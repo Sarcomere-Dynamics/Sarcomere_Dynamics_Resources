@@ -78,7 +78,7 @@ artus_api = ArtusAPI(comm_port='/tmp/ttyUR')
 
 
 ## Troubleshooting
-1. If you are unable to connect to the robot, check the IP address of the robot and the PC.
+1. If you are unable to connect to the robot, check the IP address of the robot.
 2. If sure the socat process is not already running before running the example code.
    If the socat process is already running on your PC, kill the process using the following command:
     ```
