@@ -18,7 +18,7 @@ sudo apt install socat
 ```
 
 2. Connect the Artus Hand to the UR Arm using the RS485 connetor.
-3. Run the following command to forward the UR Arm's RS485 port to the Artus Hand:
+3. Run the following command to forward the UR Arm's RS485 port to a TCP port:
 ```
 sudo socat tcp-l:54329,reuseaddr,fork file:/dev/ttyTool,nonblock,raw,b921600,waitlock=/var/run/tty
 
