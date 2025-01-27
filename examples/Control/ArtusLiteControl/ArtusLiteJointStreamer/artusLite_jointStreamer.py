@@ -62,13 +62,13 @@ class ArtusLiteJointStreamer:
         joint_angles = [int(i) for i in joint_angles]
         
         for i in range(16):
-            joint = {'index':i, 'target_angle': joint_angles[i], 'velocity' : 50}
+            joint = {'index':i, 'target_angle': joint_angles[i], 'velocity' : 80}
             hand_joints[i] = joint
             
         # set joint angles
         if self._check_streaming_rate():
-            print(f"Sending {self.communication_channel_identifier}...{hand_joints}")
-            print(f'hand joints : {hand_joints}')
+            # print(f"Sending {self.communication_channel_identifier}...{hand_joints}")
+            print(f'******************************** hand joints : ************************************************/n {hand_joints}')
             self.artusLite_api.set_joint_angles(joint_angles=hand_joints)
             return joint_angles
         else:
@@ -84,7 +84,7 @@ class ArtusLiteJointStreamer:
         
         # check if the time difference is greater than the streaming frequency
         if time_difference > 1/self.streaming_frequency:
-            print("time difference: ", time_difference)
+            # print("time difference: ", time_difference)
             # print(f"Streaming rate for {arm} arm is correct")
             self.previous_time = self.current_time
             return True
