@@ -1,0 +1,6 @@
+pyzmq
+PyQt5
+PySide6
+pyyaml
+psutil
+pyserial
