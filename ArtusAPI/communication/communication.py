@@ -113,7 +113,7 @@ class Communication:
             self.logger.error("unable to connect to Robot")
             print(e)
 
-    def send_data(self, message:list,no_debug=1):
+    def send_data(self, message:list,no_debug=0):
         """
         send message
         """
@@ -162,7 +162,7 @@ class Communication:
             if tmp is not None:
                 print(f'ack received in {time.perf_counter() - start_time} seconds')
                 return 1
-            time.sleep(0.001)
+            time.sleep(0.01)
 
 
 ##################################################################

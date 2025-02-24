@@ -112,12 +112,12 @@ class FirmwareUpdater:
                 if rc_csum[0] == 1:
                     return True
                 else:
-                    self.logger.warn(f'firmware flash checksum error')
+                    self.logger.warning(f'firmware flash checksum error')
                     return False
             elif tmp == 9:
                 self.logger.error(f'firmware flash failed')
                 return False
-            time.sleep(0.001)
+            time.sleep(0.02)
 
 
 def test_firmware_updater():
