@@ -109,14 +109,17 @@ class ArtusAPI:
         """
         robot_sleep_command = self._command_handler.get_sleep_command()
         return self._communication_handler.send_data(robot_sleep_command)
-    def calibrate(self):
+    
+    def calibrate(self,joint=0):
         """
         Calibrate the Artus Hand
+        :joint: joint to calibrate, 0 for all joints
         """
         if not self.awake:
             self.logger.warning(f'Hand not ready, send `wake_up` command')
             return
         robot_calibrate_command = self._command_handler.get_calibration_command()
+        robot_calibrate_command[1] = joint
         self._communication_handler.send_data(robot_calibrate_command)
 
         # wait for data back
@@ -235,7 +238,8 @@ class ArtusAPI:
             self._firmware_updater.file_location = 'not empty'
             upload = False
         else:
-            if file_location is None: file_location = input('Please enter binfile absolute path:  ')
+            if file_location is None: 
+                file_location = input('Please enter binfile absolute path:  ')
             self._firmware_updater.file_location = file_location
 
             fw_size = self._firmware_updater.get_bin_file_info()
