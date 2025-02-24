@@ -13,9 +13,9 @@ robots:
   right_hand_robot:
     robot_connected: true
     communication_method: 'UART'
-    communication_channel_identifier: '/dev/ttyUSB0'
+    communication_channel_identifier: 'COM11'
     hand_type: 'right'
     start_robot: true
     reset_on_start: 0
-    streaming_frequency: 40  # data/seconds
+    streaming_frequency: 35  # data/seconds
     calibrate: false

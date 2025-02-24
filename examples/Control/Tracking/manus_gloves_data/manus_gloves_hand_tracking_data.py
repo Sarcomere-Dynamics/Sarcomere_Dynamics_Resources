@@ -89,7 +89,7 @@ class ManusGlovesHandTrackingData:
         # print("1. Original Data: ", joint_angles)
         if joint_angles is None or joint_angles == "[]" or joint_angles == "":
             return self.joint_angles_dict_L, self.joint_angles_dict_R
-        print("1. Original Data: ", joint_angles)
+        # print("1. Original Data: ", joint_angles)
         self._joint_angles_manus_to_joint_streamer(joint_angles)
         return joint_angles
     
@@ -144,8 +144,8 @@ class ManusGlovesHandTrackingData:
 
         data_R.extend(data_R)
 
-        print("Data L: ", data_L)
-        print("Data R: ", data_R)
+        # print("Data L: ", data_L)
+        # print("Data R: ", data_R)
 
         self.joint_angles_dict_L['thumb'] = data_L[0:4]
         self.joint_angles_dict_L['index'] = data_L[4:8]
@@ -173,11 +173,11 @@ class ManusGlovesHandTrackingData:
         # decode received data and split to left and right
 
         self.manus_data_to_dict(joint_angles)
-        print("2. Joint angle Dicts: ", self.joint_angles_dict_L, self.joint_angles_dict_R)
+        # print("2. Joint angle Dicts: ", self.joint_angles_dict_L, self.joint_angles_dict_R)
 
         joint_angles_L, joint_angles_R = self.map_user_hand_to_artus_hand("LR")
 
-        print("3. mapped joint angles: ", joint_angles_L, joint_angles_R)
+        # print("3. mapped joint angles: ", joint_angles_L, joint_angles_R)
 
         # Organizing Data
         # [thumb_1,   thumb_2,   thumb_3,  thumb_4, 
@@ -210,7 +210,7 @@ class ManusGlovesHandTrackingData:
                             #   0, 0, 0, # ring
                             #   0, 0, 0] # pinky
         
-        print("4. Joint angles sent to hand: ", self.joint_angles_left, self.joint_angles_right)
+        # print("4. Joint angles sent to hand: ", self.joint_angles_left, self.joint_angles_right)
         
         return self.joint_angles_left, self.joint_angles_right
 

@@ -33,7 +33,8 @@ class ManusGloveController:
 
     def _run_manus_executable(self):
         # Start Manus executable to receive data
-        os.startfile(r"C://Users//General User//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64\Debug//Client//SDKClient.exe")
+        #  os.startfile(r"C://Users//General User//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64\Debug//Client//SDKClient.exe")
+        os.startfile(r"C://Users//Gagan//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64//Debug//Client//SDKClient.exe")
         time.sleep(5)
 
     
