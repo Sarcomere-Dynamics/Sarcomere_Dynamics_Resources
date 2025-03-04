@@ -123,7 +123,7 @@ class ArtusAPI:
         self._communication_handler.send_data(robot_calibrate_command)
 
         # wait for data back
-        if self._communication_handler.wait_for_ack():
+        if self._communication_handler.wait_for_ack(visual=True):
             self.logger.info(f'Finished calibration')
         else:
             self.logger.warning(f'Error in calibration')
@@ -196,8 +196,12 @@ class ArtusAPI:
         
         feedback_command = self._receive_feedback()
         joint_angles = self._robot_handler.get_joint_angles(feedback_command)
+        # separate joint angles into 3 lists
+        angles = joint_angles[1][0:16]
+        velocities = joint_angles[1][16:32]
+        temperatures = joint_angles[1][32:48]
         # print(joint_angles)
-        return joint_angles
+        return joint_angles[0],angles,velocities,temperatures
     
     # robot feedback stream
     def get_streamed_joint_angles(self):
@@ -248,18 +252,34 @@ class ArtusAPI:
         if drivers_to_flash == None:
             drivers_to_flash = int(input(f'Which drivers would you like to flash? \n0: All Actuators \n1-8 Specific Actuator \n9: Peripheral Controller \nEnter: '))
 
-        firmware_command = self._command_handler.get_firmware_command(fw_size,upload,drivers_to_flash)
-        self._communication_handler.send_data(firmware_command)
-        if upload:
-            self._firmware_updater.update_firmware(fw_size)
+        if drivers_to_flash == 0:
+            
+            for i in range(1,9):
+                self.update_firmware_single_driver(i,fw_size,upload)
+                if upload:
+                    self._firmware_updater.update_firmware(fw_size)
+                    upload = False
 
-        print(f'File size = {fw_size}')        
-        print(f'flashing...')
-        self._communication_handler.wait_for_ack()
+                print(f'Flashing driver {i}')
+                if not self._communication_handler.wait_for_ack(25,True):
+                    print(f'Error flashing driver {i}')
+                    return
+                # time.sleep(2)
+        else:
+            self.update_firmware_single_driver(drivers_to_flash,fw_size,upload)
+            if upload:
+                self._firmware_updater.update_firmware(fw_size)
+       
+            print(f'Flashing driver {drivers_to_flash}')
+            self._communication_handler.wait_for_ack(25,True)
+        
         print(f'Power Cycle the device to take effect')
 
-        
-
+    def update_firmware_single_driver(self,actuator_number,fw_size,upload):
+        """
+        update firmware for a single driver
+        """
+        self._communication_handler.send_data(self._command_handler.get_firmware_command(fw_size,upload,actuator_number))
 
     def request_joint_and_motor(self):
         """

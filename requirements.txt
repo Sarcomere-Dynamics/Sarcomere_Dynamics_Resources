@@ -2,3 +2,4 @@ psutil==5.9.8
 pyserial==3.5
 esptool
 pyyaml
+tqdm

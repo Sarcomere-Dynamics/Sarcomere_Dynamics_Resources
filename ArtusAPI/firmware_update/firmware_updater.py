@@ -3,6 +3,7 @@ import time
 import logging
 import platform
 import subprocess
+from tqdm import tqdm
 
 BYTES_CHUNK = 32
 UPLOAD_CHUNKS_COMMAND = 0x30
@@ -38,7 +39,7 @@ class FirmwareUpdater:
 
     def update_firmware(self,file_size):
         
-        time.sleep(0.1)
+        time.sleep(0.02)
         
         # wait for ACK back before sending data
         self.wait_for_ack()
@@ -56,46 +57,48 @@ class FirmwareUpdater:
         # init counter
         i = 0
         ret = False
-        while i < len(file_data):
-            
-            # if not enough file data for 32B, fill with 0xFFs
-            if i+BYTES_CHUNK > file_size:
-                chunk = list(file_data[i:])
-                while len(chunk) < BYTES_CHUNK: # Always make sure 32B of valid data
-                    chunk.append(0xFF)
-            
-            else:
-                chunk = list(file_data[i:i+BYTES_CHUNK])
-            
-            
-            # checksum last value
-            csum = self.calc_check_sum(chunk)
-            # set 33rd byte as checksum value
-            chunk.append(csum)
+        with tqdm(total=len(file_data), unit="B", unit_scale=True, desc="Uploading") as pbar:
 
-            # print(f'{chunk} {len(chunk)}')
-
-            # send data
-            self._communication_handler.send_data(chunk,1)
-
-            # sleep
-            time.sleep(0.008)
-
-            # print([hex(x) for x in chunk])
+            while i < len(file_data):
                 
-            # wait for ack
-            ret = self.wait_for_ack()
-            # debug print
-            # print(f'CHUNKS LEFT {chunks_required} {csum}')
+                # if not enough file data for 32B, fill with 0xFFs
+                if i+BYTES_CHUNK > file_size:
+                    chunk = list(file_data[i:])
+                    while len(chunk) < BYTES_CHUNK: # Always make sure 32B of valid data
+                        chunk.append(0xFF)
+                
+                else:
+                    chunk = list(file_data[i:i+BYTES_CHUNK])
+                
+                
+                # checksum last value
+                csum = self.calc_check_sum(chunk)
+                # set 33rd byte as checksum value
+                chunk.append(csum)
 
-            if ret:
-                chunks_required -= 1
-                i += BYTES_CHUNK
-                csum = 0
-                ret = 0
-        
+                # print(f'{chunk} {len(chunk)}')
 
-            time.sleep(0.01)
+                # send data
+                self._communication_handler.send_data(chunk,1)
+
+                # sleep
+                time.sleep(0.008)
+
+                # print([hex(x) for x in chunk])
+                    
+                # wait for ack
+                ret = self.wait_for_ack()
+                # debug print
+                # print(f'CHUNKS LEFT {chunks_required} {csum}')
+
+                if ret:
+                    chunks_required -= 1
+                    i += BYTES_CHUNK
+                    csum = 0
+                    ret = 0
+                pbar.update(BYTES_CHUNK)
+
+                time.sleep(0.01)
 
         print(f'Firmware update in progress..')
 

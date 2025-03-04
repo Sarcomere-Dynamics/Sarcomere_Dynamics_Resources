@@ -1,6 +1,7 @@
 
 import logging
 import time
+from tqdm import tqdm
 
 
 
@@ -155,15 +156,31 @@ class Communication:
         self.communicator.close()
 
 
-    def wait_for_ack(self):
+    def wait_for_ack(self,timeout=144,visual=False):
         start_time = time.perf_counter()
-        while 1:
-            tmp,rc_csum = self.receive_data()
-            if tmp is not None:
-                print(f'ack received in {time.perf_counter() - start_time} seconds')
-                return 1
-            time.sleep(0.01)
-
+        if visual:
+            with tqdm(total=timeout, unit="s", desc="Waiting for ack") as pbar:
+                while 1:
+                    tmp,rc_csum = self.receive_data()
+                    if tmp is not None:
+                        self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
+                        return 1
+                    time.sleep(0.01)
+                    if time.perf_counter() - start_time > timeout:
+                        pbar.close()
+                        self.logger.error('timeout error\r\ntimeout error\r\ntimeout error')
+                        return 0
+                    pbar.update(0.01)
+        else:
+            while 1:
+                tmp,rc_csum = self.receive_data()
+                if tmp is not None:
+                    self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
+                    return 1
+                if time.perf_counter() - start_time > timeout:
+                    self.logger.error('timeout error\r\ntimeout error\r\ntimeout error')
+                    return 0
+                time.sleep(0.01)
 
 ##################################################################
 ############################## TESTS #############################

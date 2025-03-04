@@ -37,6 +37,7 @@ def main_menu():
     ║                                                                  ║
     ╚══════════════════════════════════════════════════════════════════╝
     >> Input Command Code (1-8): """
+    
     )
 
 
@@ -71,10 +72,12 @@ def example():
                 artusapi.sleep()
             case "5":
                 # artusapi.calibrate(joint=3)
-                # artusapi.calibrate(joint=1)
-                # artusapi.calibrate(joint=7)
-                # artusapi.calibrate(joint=10)
-                # artusapi.calibrate(joint=12)
+                # time.sleep(1)
+                # artusapi.calibrate(joint=8)
+                # time.sleep(1)
+                # artusapi.calibrate(joint=15)
+                # time.sleep(1)
+                # artusapi.calibrate(joint=13)
                 # artusapi.calibrate(joint=13)
 
                 artusapi.calibrate()
