@@ -88,8 +88,11 @@ class Communication:
     def _byte_to_list_decode(self,package:bytearray) -> tuple:
         recv_data = []
         i = 0
+        # BYTE 0 : ACK
+        # BYTE 1 - 16 : 8 BIT POSITION
+        # BYTE 17 - 49 : 16 BIT POSITION
         while i < 65:
-            if 17 <= i <= 49: # 16 bit signed integer to int
+            if 17 <= i <= 47: # 16 bit signed integer to int
                 recv_data.append(int.from_bytes(package[i:i+2],byteorder='big',signed=True))
                 i+=2
             else:   # 8 bit signed integer to int

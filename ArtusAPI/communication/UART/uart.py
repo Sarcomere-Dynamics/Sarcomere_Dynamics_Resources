@@ -37,6 +37,7 @@ class UART:
         except Exception as e:
             self.logger.error(f'Error opening port {self.port}')
             self.logger.error(e)
+            quit()
 
     def send(self, data:bytearray):
         # print(data)
