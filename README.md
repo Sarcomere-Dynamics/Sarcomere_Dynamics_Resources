@@ -120,6 +120,9 @@ When getting ready to power off the device please do the following:
 * Once the hand is in an open position, send the `artus.sleep()` command to save parameters to the SD Card.
 * Once the LED turns yellow, then the device can be powered off. 
 
+>[!NOTE]
+>This is different than the mk8 where the SD Card would save periodically. Now, saving to SD Card is more intentional.
+
 ## Interacting with the API
 To get the most out of the Artus hands, the functions that will likely be most interacted with are `set_joint_angles(self, joint_angles:dict)` and `get_joint_angles(self)`. The `set_joint_angles` function allows the user to set 16 independent joint values with a desired velocity/force value in the form of a dictionary. See the [grasp_close file](data/hand_poses/grasp_close.json) for an example of a full 16 joint dictionary for the Artus Lite. See the [Artus Lite README](ArtusAPI/robot/artus_lite/README.md) for joint mapping.
 
