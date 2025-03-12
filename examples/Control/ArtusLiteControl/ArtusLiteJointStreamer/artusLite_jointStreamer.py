@@ -62,17 +62,18 @@ class ArtusLiteJointStreamer:
         joint_angles = [int(i) for i in joint_angles]
         
         for i in range(16):
-            joint = {'index':i, 'target_angle': joint_angles[i], 'velocity' : 80}
+            joint = {'index':i, 'target_angle': joint_angles[i], 'velocity' : 60}
             hand_joints[i] = joint
             
         # set joint angles
         if self._check_streaming_rate():
             # print(f"Sending {self.communication_channel_identifier}...{hand_joints}")
-            print(f'******************************** hand joints : ************************************************/n {hand_joints}')
+            # print(f'******************************** hand joints : ************************************************/n {hand_joints}')
+            # print(f'hand joints sent to hand: {hand_joints[0:4]}')
             self.artusLite_api.set_joint_angles(joint_angles=hand_joints)
             return joint_angles
         else:
-            print(f'missed {self.communication_channel_identifier}')
+            # print(f'missed {self.communication_channel_identifier}')
             return None
         
     def _check_streaming_rate(self):
