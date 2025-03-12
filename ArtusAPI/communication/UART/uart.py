@@ -1,6 +1,8 @@
 import serial
 import logging
 import time
+from tqdm import tqdm
+
 
 class UART:
     def __init__(self,
@@ -35,8 +37,10 @@ class UART:
             self.esp32.flush()
             msg_bytes = self.esp32.read_all()
         except Exception as e:
-            self.logger.error(f'Error opening port {self.port}')
             self.logger.error(e)
+            self.logger.error(f'Error opening port {self.port} ......... QUITTING ........')
+            for i in range(25):
+                time.sleep(0.1)
             quit()
 
     def send(self, data:bytearray):

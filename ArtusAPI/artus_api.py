@@ -79,7 +79,6 @@ class ArtusAPI:
         # send wake command with it
         if not self.awake:
             self.wake_up()
-            self.awake = True
         return
     
     def disconnect(self):
@@ -102,6 +101,17 @@ class ArtusAPI:
             self.logger.info(f'Finished calibration')
         else:
             self.logger.warning(f'Error in calibration')
+        self.awake = True
+
+        # get current position of the hand and set the last target positions to this value
+        # while True:
+        #     joint_angles = self.get_joint_angles()
+        #     time.sleep(1)
+        #     if joint_angles is not None:
+        #         break
+        
+        # for joint,data in self._robot_handler.robot.hand_joints.items():
+        #     data.target_angle = data.feedback_angle
 
     def sleep(self):
         """
@@ -110,7 +120,7 @@ class ArtusAPI:
         robot_sleep_command = self._command_handler.get_sleep_command()
         return self._communication_handler.send_data(robot_sleep_command)
     
-    def calibrate(self,joint=0):
+    def calibrate(self,joint=0,calibration_type=0):
         """
         Calibrate the Artus Hand
         :joint: joint to calibrate, 0 for all joints
@@ -120,6 +130,7 @@ class ArtusAPI:
             return
         robot_calibrate_command = self._command_handler.get_calibration_command()
         robot_calibrate_command[1] = joint
+        robot_calibrate_command[2] = calibration_type
         self._communication_handler.send_data(robot_calibrate_command)
 
         # wait for data back
@@ -144,6 +155,16 @@ class ArtusAPI:
         if not self._check_communication_frequency(self._last_command_sent_time):
             return False
         return self._communication_handler.send_data(robot_set_joint_angles_command)
+    
+    def set_zero_manual_calibration(self):
+        """
+        Set the zero position of the joints used in internal calibration
+        """
+        if not self.awake:
+            self.logger.warning(f'Hand not ready, send `wake_up` command')
+            return
+        robot_set_zero_command = self._command_handler.get_set_zero_command()
+        self._communication_handler.send_data(robot_set_zero_command)
     
     def set_home_position(self):
         """
@@ -196,6 +217,8 @@ class ArtusAPI:
         
         feedback_command = self._receive_feedback()
         joint_angles = self._robot_handler.get_joint_angles(feedback_command)
+        if joint_angles is None:
+            return None
         # separate joint angles into 3 lists
         angles = joint_angles[1][0:16]
         velocities = joint_angles[1][16:32]
@@ -255,16 +278,16 @@ class ArtusAPI:
         if drivers_to_flash == 0:
             
             for i in range(1,9):
+                print(f'Flashing driver {i}')
+                time.sleep(1)
                 self.update_firmware_single_driver(i,fw_size,upload)
                 if upload:
                     self._firmware_updater.update_firmware(fw_size)
                     upload = False
 
-                print(f'Flashing driver {i}')
                 if not self._communication_handler.wait_for_ack(25,True):
                     print(f'Error flashing driver {i}')
                     return
-                # time.sleep(2)
         else:
             self.update_firmware_single_driver(drivers_to_flash,fw_size,upload)
             if upload:

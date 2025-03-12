@@ -14,6 +14,7 @@ class Commands:
     target_command = 0x66,
     get_feedback_command = 0x68,
     update_param_command = 0x44,
+    set_zero_command = 0x15,
 
     save_grasp_onboard_command = 0xC8,
     return_grasps_command = 0xD2,
@@ -34,7 +35,8 @@ class Commands:
             'return_grasps_command': return_grasps_command,
             'execute_grasp_command': execute_grasp_command,
             'update_param_command' : update_param_command,
-            'wipe_sd_command' : wipe_sd_command
+            'wipe_sd_command' : wipe_sd_command,
+            'set_zero_command' : set_zero_command
         }
         self.reset_on_start = reset_on_start
 
@@ -68,6 +70,11 @@ class Commands:
         command_list.insert(0,self.commands['target_command'])
         
         return command_list
+    
+    def get_set_zero_command(self):
+        command_list = [0]*32
+        command_list.insert(0,self.commands['set_zero_command'])
+        return command_list
 
     def get_firmware_command(self,fw_size,upload,drivers):
         command_list = [0]*32
@@ -83,6 +90,7 @@ class Commands:
     def get_calibration_command(self):
         command_list = [0]*32
         command_list.insert(0,self.commands['calibrate_command'])
+
         return command_list
 
     def get_sleep_command(self):
