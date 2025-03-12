@@ -80,7 +80,7 @@ def example():
                 # artusapi.calibrate(joint=13)
                 # artusapi.calibrate(joint=13)
 
-                artusapi.calibrate()
+                artusapi.calibrate(calibration_type=1)
             case "6":
                 with open(os.path.join(hand_poses_path,'grasp_example.json'),'r') as file:
                     grasp_dict = json.load(file)
@@ -124,6 +124,9 @@ def example():
                 artusapi.execute_grasp(num)
             case 'w':
                 artusapi.wipe_sd()
+            case 'q':
+                artusapi.set_zero_manual_calibration()
+
 
 # ----------------------------------------------------------------------------------
 # ---------------------------------- Main ------------------------------------------
