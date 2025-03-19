@@ -53,7 +53,7 @@ def main(triangle_wave,freq,max):
     # Initialize ArtusAPI with specified parameters
     artus = ArtusAPI(
         communication_method='UART',
-        communication_channel_identifier="/dev/ttyUSB0",
+        communication_channel_identifier="/dev/ttyUSB0", ### @TODO EDIT ME ###
         robot_type='artus_lite',
         hand_type='right',
         reset_on_start=0,
@@ -83,10 +83,10 @@ def main(triangle_wave,freq,max):
         # Update all joint angles in the dictionary
         for joint in grasp_dict:
             if grasp_dict[joint]["index"] not in [0,1,4,7,10,13] : # :[2,3]
-                grasp_dict[joint]["velocity"] = 25
+                grasp_dict[joint]["velocity"] = 40
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
             elif grasp_dict[joint]["index"] == 0 and int(triangle_wave[wave_index]) <= 40:
-                grasp_dict[joint]["velocity"] = 25
+                grasp_dict[joint]["velocity"] = 40
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])-20
             # if grasp_dict[joint]["index"] == 8:
             #     grasp_dict[joint]["velocity"] = 20
@@ -108,8 +108,9 @@ def main(triangle_wave,freq,max):
 
             x = artus.get_streamed_joint_angles()
             if x:
-                # print(f'Data Returned: {x}')
-                print(f'time period: {(time.perf_counter() - time_stamp)*1000:.2f} ms')
+                print(f'Data Returned: {x}')
+                # print({key: value["feedback_current"] for key, value in artus._robot_handler.robot.hand_joints.items() if "feedback_current" in value})
+                # print(f'time period: {(time.perf_counter() - time_stamp)*1000:.2f} ms')
                 time_stamp = time.perf_counter()
             # else:
             #     print(f'x.type = {type(x)}')
@@ -128,7 +129,7 @@ if __name__ == "__main__":
     # gete com port
     while True:
         try:
-            freq = 70
+            freq = 33
             max_val = 45
             triangle_wave = generate_triangle_wave(0.8,freq,max_val)
             main(triangle_wave,freq,max_val)

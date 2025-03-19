@@ -93,7 +93,7 @@ class Communication:
         # BYTE 17 - 49 : 16 BIT POSITION
         while i < 65:
             if 17 <= i <= 47: # 16 bit signed integer to int
-                recv_data.append(int.from_bytes(package[i:i+2],byteorder='big',signed=True))
+                recv_data.append(package[i].from_bytes(package[i:i+2], byteorder='big', signed=False))
                 i+=2
             else:   # 8 bit signed integer to int
                 recv_data.append(package[i].from_bytes(package[i:i+1],byteorder='little',signed=True))
@@ -102,6 +102,8 @@ class Communication:
         # extract acknowledge value
         ack = recv_data[0]
         del recv_data[0] # delete 0th value from array
+
+        # print(f'recv_data = {recv_data}')
 
         return ack,recv_data
 
