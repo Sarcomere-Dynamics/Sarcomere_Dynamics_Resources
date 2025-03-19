@@ -32,8 +32,8 @@ class ManusGlovesHandTrackingData:
         self.user_hand_min_max_right = {'index': [-15,15,0,90,0,90], 'middle': [-15,15,0,90,0,90], 'ring': [-15,15,0,90,0,90], 'pinky': [-15,15,0,90,0,90], 'thumb': [-25,25,0,90,0,90,0,90]}
         self.artus_min_max = {'index': [-15,15,0,90,0,90], 'middle': [-15,15,0,90,0,90], 'ring': [-15,15,0,90,0,90], 'pinky': [-15,15,0,90,0,90], 'thumb': [-25,25,0,90,0,90,0,90]}
 
-        self.moving_average_lefthand = MultiMovingAverage(window_size=30, num_windows=20)
-        self.moving_average_righthand = MultiMovingAverage(window_size=30, num_windows=20)
+        self.moving_average_lefthand =  MultiMovingAverage(window_size=60, num_windows=20)
+        self.moving_average_righthand = MultiMovingAverage(window_size=60, num_windows=20)
 
 
         self.joint_angles_left = None # [thumb_1, thumb_2, thumb_3, thumb4, index_1, index_2, index_3, middle_1, middle_2, middle_3, ring, pinky]
@@ -204,11 +204,14 @@ class ManusGlovesHandTrackingData:
                               -joint_angles_R[3], joint_angles_R[8], joint_angles_R[13], # ring
                               -joint_angles_R[2], joint_angles_R[7], joint_angles_R[12]] # pinky
         
+        # """ 
+        # FOR TESTING
+        # """
         # self.joint_angles_right = [-joint_angles_R[4],joint_angles_R[9],joint_angles_R[14], joint_angles_R[19], # thumb
-        #                       -joint_angles_R[0], joint_angles_R[5], joint_angles_R[10], # index
-        #                       -joint_angles_R[1], joint_angles_R[6], joint_angles_R[11], # middle
-                            #   0, 0, 0, # ring
-                            #   0, 0, 0] # pinky
+        #                       0, 0, 0, # index
+        #                       0, 0, 0, # middle
+        #                       0, 0, 0, # ring
+        #                       0, 0, 0] # pinky
         
         # print("4. Joint angles sent to hand: ", self.joint_angles_left, self.joint_angles_right)
         
