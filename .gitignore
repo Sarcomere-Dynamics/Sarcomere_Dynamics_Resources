@@ -11,4 +11,4 @@ bins.zip
 
 **/__pycache__/
 private/
-.zip
+*.zip
