@@ -53,7 +53,7 @@ def main(triangle_wave,freq,max):
     # Initialize ArtusAPI with specified parameters
     artus = ArtusAPI(
         communication_method='UART',
-        communication_channel_identifier="/dev/ttyUSB1", ### @TODO EDIT ME ###
+        communication_channel_identifier="/dev/ttyUSB0", ### @TODO EDIT ME ###
         robot_type='artus_lite',
         hand_type='right',
         reset_on_start=0,
@@ -81,96 +81,115 @@ def main(triangle_wave,freq,max):
     time_stamp = time.perf_counter()
 
     for joint in grasp_dict:
-        grasp_dict[joint]["velocity"] = 70
+        grasp_dict[joint]["velocity"] = 50
 
-    sleep_time = 0.6
-    target_angle = 60
+    sleep_time = 0.5
+    target_angle = 90
 
     while True:
         # d2s first
-        grasp_dict["thumb_spread"]["target_angle"] = 20
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
-        grasp_dict["thumb_spread"]["target_angle"] = -20
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
+        # grasp_dict["thumb_spread"]["target_angle"] = 20
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
+        # grasp_dict["thumb_spread"]["target_angle"] = -20
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
         
         
-        grasp_dict["thumb_d2"]["target_angle"] = target_angle
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
+        # grasp_dict["thumb_d2"]["target_angle"] = target_angle
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
 
-        grasp_dict["thumb_d2"]["target_angle"] = 0
-        grasp_dict["thumb_d1"]["target_angle"] = target_angle
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
+        # grasp_dict["thumb_d2"]["target_angle"] = 0
+        # grasp_dict["thumb_d1"]["target_angle"] = target_angle
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
 
-        grasp_dict["thumb_d1"]["target_angle"] = 0
-        grasp_dict["index_d2"]["target_angle"] = target_angle
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
-
-        grasp_dict["index_d2"]["target_angle"] = 0          
-        grasp_dict["middle_d2"]["target_angle"] = target_angle
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
-
-        grasp_dict["middle_d2"]["target_angle"] = 0
-        grasp_dict["ring_d2"]["target_angle"] = target_angle
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
-
-        grasp_dict["ring_d2"]["target_angle"] = 0       
+        # grasp_dict["thumb_d1"]["target_angle"] = 0
+        grasp_dict["pinky_flex"]["target_angle"] = target_angle       
         grasp_dict["pinky_d2"]["target_angle"] = target_angle
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
 
-
-        grasp_dict["pinky_d2"]["target_angle"] = 0
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
-
-        grasp_dict["pinky_flex"]["target_angle"] = target_angle
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
-
-        grasp_dict["pinky_flex"]["target_angle"] = 0
         grasp_dict["ring_flex"]["target_angle"] = target_angle
+        grasp_dict["ring_d2"]["target_angle"] = target_angle
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
 
-        grasp_dict["ring_flex"]["target_angle"] = 0
-        grasp_dict["middle_flex"]["target_angle"] = target_angle
+        grasp_dict["middle_flex"]["target_angle"] = target_angle          
+        grasp_dict["middle_d2"]["target_angle"] = target_angle
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
 
-        grasp_dict["middle_flex"]["target_angle"] = 0
+        grasp_dict["index_d2"]["target_angle"] = target_angle
         grasp_dict["index_flex"]["target_angle"] = target_angle
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
 
-        grasp_dict["index_flex"]["target_angle"] = 0
+        time.sleep(0.5)
+
+        grasp_dict["thumb_flex"]["target_angle"] = 40       
+        grasp_dict["thumb_d2"]["target_angle"] = 30
+        grasp_dict["thumb_d1"]["target_angle"] = 30
+        grasp_dict["thumb_spread"]["target_angle"] = -20
         artus.set_joint_angles(grasp_dict)
+
+        time.sleep(sleep_time)
+
+        time.sleep(1)
+
+        for joint in grasp_dict:
+            grasp_dict[joint]["target_angle"] = 0
+
+        artus.set_joint_angles(grasp_dict)
+        
+
+
+        # grasp_dict["pinky_d2"]["target_angle"] = 0
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
+
+        # grasp_dict["pinky_flex"]["target_angle"] = target_angle
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
+
+        # grasp_dict["pinky_flex"]["target_angle"] = 0
+        # grasp_dict["ring_flex"]["target_angle"] = target_angle
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
+
+        # grasp_dict["ring_flex"]["target_angle"] = 0
+        # grasp_dict["middle_flex"]["target_angle"] = target_angle
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
+
+        # grasp_dict["middle_flex"]["target_angle"] = 0
+        # grasp_dict["index_flex"]["target_angle"] = target_angle
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
+
+        # grasp_dict["index_flex"]["target_angle"] = 0
+        # artus.set_joint_angles(grasp_dict)
         
         # time.sleep(sleep_time)
 
         # half second delay before abdcution
-        time.sleep(0.5)
+        # time.sleep(0.5)
 
-        grasp_dict["index_spread"]["target_angle"] = -15
-        grasp_dict["middle_spread"]["target_angle"] = -10
-        grasp_dict["ring_spread"]["target_angle"] = 10
-        grasp_dict["pinky_spread"]["target_angle"] = 15
+        # grasp_dict["index_spread"]["target_angle"] = -15
+        # grasp_dict["middle_spread"]["target_angle"] = -10
+        # grasp_dict["ring_spread"]["target_angle"] = 10
+        # grasp_dict["pinky_spread"]["target_angle"] = 15
 
-        artus.set_joint_angles(grasp_dict)
-        time.sleep(sleep_time)
+        # artus.set_joint_angles(grasp_dict)
+        # time.sleep(sleep_time)
 
-        grasp_dict["index_spread"]["target_angle"] = 0
-        grasp_dict["middle_spread"]["target_angle"] = 0
-        grasp_dict["ring_spread"]["target_angle"] = 0
-        grasp_dict["pinky_spread"]["target_angle"] = 0
+        # grasp_dict["index_spread"]["target_angle"] = 0
+        # grasp_dict["middle_spread"]["target_angle"] = 0
+        # grasp_dict["ring_spread"]["target_angle"] = 0
+        # grasp_dict["pinky_spread"]["target_angle"] = 0
 
-        artus.set_joint_angles(grasp_dict)
+        # artus.set_joint_angles(grasp_dict)
 
         time.sleep(5)
 
