@@ -1,4 +1,16 @@
 
+"""
+Sarcomere Dynamics Software License Notice
+------------------------------------------
+This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
+including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
+
+Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+
+Licensed under the Sarcomere Dynamics Software License.
+See the LICENSE file in the repository for full details.
+"""
+
 import time
 import os
 import sys
@@ -11,6 +23,7 @@ print("Project Root", PROJECT_ROOT)
 # sys.path.append(PROJECT_ROOT)
 from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI
 
+# 1, 6, 8, 4
 class ArtusLiteJointStreamer:
 
     def __init__(self,                 
@@ -19,7 +32,7 @@ class ArtusLiteJointStreamer:
                 hand_type = 'left',
                 reset_on_start = 0,
                 
-                streaming_frequency = 40, # data/seconds
+                streaming_frequency = 30, # data/seconds
                 start_robot=True,
                 calibrate= False,
                 robot_connected=True,
@@ -28,7 +41,10 @@ class ArtusLiteJointStreamer:
         self.artusLite_api = ArtusAPI(communication_method=communication_method,
                                     communication_channel_identifier=communication_channel_identifier,
                                     hand_type=hand_type,
-                                    reset_on_start=reset_on_start)
+                                    reset_on_start=reset_on_start,
+                                    communication_frequency = streaming_frequency,
+                                    stream = True)
+                                    
         
         self.communication_channel_identifier = communication_channel_identifier
         self.robot_start = start_robot
@@ -44,13 +60,13 @@ class ArtusLiteJointStreamer:
       
     def _initialize_api(self):
         self.artusLite_api.connect()
-        time.sleep(2)
+        time.sleep(1)
         if self.robot_start:
             self.artusLite_api.wake_up()
-            time.sleep(2)
+            # time.sleep(2)
         if self.calibrate:
             self.artusLite_api.calibrate()
-        time.sleep(2)
+        # time.sleep(2)
 
     def _go_to_zero_position(self):
         self.artusLite_api.set_home_position()
@@ -66,15 +82,15 @@ class ArtusLiteJointStreamer:
             hand_joints[i] = joint
             
         # set joint angles
-        if self._check_streaming_rate():
+        # if self._check_streaming_rate():
             # print(f"Sending {self.communication_channel_identifier}...{hand_joints}")
             # print(f'******************************** hand joints : ************************************************/n {hand_joints}')
             # print(f'hand joints sent to hand: {hand_joints[0:4]}')
-            self.artusLite_api.set_joint_angles(joint_angles=hand_joints)
-            return joint_angles
-        else:
+        self.artusLite_api.set_joint_angles(joint_angles=hand_joints)
+            # return joint_angles
+        # else:
             # print(f'missed {self.communication_channel_identifier}')
-            return None
+            # return None
         
     def _check_streaming_rate(self):
         """
@@ -93,17 +109,93 @@ class ArtusLiteJointStreamer:
         return False
     
 
+    def receive_force_feedback(self):
+        joint_angles = self.artusLite_api.get_streamed_joint_angles()
+  
+        if joint_angles is None:
+            return  # Exit early if there's no data to process
+
+
+        joint_names_local=['thumb_spread', 'thumb_flex', 'thumb_d2', 'thumb_d1', # thumb
+                    'index_spread', 'index_flex', 'index_d2', # index
+                    'middle_spread', 'middle_flex', 'middle_d2', # middle
+                    'ring_spread', 'ring_flex', 'ring_d2', # ring
+                    'pinky_spread', 'pinky_flex', 'pinky_d2'] # pinky,
+        
+        position = []
+        current = []
+        temperature = []
+
+        for i in range(len(joint_names_local)):
+            name = joint_names_local[i]
+            position.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_angle)
+            current.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_current)
+            temperature.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_temperature)
+
+
+
+        return current
+
 def test_artus_joint_streamer():
-    artus_joint_streamer = ArtusLiteJointStreamer()
+    artus_joint_streamer = ArtusLiteJointStreamer(communication_method='UART',
+                                                  communication_channel_identifier='/dev/ttyUSB0',
+                                                  hand_type='right',
+                                                  reset_on_start=0,
+                                                  streaming_frequency=40,
+                                                  start_robot=True,
+                                                  calibrate=False,
+                                                  robot_connected=True)
     joint_angles_1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     joint_angles_2 = [0, 20, 30, 30, 10, 50, 70, 10, 50, 70, 10, 50, 70, 10, 50, 70]
 
     while True:
         artus_joint_streamer.stream_joint_angles(joint_angles=joint_angles_1)
         time.sleep(3)
+        # receive force feedback
+        force_data = artus_joint_streamer.receive_force_feedback()
+        # print("Feedback Data: ", force_data)
         artus_joint_streamer.stream_joint_angles(joint_angles=joint_angles_2)
+        time.sleep(3)
+        # receive force feedback
+        force_data = artus_joint_streamer.receive_force_feedback()
+        # print("Feedback Data: ", force_data)
         time.sleep(3)
 
 
+def test_feedback_streaming():
+    artus_joint_streamer = ArtusLiteJointStreamer(communication_method='UART',
+                                                  communication_channel_identifier='/dev/ttyUSB0',
+                                                  hand_type='right',
+                                                  reset_on_start=0,
+                                                  streaming_frequency=20,
+                                                  start_robot=True,
+                                                  calibrate=False,
+                                                  robot_connected=True)
+    while True:
+        # receive force feedback
+        joint_angles_1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        artus_joint_streamer.stream_joint_angles(joint_angles=joint_angles_1)
+        # time.sleep(1)
+        force_data = artus_joint_streamer.receive_force_feedback()
+        # time.sleep(1)
+        if force_data is not None:
+            time.sleep(0.001)
+            # print("Feedback Data: ", force_data)
+            pass
+
+      
+
+        joint_angles_1 = [0,0,5,5,0,5,5,0,5,5,0,5,5,0,5,5]
+        artus_joint_streamer.stream_joint_angles(joint_angles=joint_angles_1)
+        force_data = artus_joint_streamer.receive_force_feedback()
+        if force_data is not None:
+            time.sleep(0.001)
+            pass
+            # print("Feedback Data: ", force_data)
+        # # time.sleep(3)
+
+
+
 if __name__ == "__main__":
-    test_artus_joint_streamer()
+    # test_artus_joint_streamer()
+    test_feedback_streaming()

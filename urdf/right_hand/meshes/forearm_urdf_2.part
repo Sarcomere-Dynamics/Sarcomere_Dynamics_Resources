@@ -1,0 +1,14 @@
+{
+    "configuration": "default",
+    "documentId": "aec3e5c812de051a5a389dd7",
+    "documentMicroversion": "9ac969a1f1ab8dafdc4aa2e3",
+    "documentVersion": "33cdf42c45e6501acadded68",
+    "elementId": "74d932b909a1c16ab52ea653",
+    "fullConfiguration": "default",
+    "id": "MH7LaRntvGQsuIvpf",
+    "isStandardContent": false,
+    "name": "Forearm URDF 2 <1>",
+    "partId": "R5ID",
+    "suppressed": false,
+    "type": "Part"
+}

@@ -1,0 +1,5 @@
+pyzmq
+pyqtgraph
+pyyaml
+psutil
+pyserial

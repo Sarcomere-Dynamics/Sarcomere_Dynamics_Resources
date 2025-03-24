@@ -1,0 +1,14 @@
+{
+    "configuration": "default",
+    "documentId": "aec3e5c812de051a5a389dd7",
+    "documentMicroversion": "b716405520e456bd5b3f6c82",
+    "documentVersion": "c5894ec2985a15bca71f922e",
+    "elementId": "d627bf36b0a43e1fcd63dbbe",
+    "fullConfiguration": "default",
+    "id": "MsiL2sTVsgLPHlPvl",
+    "isStandardContent": false,
+    "name": "Left Palm URDF <1>",
+    "partId": "RRgD",
+    "suppressed": false,
+    "type": "Part"
+}

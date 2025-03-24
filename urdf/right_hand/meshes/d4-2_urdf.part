@@ -1,0 +1,13 @@
+{
+    "configuration": "default",
+    "documentId": "8d955cae9a6403d426103dcf",
+    "documentMicroversion": "5388ac54674a0ec902d5b6b2",
+    "elementId": "5a9f4538cd824d47081c82f3",
+    "fullConfiguration": "default",
+    "id": "MVKZyYEhlbzXQyF8u",
+    "isStandardContent": false,
+    "name": "D4-2 URDF <1>",
+    "partId": "RMCP",
+    "suppressed": false,
+    "type": "Part"
+}

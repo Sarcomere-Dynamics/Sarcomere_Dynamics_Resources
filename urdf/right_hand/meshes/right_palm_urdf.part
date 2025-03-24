@@ -1,0 +1,14 @@
+{
+    "configuration": "default",
+    "documentId": "aec3e5c812de051a5a389dd7",
+    "documentMicroversion": "5ceb0ff3d925d6f709ca7671",
+    "documentVersion": "5c98c684936d2d882e579182",
+    "elementId": "d627bf36b0a43e1fcd63dbbe",
+    "fullConfiguration": "default",
+    "id": "MeBrIjfylYKDg+V4Q",
+    "isStandardContent": false,
+    "name": "Right Palm URDF <1>",
+    "partId": "RrHP",
+    "suppressed": false,
+    "type": "Part"
+}
