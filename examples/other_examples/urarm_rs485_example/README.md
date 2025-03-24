@@ -11,6 +11,11 @@ After that, setup the software communication on the UR Arm and on the PC.
 The setup on the UR Arm forwards the RS485 port (/dev/ttyTool) to a TCP port (54329) on the UR Arm.
 This allows the PC to communicate with the Artus Hand over the network.
 
+Communication Interface also needs to be enabled on polyscope with default the following settings, leave others default:
+* No Parity
+* 1 stop / 1 start bit
+* 115200 baudrate
+
 ### Method 1: Terminal on UR Arm
 1. On the UR Arm control box, install socat using the following command:
 ```

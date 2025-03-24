@@ -1,17 +1,14 @@
+"""
+Sarcomere Dynamics Software License Notice
+------------------------------------------
+This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
+including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
+Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 
-# import sys
-# from pathlib import Path
-# # Current file's directory
-# current_file_path = Path(__file__).resolve()
-# # Add the desired path to the system path
-# desired_path = current_file_path.parent.parent.parent.parent
-# sys.path.append(str(desired_path))
-# print(desired_path)
-
-# # Artus Lite Robots
-# from ArtusAPI.robot.artus_lite.artus_lite_left import ArtusLite_LeftHand
-# from ArtusAPI.robot.artus_lite.artus_lite_right import ArtusLite_RightHand
+Licensed under the Sarcomere Dynamics Software License.
+See the LICENSE file in the repository for full details.
+"""
 
 from .artus_lite.artus_lite_left import ArtusLite_LeftHand
 from .artus_lite.artus_lite_right import ArtusLite_RightHand

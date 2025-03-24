@@ -1,3 +1,15 @@
+"""
+Sarcomere Dynamics Software License Notice
+------------------------------------------
+This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
+including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
+
+Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+
+Licensed under the Sarcomere Dynamics Software License.
+See the LICENSE file in the repository for full details.
+"""
+
 import socket
 import time
 import os

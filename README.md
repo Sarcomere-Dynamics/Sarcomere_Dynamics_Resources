@@ -4,7 +4,7 @@
 
 This repository contains a Python API for controlling the ARTUS robotic hands by Sarcomere Dynamics Inc.
 
-Please contact the team if there are any issues that arise through the use of the API.
+Please contact the team if there are any issues that arise through the use of the API. See [Software License](/Software%20License_24March%202025.pdf).
 
 ## Introduction
 >[!IMPORTANT]

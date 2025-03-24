@@ -1,4 +1,14 @@
+"""
+Sarcomere Dynamics Software License Notice
+------------------------------------------
+This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
+including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
+Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+
+Licensed under the Sarcomere Dynamics Software License.
+See the LICENSE file in the repository for full details.
+"""
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
 # ------------------------------------------------------------------------------
@@ -61,7 +71,8 @@ def example():
                         communication_method=communication_method,
                         communication_channel_identifier=local_device_name,
                         reset_on_start=config.config.robot.artusLite.reset_on_start,
-                        awake = config.config.robot.artusLite.awake)
+                        awake = config.config.robot.artusLite.awake,
+                        baudrate=115200) # baudrate set for RS485 Communication over UR ARM
     # Path to the hand poses
     hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
     # Main loop (example)
