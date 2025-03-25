@@ -9,25 +9,11 @@ Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
+
 import logging
 import time
 from tqdm import tqdm
 
-
-
-# import sys
-# from pathlib import Path
-# # Current file's directory
-# current_file_path = Path(__file__).resolve()
-# # Add the desired path to the system path
-# desired_path = current_file_path.parent.parent.parent
-# sys.path.append(str(desired_path))
-# print(desired_path)
-
-# # Communication methodss
-# from ArtusAPI.communication.WiFi.wifi_server import WiFiServer
-# from ArtusAPI.communication.UART.uart import UART
-# from ArtusAPI.ArtusAPI.communication.can import CAN
 
 from .UART.uart import UART
 from .WiFi.wifi_server import WiFiServer
@@ -103,7 +89,7 @@ class Communication:
         # BYTE 17 - 49 : 16 BIT POSITION
         while i < 65:
             if 17 <= i <= 47: # 16 bit signed integer to int
-                recv_data.append(package[i].from_bytes(package[i:i+2], byteorder='big', signed=False))
+                recv_data.append(package[i].from_bytes(package[i:i+2], byteorder='big', signed=True))
                 i+=2
             else:   # 8 bit signed integer to int
                 recv_data.append(package[i].from_bytes(package[i:i+1],byteorder='little',signed=True))
