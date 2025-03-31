@@ -93,18 +93,18 @@ def main(triangle_wave,freq,max):
     while True:
         # Update all joint angles in the dictionary
         for joint in grasp_dict:
-            if grasp_dict[joint]["index"] not in [0,1,4,7,10,13] : # :[2,3]
-                grasp_dict[joint]["velocity"] = 40
+            if grasp_dict[joint]["index"] not in [4,7,10,13] : # :[2,3]
+                grasp_dict[joint]["velocity"] = 60
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
-            elif grasp_dict[joint]["index"] == 0 and int(triangle_wave[wave_index]) <= 40:
-                grasp_dict[joint]["velocity"] = 40
+            elif grasp_dict[joint]["index"] == 0 and int(triangle_wave[wave_index]) <= 45:
+                grasp_dict[joint]["velocity"] = 60
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])-20
             # if grasp_dict[joint]["index"] == 8:
             #     grasp_dict[joint]["velocity"] = 20
             #     grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
         try:
             if sleeper_flag:
-                if time.perf_counter() - sleeper_last > 1:
+                if time.perf_counter() - sleeper_last > 0.3:
                     sleeper_flag = False
             # Send updated positions to the robot
             elif artus.set_joint_angles(grasp_dict):
@@ -128,7 +128,7 @@ def main(triangle_wave,freq,max):
         except KeyboardInterrupt:
             artus.disconnect()
             print(f'Disconnected from robot')
-            return
+            quit
         except Exception as e:
             print(e)
         # time.sleep(0.05)  # Match the streaming frequency
@@ -141,8 +141,8 @@ if __name__ == "__main__":
     while True:
         try:
             freq = 33
-            max_val = 45
-            triangle_wave = generate_triangle_wave(0.8,freq,max_val)
+            max_val = 40
+            triangle_wave = generate_triangle_wave(0.5,freq,max_val)
             main(triangle_wave,freq,max_val)
         except Exception as e:
             print('E::'+e)
