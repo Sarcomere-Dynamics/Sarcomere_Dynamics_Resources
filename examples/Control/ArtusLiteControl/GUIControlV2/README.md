@@ -27,6 +27,7 @@ This guide provides instructions on how to use the GUI to control the Artus Lite
 python3 -m venv vevn
 ```
 2. Activate the virtual environment
+
 On Ubuntu:
 ```
 source venv/bin/activate
@@ -41,7 +42,7 @@ venv\Scripts\activate
     pip install numpy pyzmq pyqtgraph PyQT5 pyyaml psutil pyserial esptool tqdm
     ```
 
-4. Update the PYTHON_PATH in the gui.bat (windows) or gui.sh (ubuntu) files accordingly using you virtual environment's python path
+4. Update the PYTHON_PATH in the gui.bat (windows) or gui.sh (ubuntu) files accordingly using your virtual environment's python path
 
 5. Run gui.bat (windows) or gui.sh (ubuntu)
 
