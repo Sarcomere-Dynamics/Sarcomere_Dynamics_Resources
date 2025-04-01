@@ -24,7 +24,7 @@ This guide provides instructions on how to use the GUI to control the Artus Lite
 
 1. Create a virutal environment
 ```
-python3 -m venv vevn
+python3 -m venv venv
 ```
 2. Activate the virtual environment
 
