@@ -1,5 +1,6 @@
 pyzmq
 pyqtgraph
+PyQT5
 pyyaml
 psutil
 pyserial

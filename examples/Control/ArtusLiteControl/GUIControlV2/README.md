@@ -22,10 +22,29 @@ This guide provides instructions on how to use the GUI to control the Artus Lite
 ## Installation
 
 
-1. Install the required Python packages:
+1. Create a virutal environment
+```
+python3 -m venv vevn
+```
+2. Activate the virtual environment
+On Ubuntu:
+```
+source venv/bin/activate
+```
+
+On Windows:
+```
+venv\Scripts\activate
+```
+3. Install the required Python packages:
     ```sh
-    pip install pyzmq PyQt5 PySide6 pyyaml psutil pyserial
+    pip install numpy pyzmq pyqtgraph PyQT5 pyyaml psutil pyserial esptool tqdm
     ```
+
+4. Update the PYTHON_PATH in the gui.bat (windows) or gui.sh (ubuntu) files accordingly using you virtual environment's python path
+
+5. Run gui.bat (windows) or gui.sh (ubuntu)
+
 
 ## Configuration
 
@@ -37,7 +56,7 @@ To start the GUI for controlling the Artus Lite hand robot, follow these steps:
 
 1. Navigate to the directory containing the `gui.bat` script:
     ```sh
-    Sarcomere_Dynamics_Resources/examples/Control/ArtusLiteControl/GUIControl
+    Sarcomere_Dynamics_Resources/examples/Control/ArtusLiteControl/GUIControlV2
     ```
 
 2. Run the `gui.bat` script:
