@@ -3,11 +3,11 @@ import numpy as np
 class FingerPoseTransformer:
     """
     Compute absolute fingertip poses from relative joint data.
-    
+
     - Input: a dict mapping node_id -> (pos_tuple, quat_tuple)
-      where pos_tuple is (x,y,z) and quat_tuple is (qx,qy,qz,qw).
+      where pos_tuple is (x,y,z) and quat_tuple is (w,qx,qy,qz).
     - Output: a dict mapping finger names ('thumb', 'index', etc.)
-      to their absolute (position: np.ndarray, quaternion: np.ndarray).
+      to their absolute (position: np.ndarray, quaternion: np.ndarray in [x,y,z,w]).
     """
     DEFAULT_CHAINS = {
         'thumb':  [1,  2,  3],
@@ -37,7 +37,6 @@ class FingerPoseTransformer:
 
     @classmethod
     def rotate_vec(cls, v: np.ndarray, q: np.ndarray) -> np.ndarray:
-        """Rotate vector v by quaternion q."""
         v_q = np.array([v[0], v[1], v[2], 0.0])
         return cls.quat_mul(
             cls.quat_mul(q, v_q),
@@ -48,10 +47,6 @@ class FingerPoseTransformer:
                 p1: np.ndarray, q1: np.ndarray,
                 p2: np.ndarray, q2: np.ndarray
                ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        First apply (p1, q1), then (p2, q2).
-        Returns (p_abs, q_abs).
-        """
         p_abs = p1 + self.rotate_vec(p2, q1)
         q_abs = self.quat_mul(q1, q2)
         return p_abs, q_abs
@@ -61,19 +56,21 @@ class FingerPoseTransformer:
         decoded: dict[int, tuple[tuple[float,float,float], tuple[float,float,float,float]]]
     ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
         """
-        decoded: { node_id: ((x,y,z), (qx,qy,qz,qw)), … }
-        returns: { finger_name: (pos_abs, quat_abs), … }
+        decoded: { node_id: ((x,y,z), (w,qx,qy,qz)), … }
+        returns: { finger_name: (pos_abs, quat_abs in [x,y,z,w]), … }
         """
         result = {}
         for finger, node_ids in self.chains.items():
             p_abs = np.zeros(3)
-            q_abs = np.array([0.0, 0.0, 0.0, 1.0])
+            q_abs = np.array([0.0, 0.0, 0.0, 1.0])  # identity quat in [x,y,z,w]
             for nid in node_ids:
                 p_rel = np.array(decoded[nid][0])
-                q_rel = np.array(decoded[nid][1])
+                w, x, y, z = decoded[nid][1]        # unpack your (w,x,y,z)
+                q_rel = np.array([x, y, z, w])      # reorder to [x,y,z,w]
                 p_abs, q_abs = self.compose(p_abs, q_abs, p_rel, q_rel)
             result[finger] = (p_abs, q_abs)
         return result
+
 
 
 
