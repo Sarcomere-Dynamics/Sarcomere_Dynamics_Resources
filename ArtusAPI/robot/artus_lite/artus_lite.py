@@ -10,7 +10,7 @@ class ArtusLite:
                 joint_min_angles=[-40, 0, 0, 0, # thumb
                                 -17, 0, 0, # index
                                 -17, 0, 0, # middle
-                                -17, 0, 7, # ring
+                                -17, 0, 0, # ring
                                 -17, 0, 0], # pinky
 
                 joint_default_angles=[0, 0, 0, 0, # thumb
@@ -172,7 +172,7 @@ class ArtusLite:
         # create new target dictionary with default velocity and default angle
         
         joint_angles = {key: {'index': value.index, 'target_angle':value.default_angle,'velocity':self.joint_velocities[value.index]} for key,value in self.hand_joints.items()}
-        print(self.hand_joints['thumb_spread'])
+        # print(self.hand_joints['thumb_spread'])
         return self.set_joint_angles(joint_angles)
     
     def get_joint_angles(self, feedback_package:list):
@@ -186,6 +186,10 @@ class ArtusLite:
                 joint_data.feedback_angle = feedback_package[1][joint_data.index]
                 joint_data.feedback_current = feedback_package[1][joint_data.index+15]
                 joint_data.feedback_temperature = feedback_package[1][joint_data.index+31]
+
+                if joint_data.index in [1,5,8,11,14] and joint_data.feedback_angle < 0:
+                    joint_data.feedback_angle = -joint_data.feedback_angle
+                    feedback_package[1][joint_data.index] = -feedback_package[1][joint_data.index]
 
             return feedback_package
         except TypeError:
