@@ -39,6 +39,8 @@ class FingerPoseTransformer:
         self.q_R = self.rot_to_quat(self.R)
 
     def rot_to_quat(self, R):
+        # ensure R is a NumPy array
+        R = np.asarray(R, dtype=float)
         # returns [qx, qy, qz, qw] from a 3×3 R
         t = R[0,0] + R[1,1] + R[2,2]
         if t > 0:
