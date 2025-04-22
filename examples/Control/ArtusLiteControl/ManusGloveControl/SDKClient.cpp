@@ -15,7 +15,7 @@
 		m_CurrentInteraction = nullptr; return ClientReturnCode::ClientReturnCode_Success;}
 
 
-
+#define TCP_DATA_RATE 50 // Set the data rate for TCP communication (in milliseconds)
 
 //////// TCP Client ////////////////
 #pragma comment(lib,"ws2_32.lib") //Winsock Library
@@ -1341,6 +1341,21 @@ void SDKClient::TCP_Send(const std::string& hand_data)
 /// @brief Print the ergonomics data received from Core.
 void SDKClient::SendErgonomicsData()
 {
+	// Add static time tracking
+	static std::chrono::high_resolution_clock::time_point s_LastSendTime = std::chrono::high_resolution_clock::now();
+
+	// Get current time
+	auto currentTime = std::chrono::high_resolution_clock::now();
+	auto timeSinceLastSend = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - s_LastSendTime).count();
+	
+	// Check if enough time has passed since last send
+	if (timeSinceLastSend < TCP_DATA_RATE)
+	{
+		return;
+	}
+
+	// Reset timer
+	s_LastSendTime = currentTime;
 
 	// TODO: Add a differentiator to differentiate between left and right glove data
 	const std::string t_FingerNames[NUM_FINGERS_ON_HAND] = { "thumb", "index", "middle", "ring", "pinky" };
