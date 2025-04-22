@@ -9,12 +9,20 @@ class FingerPoseTransformer:
     - Output: a dict mapping finger names ('thumb', 'index', etc.)
       to their absolute (position: np.ndarray, quaternion: np.ndarray in [x,y,z,w]).
     """
+    # DEFAULT_CHAINS = {
+    #     'thumb':  [1,  2,  3],
+    #     'index':  [6,  7,  8],
+    #     'middle': [11, 12, 13],
+    #     'ring':   [16, 17, 18],
+    #     'pinky':  [21, 22, 23],
+    # }
+    
     DEFAULT_CHAINS = {
-        'thumb':  [1,  2,  3],
-        'index':  [6,  7,  8],
-        'middle': [11, 12, 13],
-        'ring':   [16, 17, 18],
-        'pinky':  [21, 22, 23],
+        'thumb':  [0, 1,  2,  3, 4],
+        'index':  [5, 6,  7,  8, 9],
+        'middle': [10, 11, 12, 13, 14],
+        'ring':   [15, 16, 17, 18, 19],
+        'pinky':  [20, 21, 22, 23, 24],
     }
 
     def __init__(self, chains: dict[str, list[int]] = None):
@@ -62,8 +70,8 @@ class FingerPoseTransformer:
         result = {}
         for finger, node_ids in self.chains.items():
             p_abs = np.zeros(3)
-            # q_abs = np.array([0.0, 0.0, 0.0, 1.0])  # identity quat in [x,y,z,w]
-            q_abs = np.array([0.0, 0.707, 0.0, 0.707])  # identity quat in [x,y,z,w]
+            q_abs = np.array([0.0, 0.0, 0.0, 1.0])  # identity quat in [x,y,z,w]
+            # q_abs = np.array([0.0, 0.707, 0.0, 0.707])  # identity quat in [x,y,z,w]
             for nid in node_ids:
                 p_rel = np.array(decoded[nid][0])
                 w, x, y, z = decoded[nid][1]        # unpack your (w,x,y,z)
@@ -72,7 +80,11 @@ class FingerPoseTransformer:
             result[finger] = (p_abs, q_abs)
             # chnage sign of y coordinate to match Isaac Sim
             # print(result[finger][0])
-            result[finger][0][1] = -result[finger][0][1]
+            # result[finger][0][1] = -result[finger][0][1]
+            # add z height
+            result[finger][0][2] = result[finger][0][2] + 0.4
+            # swap x and y coordinates to match Isaac Sim
+            result[finger][0][0], result[finger][0][1] = result[finger][0][1], result[finger][0][0]
         return result
 
 

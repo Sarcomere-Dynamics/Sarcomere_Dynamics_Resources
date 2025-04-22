@@ -27,3 +27,22 @@ Node 23 - Position: (-0.0, 0.0, 0.02), Orientation: (0.99, 0.11, -0.03, 0.05)
 Node 24 - Position: (-0.0, 0.0, 0.02), Orientation: (1.0, 0.0, 0.0, 0.0)
 
 ========================================
+
+
+=== Finger Tip Data for All Fingers ===
+Thumb Tip Position:  [-0.07925908  0.06777043  0.46331307]  Thumb Tip Orientation:  [ 0.088046  0.395172 -0.709584  0.560764]
+Index Tip Position:  [0.03528988 0.0160789  0.59278598]  Index Tip Orientation:  [-0.180728 -0.012792  0.0392    0.979608]
+Middle Tip Position:  [0.02165611 0.00501227 0.58708892]  Middle Tip Orientation:  [-0.10919708 -0.00178404 -0.04422956  0.99101284]
+Ring Tip Position:  [ 0.01369405 -0.01182581  0.56851151]  Ring Tip Orientation:  [-0.08380103 -0.00459336  0.09325985  0.99359315]
+Pinky Tip Position:  [ 0.0012534  -0.03166826  0.5380038 ]  Pinky Tip Orientation:  [-0.02361562  0.00957509  0.04727527  0.99825411]
+
+========================================
+
+=== Finger Tip Data for All Fingers ===
+Thumb Tip Position:  [0.07287879 0.06243369 0.1731979 ]  Thumb Tip Orientation:  [-0.71757805 -0.4112512  -0.55141723  0.10905613]
+Index Tip Position:  [ 0.03385119 -0.02366543  0.27349275]  Index Tip Orientation:  [-0.51856714 -0.5249931   0.4467896   0.5058158 ]
+Middle Tip Position:  [ 0.00508855 -0.02821878  0.2768669 ]  Middle Tip Orientation:  [-0.47586071 -0.5230277   0.47585958  0.5230264 ]
+Ring Tip Position:  [-0.02222856 -0.02427576  0.27297437]  Ring Tip Orientation:  [ 0.44452125  0.5087789  -0.5062637  -0.5359499 ]
+Pinky Tip Position:  [-0.05044856 -0.01997505  0.26654205]  Pinky Tip Orientation:  [ 0.4049618   0.49954674 -0.53543293 -0.5475135 ]
+
+========================================
