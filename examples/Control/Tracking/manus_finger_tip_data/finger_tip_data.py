@@ -34,8 +34,12 @@ class FingerTipData:
     def __init__(self, port='65432'):
         self.port = port
         self.order_of_fingers = ['index', 'middle', 'ring', 'pinky', 'thumb']
+        self.decoded_data = {}
         
         self._initialize_tcp_server(port=port)
+        self._setup_pose_transformer()
+        
+    
         
     def _initialize_tcp_server(self, port="65432"):
         sys.path.append(str(PROJECT_ROOT))
@@ -44,10 +48,18 @@ class FingerTipData:
         self.tcp_server = TCPServer(port=int(port))
         self.tcp_server.create()
         
+    def _setup_pose_transformer(self):
+        sys.path.append(str(PROJECT_ROOT))
+        from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_finger_tip_data.finger_pose_transformer import FingerPoseTransformer
+        self.pose_transformer = FingerPoseTransformer()
+        
     def receive_fingerTip_data(self):
         raw_data = self.tcp_server.receive() # receive encoded data
         # print("1. Original Data: ", joint_angles)
         clean_data = self.parse_fingertip_data(raw_data) # parse the data
+        
+        if clean_data != {}:
+            self.decoded_data = clean_data
         return clean_data
 
 
@@ -78,11 +90,32 @@ class FingerTipData:
             result[node_id] = (pos, rot)
         
         return result
+    
+    
+    def get_finger_tip_data(self):
+        """
+        Get the finger tip data from the Manus gloves.
+        Returns a dictionary with the following keys:
+        'thumb', 'index', 'middle', 'ring', 'pinky'
+        Each key maps to a tuple of the form (position, orientation).
+        """
+        self.receive_fingerTip_data()
+        if self.decoded_data == {}:
+            return {}
+        absolute_poses = self.pose_transformer.compute_absolute_poses(self.decoded_data)
+        return absolute_poses
 
 # Example usage:
 def main():
     fingertip_data = FingerTipData()
     node_id = 14
+    
+    MANUS_GLOVE_CONTROL = True
+    # MANUS_GLOVE_CONTROL = False
+    if MANUS_GLOVE_CONTROL:
+        # Start Manus executable to receive data
+        os.startfile(r"C://Users//General User//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64\Debug//Client//SDKClient.exe")
+        time.sleep(2)
     current_time = time.perf_counter()
     while True:
         decoded = fingertip_data.receive_fingerTip_data()
@@ -112,20 +145,29 @@ def main():
 
 def finger_tip_data():
     fingertip_data = FingerTipData()
+    
+    MANUS_GLOVE_CONTROL = True
+    # MANUS_GLOVE_CONTROL = False
+    if MANUS_GLOVE_CONTROL:
+        # Start Manus executable to receive data
+        os.startfile(r"C://Users//General User//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64\Debug//Client//SDKClient.exe")
+        time.sleep(5)
 
 
-    sys.path.append(str(PROJECT_ROOT))
-    from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_finger_tip_data.finger_pose_transformer import FingerPoseTransformer
-    transformer = FingerPoseTransformer()
+    # sys.path.append(str(PROJECT_ROOT))
+    # from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_finger_tip_data.finger_pose_transformer import FingerPoseTransformer
+    # transformer = FingerPoseTransformer()
 
     current_time = time.perf_counter()
     while True:
-        decoded = fingertip_data.receive_fingerTip_data()
-        # print("Decoded Data Size: ",len(decoded))
-        if decoded == {}:
+        # decoded = fingertip_data.receive_fingerTip_data()
+        # # print("Decoded Data Size: ",len(decoded))
+        absolute_poses = fingertip_data.get_finger_tip_data()
+        if absolute_poses == {}:
+            # print("No data received")
             continue
 
-        absolute_poses = transformer.compute_absolute_poses(decoded)
+        # absolute_poses = fingertip_data.get_finger_tip_data()
 
         # print absolute_poses
         print("\n=== Finger Tip Data for All Fingers ===")
@@ -137,5 +179,5 @@ def finger_tip_data():
         print("\n" + "="*40 + "\n")
     
 if __name__ == "__main__":
-    # main()
-    finger_tip_data()
+    main()
+    # finger_tip_data()
