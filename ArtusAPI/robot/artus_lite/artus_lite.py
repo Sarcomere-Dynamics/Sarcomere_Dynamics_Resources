@@ -10,7 +10,7 @@ class ArtusLite:
                 joint_min_angles=[-35, 0, 0, 0, # thumb
                                 -15, 0, 0, # index
                                 -15, 0, 0, # middle
-                                -15, 0, 0, # ring
+                                -15, 0, 7, # ring
                                 -15, 0, 0], # pinky
 
                 joint_default_angles=[0, 0, 0, 0, # thumb

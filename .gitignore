@@ -12,3 +12,7 @@ bins.zip
 **/__pycache__/
 private/
 *.zip
+
+# virtual envs
+venv/
+venv3/

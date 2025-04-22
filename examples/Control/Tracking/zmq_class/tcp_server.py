@@ -42,6 +42,7 @@ class TCPServer:
     def receive(self):
         if self.conn:
             data = self.conn.recv(4096) #  2500-3000 bytes per message
+            # data = self.conn.recv(10000)
             if not data:
                 return None
             # return data

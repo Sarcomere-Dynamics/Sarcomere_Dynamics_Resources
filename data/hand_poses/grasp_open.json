@@ -73,7 +73,7 @@
     },
     "ring_d2":
     {
-        "target_angle": 0,
+        "target_angle": 7,
         "velocity": 30,
         "index": 12
     },

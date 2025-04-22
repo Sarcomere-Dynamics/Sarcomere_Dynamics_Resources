@@ -3,7 +3,7 @@ robot:
     hand_type: 'right'
     robot_connected: true
     communication_method: 'UART' # 'UART' or 'WiFi'
-    communication_channel_identifier: 'COM11' # 'COM*' on windows, '/dev/ttyUSB*' on linux
+    communication_channel_identifier: 'COM6' # 'COM*' on windows, '/dev/ttyUSB*' on linux
     start_robot: true
     reset_on_start: 0
     calibrate: false # calibrate the robot joints

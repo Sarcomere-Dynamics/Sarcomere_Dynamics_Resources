@@ -44,8 +44,8 @@ class ManusGloveController:
 
     def _run_manus_executable(self):
         # Start Manus executable to receive data
-        #  os.startfile(r"C://Users//General User//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64\Debug//Client//SDKClient.exe")
-        os.startfile(r"c:\\Users\\rleeu\\Documents\\Github\\MANUS_Core_2.3.0.1_SDK\\ManusSDK_v2.3.0.1\\SDKClient\\Output\\x64\\Debug\\Client\\SDKClient.exe")
+        os.startfile(r"C://Users//General User//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64\Debug//Client//SDKClient.exe")
+        # os.startfile(r"c:\\Users\\rleeu\\Documents\\Github\\MANUS_Core_2.3.0.1_SDK\\ManusSDK_v2.3.0.1\\SDKClient\\Output\\x64\\Debug\\Client\\SDKClient.exe")
         time.sleep(5)
 
     def _initialize_api(self):
@@ -92,6 +92,7 @@ class ManusGloveController:
         if joint_angles_right is not None:
             if self.artusLite_jointStreamers['right'] is not None:
                 self.artusLite_jointStreamers['right'].stream_joint_angles(joint_angles=joint_angles_right)
+                # self.artusLite_jointStreamers['right'].stream_joint_angles(joint_angles=joint_angles_left)
         else:
             logging.warning("No joint angles received for right hand")
     

@@ -13,7 +13,7 @@ robots:
   right_hand_robot:
     robot_connected: true
     communication_method: 'UART'
-    communication_channel_identifier: 'COM11'
+    communication_channel_identifier: 'COM6'
     hand_type: 'right'
     start_robot: true
     reset_on_start: 0
