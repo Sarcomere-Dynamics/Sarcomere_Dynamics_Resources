@@ -8,6 +8,11 @@ Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+
+=========================================================
+This example script simply runs through a wave motion, starting from the pinky to the thumb 
+by setting the joint angles directly through the object one by one.
+=========================================================
 """
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------

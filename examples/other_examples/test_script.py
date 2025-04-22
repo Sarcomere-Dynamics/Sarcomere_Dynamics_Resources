@@ -8,6 +8,12 @@ Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+
+
+=========================================================
+This example script creates a triangle wave signal at a set singal and sample frequency to stream to the hand
+while also receiving streamed feedback data from the hand. 
+=========================================================
 """
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------

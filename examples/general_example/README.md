@@ -45,3 +45,26 @@ To run the general example, execute the following command:
 ```sh
 python3 path/to/general_example.py
 ```
+
+The following menu will be shown once the script is run. The proper procedure is to choose `1` to start the connection to the hand. Out of the box, it will also run the `wake_up` function. Once the menu is shown again, it is ready to have a command sent to it. Try sending the command `6`! `grasp_example` does not close the hand fully, but puts it into a pincher type grip.
+
+When shutting down the device, send `4` to sleep the hand and initiate the shut down sequence. 
+```
+"""
+    ╔══════════════════════════════════════════════════════════════════╗
+    ║                          Artus API 2.0                           ║
+    ╠══════════════════════════════════════════════════════════════════╣
+    ║ Command Options:                                                 ║
+    ║                                                                  ║
+    ║   1 -> Start connection to hand                                  ║
+    ║   2 -> Disconnect from hand                                      ║
+    ║   3 -> Wakeup hand                                               ║
+    ║   4 -> Enter hand sleep mode                                     ║
+    ║   5 -> Calibrate                                                 ║
+    ║   6 -> Send command from data/hand_poses/grasp_example           ║
+    ║   7 -> Get robot states                                          ║
+    ║   8 -> Send command from data/hand_poses/grasp_open              ║
+    ║                                                                  ║
+    ╚══════════════════════════════════════════════════════════════════╝
+    >> Input Command Code (1-8): """
+```

@@ -38,7 +38,7 @@ def main_menu():
     ║ Command Options:                                                 ║
     ║                                                                  ║
     ║   1 -> Start connection to hand                                  ║
-    ║   2 -> Close connection                                          ║
+    ║   2 -> Disconnect from hand                                      ║
     ║   3 -> Wakeup hand                                               ║
     ║   4 -> Enter hand sleep mode                                     ║
     ║   5 -> Calibrate                                                 ║

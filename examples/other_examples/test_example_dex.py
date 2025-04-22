@@ -8,6 +8,12 @@ Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+
+=========================================================
+This example script simply runs through each joint in the hand, starting from the thumb to showcase
+the independent degrees of freedom
+by setting the joint angles directly through the object one by one.
+=========================================================
 """
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------

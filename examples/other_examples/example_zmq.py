@@ -8,6 +8,10 @@ Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+
+=========================================================
+DEPRACATED DEPRACATED DEPRACATED DEPRACATED DEPRACATED DEPRACATED
+=========================================================
 """
 import time
 import json

@@ -40,7 +40,7 @@ To start the GUI for controlling the Artus Lite hand robot, follow these steps:
     Sarcomere_Dynamics_Resources/examples/Control/ArtusLiteControl/GUIControl
     ```
 
-2. Run the `gui.bat` script:
+2. Run the `gui.bat` script through a terminal (Command Prompt or Powershell):
     ```sh
     gui.bat
     ```

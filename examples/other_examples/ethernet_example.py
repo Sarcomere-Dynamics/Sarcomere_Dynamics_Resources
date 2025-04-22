@@ -8,6 +8,11 @@ Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+
+=========================================================
+This example script uses a server-client ethernet architecture that Sarcomere Dynamics has used in-house for
+control through an OMRON TM-7. This script uses a received variable to execute a given movement. 
+=========================================================
 """
 import socket
 import time
