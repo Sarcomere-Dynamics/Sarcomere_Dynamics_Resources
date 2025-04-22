@@ -62,13 +62,17 @@ class FingerPoseTransformer:
         result = {}
         for finger, node_ids in self.chains.items():
             p_abs = np.zeros(3)
-            q_abs = np.array([0.0, 0.0, 0.0, 1.0])  # identity quat in [x,y,z,w]
+            # q_abs = np.array([0.0, 0.0, 0.0, 1.0])  # identity quat in [x,y,z,w]
+            q_abs = np.array([0.0, 0.707, 0.0, 0.707])  # identity quat in [x,y,z,w]
             for nid in node_ids:
                 p_rel = np.array(decoded[nid][0])
                 w, x, y, z = decoded[nid][1]        # unpack your (w,x,y,z)
                 q_rel = np.array([x, y, z, w])      # reorder to [x,y,z,w]
                 p_abs, q_abs = self.compose(p_abs, q_abs, p_rel, q_rel)
             result[finger] = (p_abs, q_abs)
+            # chnage sign of y coordinate to match Isaac Sim
+            # print(result[finger][0])
+            result[finger][0][1] = -result[finger][0][1]
         return result
 
 

@@ -78,3 +78,11 @@ To start the Manus Glove control for controlling the Artus Lite hand robot, foll
     ```sh
     python manus_glove_controller.py
     ```
+
+
+## Troubleshooting
+
+Increase the value of 'TCP_DATA_RATE' (10 - 500) in the **SDKClient.cpp** and build the project again if you laggy behavior during control of Artus Lite hand using Manus Data Gloves
+```
+#define TCP_DATA_RATE 50
+```

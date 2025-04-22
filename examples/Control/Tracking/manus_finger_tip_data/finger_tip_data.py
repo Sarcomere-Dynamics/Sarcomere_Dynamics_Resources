@@ -179,5 +179,5 @@ def finger_tip_data():
         print("\n" + "="*40 + "\n")
     
 if __name__ == "__main__":
-    main()
-    # finger_tip_data()
+    # main()
+    finger_tip_data()
