@@ -28,6 +28,7 @@ sys.path.append(str(PROJECT_ROOT))
 from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_gloves_data.moving_average import MultiMovingAverage
 
 
+
 class FingerTipData:
     
     def __init__(self, port='65432'):
@@ -107,6 +108,34 @@ def main():
         #     node_id += 1
         #     if node_id > 24:
         #         node_id = 0
+
+
+def finger_tip_data():
+    fingertip_data = FingerTipData()
+
+
+    sys.path.append(str(PROJECT_ROOT))
+    from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_finger_tip_data.finger_pose_transformer import FingerPoseTransformer
+    transformer = FingerPoseTransformer()
+
+    current_time = time.perf_counter()
+    while True:
+        decoded = fingertip_data.receive_fingerTip_data()
+        # print("Decoded Data Size: ",len(decoded))
+        if decoded == {}:
+            continue
+
+        absolute_poses = transformer.compute_absolute_poses(decoded)
+
+        # print absolute_poses
+        print("\n=== Finger Tip Data for All Fingers ===")
+        print("Thumb Tip Position: ", absolute_poses['thumb'][0], " Thumb Tip Orientation: ", absolute_poses['thumb'][1])
+        print("Index Tip Position: ", absolute_poses['index'][0], " Index Tip Orientation: ", absolute_poses['index'][1])
+        print("Middle Tip Position: ", absolute_poses['middle'][0], " Middle Tip Orientation: ", absolute_poses['middle'][1])
+        print("Ring Tip Position: ", absolute_poses['ring'][0], " Ring Tip Orientation: ", absolute_poses['ring'][1])
+        print("Pinky Tip Position: ", absolute_poses['pinky'][0], " Pinky Tip Orientation: ", absolute_poses['pinky'][1])
+        print("\n" + "="*40 + "\n")
     
 if __name__ == "__main__":
-    main()
+    # main()
+    finger_tip_data()
