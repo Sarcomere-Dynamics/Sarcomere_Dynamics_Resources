@@ -28,7 +28,6 @@ Node 24 - Position: (-0.0, 0.0, 0.02), Orientation: (1.0, 0.0, 0.0, 0.0)
 
 ========================================
 
-
 === Finger Tip Data for All Fingers ===
 Thumb Tip Position:  [-0.07925908  0.06777043  0.46331307]  Thumb Tip Orientation:  [ 0.088046  0.395172 -0.709584  0.560764]
 Index Tip Position:  [0.03528988 0.0160789  0.59278598]  Index Tip Orientation:  [-0.180728 -0.012792  0.0392    0.979608]
