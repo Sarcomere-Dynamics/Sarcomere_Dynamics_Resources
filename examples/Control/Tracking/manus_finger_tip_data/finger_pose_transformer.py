@@ -30,30 +30,27 @@ class FingerPoseTransformer:
     def __init__(self, chains: dict[str, list[int]] = None):
         self.chains = chains or self.DEFAULT_CHAINS
 
-        self.R = [[-0.0809,  0.9893,  0.1218],
-        [-0.9956, -0.0743, -0.0573],
-        [-0.0476, -0.1259,  0.9909]]
+        # self.R = [[-0.0809,  0.9893,  0.1218],
+        # [-0.9956, -0.0743, -0.0573],
+        # [-0.0476, -0.1259,  0.9909]]
 
-        self.t = [-0.0683,  0.0240, -0.2912]
+        # self.t = [-0.0683,  0.0240, -0.2912]
 
-        self.q_R = self.rot_to_quat(self.R)
+        # self.q_R = self.rot_to_quat(self.R)
 
-    def rot_to_quat(self, R):
-        # ensure R is a NumPy array
-        R = np.asarray(R, dtype=float)
-        # returns [qx, qy, qz, qw] from a 3×3 R
-        t = R[0,0] + R[1,1] + R[2,2]
-        if t > 0:
-            S = np.sqrt(t+1.0)*2
-            qw = 0.25*S
-            qx = (R[2,1] - R[1,2]) / S
-            qy = (R[0,2] - R[2,0]) / S
-            qz = (R[1,0] - R[0,1]) / S
-        # … handle other cases (see a standard matrix→quat snippet) …
-        return np.array([qx, qy, qz, qw])
-
-        
-# e.g. q_R ≈ [-0.0253, 0.0625, -0.7325, 0.6774]  (in [x,y,z,w])
+    # def rot_to_quat(self, R):
+    #     # ensure R is a NumPy array
+    #     R = np.asarray(R, dtype=float)
+    #     # returns [qx, qy, qz, qw] from a 3×3 R
+    #     t = R[0,0] + R[1,1] + R[2,2]
+    #     if t > 0:
+    #         S = np.sqrt(t+1.0)*2
+    #         qw = 0.25*S
+    #         qx = (R[2,1] - R[1,2]) / S
+    #         qy = (R[0,2] - R[2,0]) / S
+    #         qz = (R[1,0] - R[0,1]) / S
+    #     # … handle other cases (see a standard matrix→quat snippet) …
+    #     return np.array([qx, qy, qz, qw])
 
 
 
@@ -112,9 +109,9 @@ class FingerPoseTransformer:
             # print(result[finger][0])
             # result[finger][0][1] = -result[finger][0][1]
             # add z height
-            result[finger][0][2] = result[finger][0][2] + 0.4
+            # result[finger][0][2] = result[finger][0][2] + 0.4
             # swap x and y coordinates to match Isaac Sim
-            result[finger][0][0], result[finger][0][1] = result[finger][0][1], result[finger][0][0]
+            # result[finger][0][0], result[finger][0][1] = result[finger][0][1], result[finger][0][0]
         return result
 
 
