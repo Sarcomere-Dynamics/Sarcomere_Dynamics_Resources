@@ -16,3 +16,5 @@ private/
 # virtual envs
 venv/
 venv3/
+.vscode/
+setup.py
