@@ -37,17 +37,12 @@ Below is a list of the ARTUS hand-specific READMEs that are compatible with the 
   * [2.2 Normal Shutdown Procedure](#22-normal-shutdown-procedure)
   * [2.3 Running _general_example.py_](#23-running-general_examplepy)
   * [2.3.1 Video Introduction](#231-video-introduction)
-* [Interacting with the API](#interacting-with-the-api)
-    * [Startup Commands](#startup-commands)
-    * [Setting Joints](#setting-joints)
-        * [Input Units](#input-units)
-    * [Getting Feedback](#getting-feedback)
-    * [SD Card Interactions](#sd-card-intersactions)
-    * [Changing Communication Methods](#changing-communication-methods)
-    * [Controlling Multiple Hands](#controlling-multiple-hands)
-    * [Special Commands](#special-commands)
-    * [Teleoperation Considerations](#teleoperation-considerations)
-* [Directory Structure](#directory-structure)
+* [Control Examples](#artus-lite-control-examples-setup)
+  * [GUIv2](#1-gui-setup)
+  * [ROS2](#2-ros2-node-control-setup)
+  * [Manus Glove Teleoperation](#3-manus-glove-setup)
+
+See the [Appendix](#appendix) for additional links and information.
 
 ## 1. Getting Started 
 __Sections__
@@ -95,7 +90,7 @@ pip install -r requirements.txt
 
 ### 1.3 Hardware Requirements
 1. Power and Data Harness connection (options below)
-	1. 4P Nano M8 (Power) + USB-C (COM). These are the harnesses that should be connected when running the *general_example.py* script below. Out-of-the-box, the hand is set up to use USBC as the communication method. 
+	1. __4P Nano M8 (Power) + USB-C (COM)__. These are the harnesses that should be connected when running the *general_example.py* script below. Out-of-the-box, the hand is set up to use USBC as the communication method. 
 	2. 8P Nano M8 (Power + COM). This harness setup is reserved for more advanced use, once you are familiar with the hand. This harness allows for CAN or RS485 communication and power all-in-one.
 
 <div align=center>
@@ -139,3 +134,44 @@ See the [General Example README to complete this task](/examples/general_example
 
 #### 2.3.1 Video Introduction
 [![Getting Started Video](/data/images/thumbnail.png)](https://www.youtube.com/watch?v=30BkuA0EkP4)
+
+## Artus Lite Control Examples Setup
+
+### 1. GUI Setup
+Please check the [Artus GUIV2 README](examples/Control/ArtusLiteControl/GUIControlV2/README.md) for a GUI setup to control the Artus Lite hand.
+
+Also, check the video below for a demonstration of the GUI setup.
+>[!NOTE]
+>Video is for GUIv1, but GUIv1 is depracated. Please use GUIv2
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=l_Sl6bAeGuc">
+  <img src="./data/images/gui.png" alt="Watch the video" width="200" />
+  </a>
+</div>
+
+### 2. ROS2 Node Control Setup
+Please check the [Artus ROS2 Node README](ros2/artuslite_ws/README.md) for a ROS2 node setup to control the Artus Lite hand.
+
+Also, check the video below for a demonstration of the ROS2 node setup.
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=GHyG1NuuRv4">
+  Watch the video
+  </a>
+</div>
+
+### 3. Manus Glove Setup
+Please check the [Manus Glove README](examples/Control/ArtusLiteControl/ManusGloveControl/README.md) for a Manus Glove setup to control the Artus Lite hand.
+
+Also, check the video below for a demonstration of the Manus Glove setup.
+
+<div align="center">
+  <a href="https://www.youtube.com/watch?v=SPXJlxMaDVQ&list=PLNUrV_GAAyA8HNBAvwBlsmIqoWiJJLRwW&index=2">
+  Watch the video
+  </a>
+</div>
+
+
+## Appendix
+* [Artus API](ArtusAPI/artus_api.py) - The file containing all functions that interact with the Artus Lite. Functions contain docstrings 
