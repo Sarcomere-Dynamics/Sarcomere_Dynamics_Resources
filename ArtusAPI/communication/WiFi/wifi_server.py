@@ -186,11 +186,11 @@ class WiFiServer:
 
         return 
     
-    def receive(self):
+    def receive(self,size=65):
         try:
-            byte_msg = self.conn.recv(65) # receive bytes
+            byte_msg = self.conn.recv(size) # receive bytes
 
-            if len(byte_msg) == 65: # receive the first 65 bytes
+            if len(byte_msg) == size: # receive the first 65 bytes
                 return byte_msg
 
             else:

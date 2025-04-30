@@ -12,6 +12,7 @@ See the LICENSE file in the repository for full details.
 
 from .artus_lite.artus_lite_left import ArtusLite_LeftHand
 from .artus_lite.artus_lite_right import ArtusLite_RightHand
+from .artus_lite.artus_lite_plus_right import ArtusLite_Plus_RightHand
 
 # Artus 3D Robots
 
@@ -38,6 +39,14 @@ class Robot:
                 self.robot = ArtusLite_LeftHand()
             elif self.hand_type == 'right':
                 self.robot = ArtusLite_RightHand()
+            else:
+                raise ValueError("Unknown hand")
+        
+        elif self.robot_type == 'artus_lite_plus':
+            # if self.hand_type == 'left':
+            #     self.robot = ArtusLite_LeftHand()
+            if self.hand_type == 'right':
+                self.robot = ArtusLite_Plus_RightHand()
             else:
                 raise ValueError("Unknown hand")
         else:

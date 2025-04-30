@@ -26,17 +26,21 @@ class Communication:
     """
     def __init__(self,
                  communication_method='UART',
-                 communication_channel_identifier='COM9',logger = None,baudrate = 921600):
+                 communication_channel_identifier='COM9',logger = None,baudrate = 921600,robot_type='artus_lite'):
         # initialize communication
         self.communication_method = communication_method
         self.communication_channel_identifier = communication_channel_identifier
         self.communicator = None
         self.baudrate = baudrate
+        self.robot_type = robot_type
         # setup communication
         self._setup_communication()
         # params
         self.command_len = 33
-        self.recv_len = 65
+        if robot_type == 'artus_lite':
+            self.recv_len = 65
+        elif robot_type == 'artus_lite_plus':
+            self.recv_len = 76
 
         if not logger:
             self.logger = logging.getLogger(__name__)
@@ -84,17 +88,39 @@ class Communication:
     def _byte_to_list_decode(self,package:bytearray) -> tuple:
         recv_data = []
         i = 0
-        # BYTE 0 : ACK
-        # BYTE 1 - 16 : 8 BIT POSITION
-        # BYTE 17 - 49 : 16 BIT POSITION
-        while i < 65:
-            if 17 <= i <= 47: # 16 bit signed integer to int
-                recv_data.append(package[i].from_bytes(package[i:i+2], byteorder='big', signed=True))
-                i+=2
-            else:   # 8 bit signed integer to int
-                recv_data.append(package[i].from_bytes(package[i:i+1],byteorder='little',signed=True))
-                i+=1
+
+        if self.robot_type == 'artus_lite':
+            # BYTE 0 : ACK
+            # BYTE 1 - 16 : 8 BIT POSITION
+            # BYTE 17 - 49 : 16 BIT POSITION
+            # BYTE 50 - 65 : 8 BIT POSITION
+            while i < 65:
+                if 17 <= i <= 47: # 16 bit signed integer to int
+                    recv_data.append(package[i].from_bytes(package[i:i+2], byteorder='big', signed=True))
+                    i+=2
+                else:   # 8 bit signed integer to int
+                    recv_data.append(package[i].from_bytes(package[i:i+1],byteorder='little',signed=True))
+                    i+=1
+
+            
+            if len(recv_data) != 49:
+                raise ValueError(f"Artus Lite data length mismatch: {len(recv_data)}, expected 49")
         
+        elif self.robot_type == 'artus_lite_plus':
+            # BYTE 0 : ACK
+            # BYTE 1 - 16 : 8 BIT POSITION
+            # BYTE 17 - 76 : 4 byte force feedback (x,y,z)
+            while i < 76:
+                if 17 <= i <= 75:  # 4-byte signed integer to int (force feedback x, y, z)
+                    recv_data.append(int.from_bytes(package[i:i+4], byteorder='big', signed=True))
+                    i += 4
+                else:  # 8-bit signed integer to int
+                    recv_data.append(int.from_bytes(package[i:i+1], byteorder='little', signed=True))
+                    i += 1
+
+            if len(recv_data) != 32:
+                raise ValueError(f"Artus Lite Plus data length mismatch: {len(recv_data)}, expected 32")
+
         # extract acknowledge value
         ack = recv_data[0]
         del recv_data[0] # delete 0th value from array
@@ -139,7 +165,7 @@ class Communication:
         """
         byte_msg_recv = None
         try:    
-            byte_msg_recv = self.communicator.receive()
+            byte_msg_recv = self.communicator.receive(self.recv_len)
             if not byte_msg_recv:
                 # self.logger.warning("No data received")
                 return None,None

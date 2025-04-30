@@ -69,7 +69,7 @@ class UART:
             self.logger.error(f'Unable to send command through {self.port}')
             self.logger.error(e)
 
-    def receive(self):
+    def receive(self,size=65):
 
         # required delay
         # t = time.perf_counter()
@@ -78,14 +78,14 @@ class UART:
         try:
             x = time.perf_counter()
             # # print(f'time start: {x}')
-            while self.esp32.in_waiting < 65:
+            while self.esp32.in_waiting < size:
                 if time.perf_counter() - x > 0.001:
                     break
             # print(f'elapsed time: {time.perf_counter() - x}')
             # time.sleep(0.03)
             # check data
-            if self.esp32.in_waiting >= 65: # get data if greater or equal to 65
-                msg_bytes = self.esp32.read(65)
+            if self.esp32.in_waiting >= size: # get data if greater or equal to 65
+                msg_bytes = self.esp32.read(size)
                 # print(msg_bytes)
                 return msg_bytes
             elif self.esp32.in_waiting > 0:

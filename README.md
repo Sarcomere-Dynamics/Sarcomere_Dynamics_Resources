@@ -174,4 +174,5 @@ Also, check the video below for a demonstration of the Manus Glove setup.
 
 
 ## Appendix
-* [Artus API](ArtusAPI/artus_api.py) - The file containing all functions that interact with the Artus Lite. Functions contain docstrings 
+* [Artus API](ArtusAPI/artus_api.py) - The file containing all functions that interact with the Artus Lite.
+* [API Docs](docs/API%20Functionality.md) - Contains a little more information on application and reasoning behind the API functions. 
