@@ -21,7 +21,12 @@ print("Project Root", PROJECT_ROOT)
 
 # from artus_3d_api.Artus3DAPI import Artus3DAPI
 # sys.path.append(PROJECT_ROOT)
-from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI
+try:
+    from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
+    print("Using pip-installed version of ArtusAPI")
+except ModuleNotFoundError:
+    from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
+    print("Using local version of ArtusAPI")
 
 # 1, 6, 8, 4
 class ArtusLiteJointStreamer:

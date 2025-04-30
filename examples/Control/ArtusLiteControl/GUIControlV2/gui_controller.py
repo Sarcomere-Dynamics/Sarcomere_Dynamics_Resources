@@ -19,7 +19,12 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(o
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 from Sarcomere_Dynamics_Resources.examples.Control.configuration.configuration import ArtusLiteConfig
-from Sarcomere_Dynamics_Resources.examples.Control.ArtusLiteControl.ArtusLiteJointStreamer.artusLite_jointStreamer import ArtusLiteJointStreamer
+try:
+    from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
+    print("Using pip-installed version of ArtusAPI")
+except ModuleNotFoundError:
+    from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
+    print("Using local version of ArtusAPI")
 from Sarcomere_Dynamics_Resources.examples.Control.Tracking.hand_tracking_data import HandTrackingData
 
 
