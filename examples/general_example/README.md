@@ -42,7 +42,9 @@ Once the menu is shown again, it is ready to have a command sent to it. Try send
 
 Next, try sending the command `7`! This command prints some feedback data that the hand reports such as joint angle feedback and force feedback. **Note it may take two commands if the first one returned in None!
 
-Next, open up the hand to a fully opened state with the command `8`.
+Next, take a look at the [grasp example json](../../data/hand_poses/grasp_example.json). Try changing some of those target_angle values and resend the `7` command.
+
+Next, open up the hand to a fully opened state with the command `8` to initiate the [normal shutdown procedure](../../README.md#22-normal-shutdown-procedure).
 
 When shutting down the device, send `4` to sleep the hand and complete the [normal shutdown procedure](../../README.md#22-normal-shutdown-procedure)
 

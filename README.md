@@ -72,7 +72,9 @@ There are two ways to install the Python API. The first is through Python's pack
 >```
 >C:\Users\zanem\AppData\Local\Programs\Python\Python311\python.exe -m pip install psutil
 >```
->Take a look at [these steps on creating and using a virtual environment] to ensure that you are using the correct python at all times](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/)
+>Take a look at [these steps on creating and using a virtual environment](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/) to ensure that you are using the correct python at all times
+
+#### Creating a Virtual Environment
 
 #### 1.2.1 Use-as-Released
 The ArtusAPI is available via pip [here](https://pypi.org/project/ArtusAPI/) using the following command:
@@ -121,7 +123,7 @@ Second, the `ArtusAPI.wake_up()` function must be run to allow the hand to load 
 Once these two steps are complete, optionally, you can run `ArtusAPI.calibrate()` to calibrate the finger joints. Otherwise, the system is now ready to start sending and receiving data!
 
 >[!NOTE]
->If running version v1.0.1, `wake_up` is called inside the `connect()` function_
+>If running version v1.0.1+, `wake_up` is called inside the `connect()` function_
 
 ### 2.2 Normal Shutdown Procedure
 When getting ready to power off the device please do the following:
