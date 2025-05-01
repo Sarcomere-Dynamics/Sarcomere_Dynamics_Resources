@@ -40,7 +40,7 @@ class Communication:
         if robot_type == 'artus_lite':
             self.recv_len = 65
         elif robot_type == 'artus_lite_plus':
-            self.recv_len = 76
+            self.recv_len = 77
 
         if not logger:
             self.logger = logging.getLogger(__name__)
