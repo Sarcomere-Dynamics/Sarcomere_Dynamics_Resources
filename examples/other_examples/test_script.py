@@ -132,9 +132,10 @@ def main(triangle_wave,freq,max):
             # else:
             #     print(f'x.type = {type(x)}')
         except KeyboardInterrupt:
+            artus.set_home_position()
             artus.disconnect()
             print(f'Disconnected from robot')
-            quit
+            quit()
         except Exception as e:
             print(e)
         # time.sleep(0.05)  # Match the streaming frequency
