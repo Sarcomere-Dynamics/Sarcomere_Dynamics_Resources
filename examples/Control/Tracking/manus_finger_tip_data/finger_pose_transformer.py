@@ -1,5 +1,20 @@
 import numpy as np
 
+import os
+import sys
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+print("PROJECT_ROOT: ", PROJECT_ROOT)
+
+sys.path.append(PROJECT_ROOT)
+from Isaac_Sim_Work.Hand_Simulation.ArtusLite_2025.logs.mapping import IndexFingerMapper
+
+
+from scipy.spatial.transform import Rotation as R
+
+import transforms3d.euler
+import transforms3d.quaternions
+import math
+
 class FingerPoseTransformer:
     """
     Compute absolute fingertip poses from relative joint data.
@@ -16,6 +31,7 @@ class FingerPoseTransformer:
     #     'ring':   [16, 17, 18],
     #     'pinky':  [21, 22, 23],
     # }
+
     
     DEFAULT_CHAINS = {
         'thumb':  [0, 1,  2,  3, 4],
@@ -29,6 +45,11 @@ class FingerPoseTransformer:
 
     def __init__(self, chains: dict[str, list[int]] = None):
         self.chains = chains or self.DEFAULT_CHAINS
+        
+        self.mapper = IndexFingerMapper()
+        # now map any glove read
+        # p_test, q_test = mapper.map(p_gf, q_gf)
+        # print("Robot predicts:", p_test, q_test)
 
         # self.R = [[-0.0809,  0.9893,  0.1218],
         # [-0.9956, -0.0743, -0.0573],
@@ -97,22 +118,54 @@ class FingerPoseTransformer:
         for finger, node_ids in self.chains.items():
             p_abs = np.zeros(3)
             q_abs = np.array([0.0, 0.0, 0.0, 1.0])  # identity quat in [x,y,z,w]
-            # q_abs = np.array([0.0, 0.707, 0.0, 0.707])  # identity quat in [x,y,z,w]
-            # q_abs = self.quat_mul(q_abs,[-0.707, 0, 0.0, 0.707])  # rotate to match Isaac Sim
+            q_base = np.array([ 0.7412965, 0, 0, 0.6711777 ]) # rotate to match Isaac Sim
+            # q_abs = self.quat_mul(q_base, q_abs)  # rotate to match Isaac Sim
+            q_abs = np.array([ 0.7412965, 0, 0, 0.6711777 ])
             for nid in node_ids:
                 p_rel = np.array(decoded[nid][0])
                 w, x, y, z = decoded[nid][1]        # unpack your (w,x,y,z)
                 q_rel = np.array([x, y, z, w])      # reorder to [x,y,z,w]
                 p_abs, q_abs = self.compose(p_abs, q_abs, p_rel, q_rel)
+            # reorder quat to [w, x, y, z]
+            q_abs = np.array([q_abs[3], q_abs[0], q_abs[1], q_abs[2]])
+            # print("Q_ABS Size", len(q_abs))
             result[finger] = [p_abs, q_abs]
             # chnage sign of y coordinate to match Isaac Sim
             # print(result[finger][0])
             # result[finger][0][1] = -result[finger][0][1]
             # add z height
-            # result[finger][0][2] = result[finger][0][2] + 0.4
+            result[finger][0][2] = result[finger][0][2] + 0.2
             # swap x and y coordinates to match Isaac Sim
             # result[finger][0][0], result[finger][0][1] = result[finger][0][1], result[finger][0][0]
+            # map the result
+            # result[finger] = self.mapper.map(p_glove=p_abs,
+            #                                  q_glove=q_abs)
         return result
+    
+    def _euler_to_quaternion(self, roll_degrees, pitch_degrees, yaw_degrees):
+        """
+        Converts Euler angles (in degrees) to a unit quaternion (w, x, y, z).
+        Assumes ZYX rotation order.
+        """
+        # Convert degrees to radians
+        roll_rad = math.radians(roll_degrees)
+        pitch_rad = math.radians(pitch_degrees)
+        yaw_rad = math.radians(yaw_degrees)
+
+        # Get quaternion in (w, x, y, z) order
+        quat = transforms3d.euler.euler2quat(roll_rad, pitch_rad, yaw_rad, axes='syzx')
+        # if (pitch_degrees != 0):
+        #     quat = transforms3d.euler.euler2quat(pitch_rad, roll_rad, yaw_rad, axes='szyx')
+        # if (yaw_degrees != 0):
+        #     quat = transforms3d.euler.euler2quat(yaw_rad, roll_rad, pitch_rad, axes='sxyz')
+       
+        # print(quat)
+
+        # Normalize the quaternion (although euler2quat usually returns a normalized one)
+        # quat = transforms3d.quaternions.qnorm(quat) 
+
+        return quat
+    
 
 
 
