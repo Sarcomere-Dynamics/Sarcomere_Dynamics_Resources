@@ -64,6 +64,7 @@ def example():
     config = ArtusLiteConfig()
     # Create an instance of the ArtusAPI class using the configuration file
     artusapi = ArtusAPI(hand_type=config.config.robot.artusLite.hand_type,
+                        robot_type=config.config.robot.artusLite.robot_type,
                         communication_method=config.config.robot.artusLite.communication_method,
                         communication_channel_identifier=config.config.robot.artusLite.communication_channel_identifier,
                         reset_on_start=config.config.robot.artusLite.reset_on_start,

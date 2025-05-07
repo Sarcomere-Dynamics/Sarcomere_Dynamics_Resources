@@ -5,7 +5,12 @@ class ArtusLite_Plus(ArtusLite):
     """
     Artus Lite Plus class
     """
-    def __init__(self,num_fingers_force=0):
+    def __init__(self,num_fingers_force=0,                
+                 joint_rotation_directions=[1, 1, 1, 1, # thumb
+                                        1, 1, 1, # index
+                                        1, 1, 1, # middle
+                                        1, 1, 1, # ring
+                                        1, 1, 1]):
         super().__init__()
         self.robot_type = 'artus_lite_plus'
         self.command_len = 33

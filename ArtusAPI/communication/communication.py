@@ -12,6 +12,7 @@ See the LICENSE file in the repository for full details.
 
 import logging
 import time
+import struct
 from tqdm import tqdm
 
 
@@ -112,7 +113,7 @@ class Communication:
             # BYTE 17 - 76 : 4 byte force feedback (x,y,z)
             while i < 76:
                 if 17 <= i <= 75:  # 4-byte signed integer to int (force feedback x, y, z)
-                    recv_data.append(int.from_bytes(package[i:i+4], byteorder='big', signed=True))
+                    recv_data.append(float(struct.unpack('<f', package[i:i+4])[0]))
                     i += 4
                 else:  # 8-bit signed integer to int
                     recv_data.append(int.from_bytes(package[i:i+1], byteorder='little', signed=True))
@@ -120,6 +121,7 @@ class Communication:
 
             if len(recv_data) != 32:
                 raise ValueError(f"Artus Lite Plus data length mismatch: {len(recv_data)}, expected 32")
+        
 
         # extract acknowledge value
         ack = recv_data[0]

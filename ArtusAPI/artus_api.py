@@ -60,7 +60,7 @@ class ArtusAPI:
         """
 
         self._communication_handler = Communication(communication_method=communication_method,
-                                                  communication_channel_identifier=communication_channel_identifier,baudrate=baudrate)
+                                                  communication_channel_identifier=communication_channel_identifier,baudrate=baudrate,robot_type=robot_type)
         self._command_handler = Commands(reset_on_start=reset_on_start)
         self._robot_handler = Robot(robot_type = robot_type,
                                    hand_type = hand_type)
@@ -256,12 +256,21 @@ class ArtusAPI:
         joint_angles = self._robot_handler.get_joint_angles(feedback_command)
         if joint_angles is None:
             return None
-        # separate joint angles into 3 lists
+        
         angles = joint_angles[1][0:16]
-        velocities = joint_angles[1][16:32]
-        temperatures = joint_angles[1][32:48]
-        # print(joint_angles)
-        return joint_angles[0],angles,velocities,temperatures
+
+        if self._robot_handler.robot_type == 'artus_lite':
+            # separate joint angles into 3 lists    
+            velocities = joint_angles[1][16:32]
+            temperatures = joint_angles[1][32:48]
+            # print(joint_angles)
+            return joint_angles[0],angles,velocities,temperatures
+        
+        elif self._robot_handler.robot_type == 'artus_lite_plus':
+            # separate into lists and concat decimals
+            # angles = joint_angles[1][0:16]
+            forces = [round(force, 4) for force in joint_angles[1][16:]]
+            return joint_angles[0],angles,forces
     
     # robot feedback stream
     def get_streamed_joint_angles(self):
