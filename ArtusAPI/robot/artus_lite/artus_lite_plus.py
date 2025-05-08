@@ -5,7 +5,7 @@ class ArtusLite_Plus(ArtusLite):
     """
     Artus Lite Plus class
     """
-    def __init__(self,num_fingers_force=0,                
+    def __init__(self,num_fingers_force=5,                
                  joint_rotation_directions=[1, 1, 1, 1, # thumb
                                         1, 1, 1, # index
                                         1, 1, 1, # middle
@@ -19,7 +19,7 @@ class ArtusLite_Plus(ArtusLite):
         # force sensor init
         self.force_sensors = {}
         fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-        indices = [[0,1,2,3],[4,5,6],[7,8,9],[10,11,12],[13,14,15]]
+        indices = [[0,1,2],[3,4,5],[6,7,8],[9,10,11],[12,13,14]]
         
         for i in range(num_fingers_force):
             self.force_sensors[fingers[i]] = {
@@ -42,12 +42,13 @@ class ArtusLite_Plus(ArtusLite):
                     joint_data.feedback_angle = -joint_data.feedback_angle
                     feedback_package[1][joint_data.index] = -feedback_package[1][joint_data.index]
 
-
-            for i in range(len(feedback_package[1][16:])):
-                for key, object in self.force_sensors.items():
-                    object['data'].x = feedback_package[1][16+i]
-                    object['data'].y = feedback_package[1][16+i+1]
-                    object['data'].z = feedback_package[1][16+i+2]
+            i = 0
+            # num_vals = len(feedback_package[1][16:])
+            for key, object in self.force_sensors.items():
+                object['data'].x = feedback_package[1][16+i]
+                object['data'].y = feedback_package[1][16+i+1]
+                object['data'].z = feedback_package[1][16+i+2]
+                i += 3
                     
             return feedback_package
         except TypeError:

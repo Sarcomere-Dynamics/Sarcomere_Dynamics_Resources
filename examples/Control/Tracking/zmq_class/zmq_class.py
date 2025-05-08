@@ -58,7 +58,7 @@ class ZMQSubscriber:
             print("ZMQ receive: ")
             return message
         except zmq.Again:
-            print("ZMQ error")
+            # print("ZMQ error")
             return None
 
     def close(self):

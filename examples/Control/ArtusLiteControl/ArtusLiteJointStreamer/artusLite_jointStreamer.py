@@ -33,6 +33,7 @@ class ArtusLiteJointStreamer:
 
     def __init__(self,                 
                 communication_method= 'UART',
+                robot_type='artus_lite',
                 communication_channel_identifier='COM7',
                 hand_type = 'left',
                 reset_on_start = 0,
@@ -45,6 +46,7 @@ class ArtusLiteJointStreamer:
         
         self.artusLite_api = ArtusAPI(communication_method=communication_method,
                                     communication_channel_identifier=communication_channel_identifier,
+                                    robot_type=robot_type,
                                     hand_type=hand_type,
                                     reset_on_start=reset_on_start,
                                     communication_frequency = streaming_frequency,
@@ -119,13 +121,12 @@ class ArtusLiteJointStreamer:
   
         if joint_angles is None:
             return  # Exit early if there's no data to process
-
-
+        
         joint_names_local=['thumb_spread', 'thumb_flex', 'thumb_d2', 'thumb_d1', # thumb
-                    'index_spread', 'index_flex', 'index_d2', # index
-                    'middle_spread', 'middle_flex', 'middle_d2', # middle
-                    'ring_spread', 'ring_flex', 'ring_d2', # ring
-                    'pinky_spread', 'pinky_flex', 'pinky_d2'] # pinky,
+            'index_spread', 'index_flex', 'index_d2', # index
+            'middle_spread', 'middle_flex', 'middle_d2', # middle
+            'ring_spread', 'ring_flex', 'ring_d2', # ring
+            'pinky_spread', 'pinky_flex', 'pinky_d2'] # pinky,
         
         position = []
         current = []
@@ -134,11 +135,20 @@ class ArtusLiteJointStreamer:
         for i in range(len(joint_names_local)):
             name = joint_names_local[i]
             position.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_angle)
-            current.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_current)
-            temperature.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_temperature)
+            if self.artusLite_api._robot_handler.robot_type == 'artus_lite':
+                current.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_current)
+                temperature.append(self.artusLite_api._robot_handler.robot.hand_joints[name].feedback_temperature)
+    
+        if self.artusLite_api._robot_handler.robot_type == 'artus_lite_plus':
+            sensor_names_local = ['thumb', 'index', 'middle', 'ring', 'pinky']
 
-
-
+            for i in range(len(sensor_names_local)):
+                name = sensor_names_local[i]
+                current.append(round(self.artusLite_api._robot_handler.robot.force_sensors[name]['data'].x,2))
+                current.append(round(self.artusLite_api._robot_handler.robot.force_sensors[name]['data'].y,2))
+                current.append(round(self.artusLite_api._robot_handler.robot.force_sensors[name]['data'].z,2))
+            if len(current) == 15:
+                current.append(0)
         return current
 
 def test_artus_joint_streamer():
@@ -146,7 +156,7 @@ def test_artus_joint_streamer():
                                                   communication_channel_identifier='/dev/ttyUSB0',
                                                   hand_type='right',
                                                   reset_on_start=0,
-                                                  streaming_frequency=40,
+                                                  streaming_frequency=20,
                                                   start_robot=True,
                                                   calibrate=False,
                                                   robot_connected=True)
@@ -170,6 +180,7 @@ def test_artus_joint_streamer():
 def test_feedback_streaming():
     artus_joint_streamer = ArtusLiteJointStreamer(communication_method='UART',
                                                   communication_channel_identifier='/dev/ttyUSB0',
+                                                  robot_type='artus_lite_plus',
                                                   hand_type='right',
                                                   reset_on_start=0,
                                                   streaming_frequency=20,
