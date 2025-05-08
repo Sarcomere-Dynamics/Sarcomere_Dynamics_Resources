@@ -43,11 +43,15 @@ class ArtusLite_Plus(ArtusLite):
                     feedback_package[1][joint_data.index] = -feedback_package[1][joint_data.index]
 
             i = 0
-            # num_vals = len(feedback_package[1][16:])
+            feedback_slice = feedback_package[1][16:]
+            if all(isinstance(val, float) for val in feedback_slice):
+                feedback_slice = [round(val, 3) for val in feedback_slice]
+                feedback_package[1][16:] = feedback_slice
+            # num_vals = len(feedback_slice)
             for key, object in self.force_sensors.items():
-                object['data'].x = feedback_package[1][16+i]
-                object['data'].y = feedback_package[1][16+i+1]
-                object['data'].z = feedback_package[1][16+i+2]
+                object['data'].x = feedback_slice[i]
+                object['data'].y = feedback_slice[i+1]
+                object['data'].z = feedback_slice[i+2]
                 i += 3
                     
             return feedback_package

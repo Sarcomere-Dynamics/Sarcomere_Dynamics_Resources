@@ -76,7 +76,7 @@ def main(triangle_wave,freq,max):
     artus = ArtusAPI(
         communication_method='UART',
         communication_channel_identifier="/dev/ttyUSB0", ### @TODO EDIT ME ###
-        robot_type='artus_lite',
+        robot_type='artus_lite_plus',
         hand_type='right',
         reset_on_start=0,
         communication_frequency=freq,
@@ -105,17 +105,17 @@ def main(triangle_wave,freq,max):
         # Update all joint angles in the dictionary
         for joint in grasp_dict:
             if grasp_dict[joint]["index"] not in [4,7,10,13] : # :[2,3]
-                grasp_dict[joint]["velocity"] = 60
+                grasp_dict[joint]["velocity"] = 50
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
             elif grasp_dict[joint]["index"] == 0 and int(triangle_wave[wave_index]) <= 45:
-                grasp_dict[joint]["velocity"] = 60
+                grasp_dict[joint]["velocity"] = 50
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])-20
             # if grasp_dict[joint]["index"] == 8:
             #     grasp_dict[joint]["velocity"] = 20
             #     grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
         try:
             if sleeper_flag:
-                if time.perf_counter() - sleeper_last > 0.3:
+                if time.perf_counter() - sleeper_last > 1:
                     sleeper_flag = False
             # Send updated positions to the robot
             elif artus.set_joint_angles(grasp_dict):
@@ -139,7 +139,7 @@ def main(triangle_wave,freq,max):
         except KeyboardInterrupt:
             artus.disconnect()
             print(f'Disconnected from robot')
-            quit
+            quit()
         except Exception as e:
             print(e)
         # time.sleep(0.05)  # Match the streaming frequency
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     # gete com port
     while True:
         try:
-            freq = 33
+            freq = 30
             max_val = 40
             triangle_wave = generate_triangle_wave(0.5,freq,max_val)
             main(triangle_wave,freq,max_val)
