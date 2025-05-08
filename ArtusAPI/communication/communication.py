@@ -19,6 +19,9 @@ from tqdm import tqdm
 from .UART.uart import UART
 from .WiFi.wifi_server import WiFiServer
 
+STARTUP_ACK = 0xaa
+NORMAL_ACK = 0x2
+
 class Communication:
     """
     This communication class contains two communication methods:
@@ -185,13 +188,17 @@ class Communication:
         self.communicator.close()
 
 
-    def wait_for_ack(self,timeout=144,visual=False):
+    def wait_for_ack(self,timeout=144,visual=False,value=NORMAL_ACK):
         start_time = time.perf_counter()
         if visual:
             with tqdm(total=timeout, unit="s", desc="Waiting for ack") as pbar:
                 while 1:
                     tmp,rc_csum = self.receive_data()
-                    if tmp is not None:
+                    if value == NORMAL_ACK:
+                        if tmp is not None:
+                            self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
+                            return 1
+                    elif tmp == value:
                         self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
                         return 1
                     time.sleep(0.01)

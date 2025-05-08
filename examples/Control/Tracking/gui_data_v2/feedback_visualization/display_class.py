@@ -96,6 +96,8 @@ class RealTimePlots:
         *get data from the zmq subscriber and update the plots
         """
         new_data = self._get_data()
+        if new_data is None:
+            return
         counter = 0
         for i in range(4):
             for j in range(5):
