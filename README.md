@@ -56,7 +56,7 @@ The first step to working with the Artus Lite is to connect to the hand, and ach
 
 ### 1.1 Requirements
 Below is a list of Requirements for the Artus to be compatible 
-1. Python v3.10+ - Requires Python version >= 3.10 installed on the host system. Please visit the [Python website](https://www.python.org/downloads/) to install Python.
+1. Python v3.10+ - Requires Python version >= 3.10 installed on the host system. Please visit the [Python website](https://www.python.org/downloads/) to install Python. Within the setup instructions, there will be a prompt that allows you to "disable PATH length limit". Please continue with this option selected.
 2. FTDI USB Driver (Windows Only) - Necessary for the Artus Lite to be recognized as a USB device once it is connected over USBC, go to [FTDI Driver Download](https://ftdichip.com/drivers/vcp-drivers/) to install the virtual COM port driver. 
 
 ### 1.2 Python Requirements

@@ -4,3 +4,5 @@ PyQT5
 pyyaml
 psutil
 pyserial
+esptool
+tqdm
