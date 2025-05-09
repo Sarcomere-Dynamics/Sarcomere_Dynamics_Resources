@@ -69,8 +69,6 @@ There are two ways to install the Python API. The first is through Python's pack
 >```
 >Take a look at [these steps on creating and using a virtual environment](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/) to ensure that you are using the correct python at all times
 
-#### Creating a Virtual Environment
-
 #### 1.2.1 Use-as-Released
 The ArtusAPI is available via pip [here](https://pypi.org/project/ArtusAPI/) using the following command:
 ```python
