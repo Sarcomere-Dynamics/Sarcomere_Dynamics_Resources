@@ -137,6 +137,7 @@ def main(triangle_wave,freq,max):
             # else:
             #     print(f'x.type = {type(x)}')
         except KeyboardInterrupt:
+            artus.set_home_position()
             artus.disconnect()
             print(f'Disconnected from robot')
             quit()
