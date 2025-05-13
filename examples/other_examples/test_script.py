@@ -76,7 +76,7 @@ def main(triangle_wave,freq,max):
     artus = ArtusAPI(
         communication_method='UART',
         communication_channel_identifier="/dev/ttyUSB0", ### @TODO EDIT ME ###
-        robot_type='artus_lite_plus',
+        robot_type='artus_lite',
         hand_type='right',
         reset_on_start=0,
         communication_frequency=freq,
