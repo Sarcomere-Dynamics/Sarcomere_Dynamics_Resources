@@ -92,6 +92,7 @@ class ArtusGUIController:
         current_time_feedback = time.perf_counter()
         current_time_command = time.perf_counter()
         publishing_delay = 0.001
+        bidir_flag = False
         while True:
             try:
                 if time.perf_counter() - current_time_command > publishing_delay:
@@ -104,15 +105,28 @@ class ArtusGUIController:
                     joint_angles_right = self.hand_tracking_data.get_right_hand_joint_angles()
                     # print("3")
                     # print("Sending joint angles to Artus Robot")
-                    self._send_joint_angles(joint_angles_left, joint_angles_right)
+                    # prioritize data feedback
                     data = self._receive_force_feedback()
-                    if data is not None:
-                        self.publish_force_feedback(data)
-                        # pass
+                    self._send_joint_angles(joint_angles_left,joint_angles_right)
+
+                    # if data is not None:
+                        
+
+                    # workaround always alternate
+                    # if bidir_flag is True:
+                    #     self._send_joint_angles(joint_angles_left, joint_angles_right)
+                    #     bidir_flag = False
+
+                    # if bidir_flag is False:
+                    #     data = self._receive_force_feedback()
+                    #     bidir_flag = True
+                    #     if data is not None:
+                    #         self.publish_force_feedback(data)
+                        # pass  
                 # print("4")
-                # if time.perf_counter() - current_time_feedback > publishing_delay:
-                #     current_time_feedback = time.perf_counter()
-                    # self.publish_force_feedback(data)
+                if time.perf_counter() - current_time_feedback > publishing_delay:
+                    current_time_feedback = time.perf_counter()
+                    self.publish_force_feedback(data)
 
             except Exception as e:
                 print(e)
