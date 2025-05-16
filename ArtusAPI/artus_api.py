@@ -521,6 +521,21 @@ def main_flash():
     # import specific to the cli entry point
     import argparse
     import requests
+    import os
+    import json
+    import base64
+    import esptool
+
+    bin_paths = {
+    "actuator_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/actuator_64.txt",
+    "peripheral_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_64.txt",
+    "peripheral_plus_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_plus_64.txt",
+    "master_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_64.txt",
+    "master_plus_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_64.txt",
+    "master_bootapp0_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_bootapp0_64.txt",
+    "master_partitions_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_partitions_64.txt",
+    "master_bootloader_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_bootloader_64.txt"
+    }
     
     parser = argparse.ArgumentParser(
         description="Artus API CLI Tool"
@@ -533,14 +548,113 @@ def main_flash():
 
     args = parser.parse_args()
 
-    myrobot = ArtusAPI(robot_type=args.robot, hand_type=args.side, communication_channel_identifier=args.port)
+    type_flash = None
+    driver_to_flash = None
+    bootapp_path = None
+    partitions_path = None
+    bootloader_path = None
+    file_location = None
 
-    myrobot.connect()
-    print('Connected to robot')
+    # get type of flash
+    while type_flash not in ['actuator','peripheral','master']:
+        type_flash = input('Enter subsystem to flash (actuator, peripheral, master): ')
 
-    myrobot.update_firmware(upload_flag='y',file_location=None,drivers_to_flash=None)
+    if type_flash == 'actuator':
+        file_location = bin_paths['actuator_64']
+        driver_to_flash = 0
+    elif type_flash == 'peripheral':
+        if args.robot == 'artus_lite':
+            file_location = bin_paths['peripheral_64']
+        elif args.robot == 'artus_lite_plus':
+            file_location = bin_paths['peripheral_plus_64']
+        driver_to_flash = 9
+    elif type_flash == 'master':
+        if args.robot == 'artus_lite':
+            file_location = bin_paths['master_64']
+        elif args.robot == 'artus_lite_plus':
+            file_location = bin_paths['master_plus_64']
+        
+        bootapp_path = bin_paths['master_bootapp0_64']
+        partitions_path = bin_paths['master_partitions_64']
+        bootloader_path = bin_paths['master_bootloader_64']
 
-    myrobot.disconnect()
+    # write files
+    # Download and decode base64 firmware file
+    response = requests.get(file_location)
+    decoded_firmware = base64.b64decode(response.text)
+    
+    # Write decoded firmware to flash.bin
+    with open('flash.bin', 'wb') as f:
+        f.write(decoded_firmware)
+
+    # For master firmware, also download and decode bootloader files
+    if type_flash == 'master':
+        # Download and decode bootapp
+        response = requests.get(bootapp_path) 
+        decoded_bootapp = base64.b64decode(response.text)
+        with open('bootapp0.bin', 'wb') as f:
+            f.write(decoded_bootapp)
+
+        # Download and decode partitions
+        response = requests.get(partitions_path)
+        decoded_partitions = base64.b64decode(response.text)
+        with open('partitions.bin', 'wb') as f:
+            f.write(decoded_partitions)
+            
+        # Download and decode bootloader
+        response = requests.get(bootloader_path)
+        decoded_bootloader = base64.b64decode(response.text)
+        with open('bootloader.bin', 'wb') as f:
+            f.write(decoded_bootloader)
+        
+
+    # flash through api
+    if type_flash != 'master':
+        myrobot = ArtusAPI(robot_type=args.robot, hand_type=args.side, communication_channel_identifier=args.port)
+        myrobot.connect()
+        print('Connected to robot')
+
+        file_location = 'flash.bin'
+        myrobot.update_firmware(upload_flag='y',file_location=file_location,drivers_to_flash=driver_to_flash)
+        
+        myrobot.disconnect()
+        print('Disconnected from robot')
+
+    else:
+       
+        # Build esptool command arguments
+        cmd_args = [
+            '--chip', 'esp32s3',
+            '--port', args.port,
+            '--baud', '921600',
+            '--before', 'default_reset',
+            '--after', 'hard_reset',
+            'write_flash',
+            '-z',
+            '--flash_mode', 'keep',
+            '--flash_freq', 'keep',
+            '--flash_size', 'keep',
+            '0x0', 'bootloader.bin',
+            '0x8000', 'partitions.bin', 
+            '0xe000', 'bootapp0.bin',
+            '0x10000', 'flash.bin'
+        ]
+
+        # Run esptool flash command
+        esptool.main(cmd_args)
+
+        # Clean up temporary bootloader files
+        os.remove('bootloader.bin')
+        os.remove('partitions.bin')
+        os.remove('bootapp0.bin')
+
+    # delete bin file
+    time.sleep(1)
+    os.remove('flash.bin')
+    print('Flash complete')
+
+    print('Done')
+
 
 if __name__ == "__main__":
     test_artus_api()
