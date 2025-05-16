@@ -515,5 +515,29 @@ def test_artus_api():
     time.sleep(2)
     artus_api.disconnect()
 
+# a general example CLI
+
+def main():
+    # import specific to the cli entry point
+    import argparse
+    import requests
+    
+    parser = argparse.ArgumentParser(
+        description="Artus API CLI Tool"
+    )
+
+    # add required arguments
+    parser.add_argument('--port',required=True,help="required com port (COMx) or (/dev/ttyUSBx)")
+    parser.add_argument('--robot',default='artus_lite',help="Robot type",choices='[artus_lite,artus_lite_plus]')
+    parser.add_argument('--side',default='right',choices=['left','right'],help='specify hand side, left or right')
+
+    args = parser.parse_args()
+
+    myrobot = ArtusAPI(robot_type=args.robot, hand_type=args.side, communication_channel_identifier=args.port)
+
+    myrobot.connect()
+
+    x = input()
+
 if __name__ == "__main__":
     test_artus_api()
