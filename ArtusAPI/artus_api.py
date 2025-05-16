@@ -66,6 +66,7 @@ class ArtusAPI:
                                    hand_type = hand_type)
         
         self._last_command_sent_time = time.perf_counter()
+        self.last_streamed_feedback_time = time.perf_counter()
         self._communication_frequency = communication_frequency
         self._communication_period = 1 / self._communication_frequency
         self._communication_period_ms = self._communication_period * 1000
@@ -253,6 +254,8 @@ class ArtusAPI:
             return
         
         feedback_command = self._receive_feedback()
+        if not self._check_communication_frequency(self._last_command_sent_time):
+            return None
         joint_angles = self._robot_handler.get_joint_angles(feedback_command)
         if joint_angles is None:
             return None
@@ -286,7 +289,7 @@ class ArtusAPI:
             self.logger.warning(f'Hand not ready, send `wake_up` command')
             return
         
-        if not self._check_communication_frequency(self.last_command_recv_time):
+        if not self._check_communication_frequency(self.last_streamed_feedback_time):
             return None
         else:
             feedback_command = self._communication_handler.receive_data()
