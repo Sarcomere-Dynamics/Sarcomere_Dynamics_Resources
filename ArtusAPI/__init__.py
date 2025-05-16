@@ -1,1 +1,1 @@
-from artus_api import ArtusAPI
+from .artus_api import ArtusAPI, main_flash

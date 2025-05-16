@@ -515,9 +515,9 @@ def test_artus_api():
     time.sleep(2)
     artus_api.disconnect()
 
-# a general example CLI
+# script entry points
 
-def main():
+def main_flash():
     # import specific to the cli entry point
     import argparse
     import requests
@@ -527,17 +527,20 @@ def main():
     )
 
     # add required arguments
-    parser.add_argument('--port',required=True,help="required com port (COMx) or (/dev/ttyUSBx)")
-    parser.add_argument('--robot',default='artus_lite',help="Robot type",choices='[artus_lite,artus_lite_plus]')
-    parser.add_argument('--side',default='right',choices=['left','right'],help='specify hand side, left or right')
+    parser.add_argument('-p','--port',required=True,help="required com port (COMx) or (/dev/ttyUSBx)")
+    parser.add_argument('-r','--robot',default='artus_lite',help="Robot type",choices=['artus_lite','artus_lite_plus'])
+    parser.add_argument('-s','--side',default='right',choices=['left','right'],help='specify hand side, left or right')
 
     args = parser.parse_args()
 
     myrobot = ArtusAPI(robot_type=args.robot, hand_type=args.side, communication_channel_identifier=args.port)
 
     myrobot.connect()
+    print('Connected to robot')
 
-    x = input()
+    myrobot.update_firmware(upload_flag='y',file_location=None,drivers_to_flash=None)
+
+    myrobot.disconnect()
 
 if __name__ == "__main__":
     test_artus_api()
