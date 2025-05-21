@@ -77,7 +77,7 @@ class RealTimePlots:
                 # color for each finger
                 self.curves[self.counter].setPen(self.colors[self.finger_names[j]])
                 # Set y-range for the plot
-                self.plots[self.counter].setYRange(-30, 30)  # Example range
+                self.plots[self.counter].setYRange(-15, 15)  # Example range
                 self.counter += 1
                 self.ptr.append(0)
             self.win.nextRow()
