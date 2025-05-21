@@ -114,7 +114,7 @@ def main(triangle_wave, freq, max):
                 if time.perf_counter() - sleeper_last > 1:
                     sleeper_flag = False
             # Send updated positions to the robot
-            elif artus.set_joint_angles(grasp_dict):
+            elif artus.set_joint_angles(grasp_dict,True):
                 if triangle_wave[wave_index] == max:
                     sleeper_flag = True
                     sleeper_last = time.perf_counter()

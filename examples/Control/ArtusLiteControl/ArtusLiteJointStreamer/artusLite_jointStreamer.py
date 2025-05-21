@@ -115,6 +115,11 @@ class ArtusLiteJointStreamer:
         # print("Time difference: ", time_difference)
         return False
     
+    def get_joint_feedback_force(self):
+        """
+        This function returns the feedback force of all the joints in the hand, in a joint list of integers
+        """
+        return [joint.feedback_force for joint in self.artusLite_api._robot_handler.robot.hand_joints.values()]
 
     def receive_force_feedback(self):
         joint_angles = self.artusLite_api.get_streamed_joint_angles()

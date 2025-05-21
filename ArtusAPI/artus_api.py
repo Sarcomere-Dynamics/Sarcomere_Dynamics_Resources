@@ -152,7 +152,7 @@ class ArtusAPI:
     
 
     # robot control
-    def set_joint_angles(self, joint_angles:dict):
+    def set_joint_angles(self, joint_angles:dict,name=False):
         """
         Set joint angle targets and speed values to the Artus Hand
         
@@ -162,7 +162,7 @@ class ArtusAPI:
         if not self.awake:
             self.logger.warning(f'Hand not ready, send `wake_up` command')
             return
-        self._robot_handler.set_joint_angles(joint_angles=joint_angles,name=True)
+        self._robot_handler.set_joint_angles(joint_angles=joint_angles,name=name)
         robot_set_joint_angles_command = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
         # check communication frequency
         if not self._check_communication_frequency(self._last_command_sent_time):

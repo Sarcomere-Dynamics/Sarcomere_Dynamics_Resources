@@ -95,34 +95,19 @@ class ArtusGUIController:
         bidir_flag = False
         while True:
             try:
-                if time.perf_counter() - current_time_command > publishing_delay:
-                    current_time_command = time.perf_counter()
+                # if time.perf_counter() - current_time_command > publishing_delay:
+                #     current_time_command = time.perf_counter()
                     # print("1")
                     # print("Receiving joint angles from GUI")
-                    self.hand_tracking_data.receive_joint_angles()
-                    # print("2")
-                    joint_angles_left = self.hand_tracking_data.get_left_hand_joint_angles()
-                    joint_angles_right = self.hand_tracking_data.get_right_hand_joint_angles()
-                    # print("3")
-                    # print("Sending joint angles to Artus Robot")
-                    # prioritize data feedback
-                    data = self._receive_force_feedback()
-                    self._send_joint_angles(joint_angles_left,joint_angles_right)
-
-                    # if data is not None:
-                        
-
-                    # workaround always alternate
-                    # if bidir_flag is True:
-                    #     self._send_joint_angles(joint_angles_left, joint_angles_right)
-                    #     bidir_flag = False
-
-                    # if bidir_flag is False:
-                    #     data = self._receive_force_feedback()
-                    #     bidir_flag = True
-                    #     if data is not None:
-                    #         self.publish_force_feedback(data)
-                        # pass  
+                self.hand_tracking_data.receive_joint_angles()
+                # print("2")
+                joint_angles_left = self.hand_tracking_data.get_left_hand_joint_angles()
+                joint_angles_right = self.hand_tracking_data.get_right_hand_joint_angles()
+                # print("3")
+                # print("Sending joint angles to Artus Robot")
+                # prioritize data feedback
+                data = self._receive_force_feedback()
+                self._send_joint_angles(joint_angles_left,joint_angles_right)
                 # print("4")
                 if time.perf_counter() - current_time_feedback > publishing_delay:
                     current_time_feedback = time.perf_counter()
@@ -193,14 +178,17 @@ class ArtusGUIController:
         """
         if self.artusLite_jointStreamers['left'] is not None:
             force_feedback_left = self.artusLite_jointStreamers['left'].receive_force_feedback()
-            # print("Force Feedback Left: ", force_feedback_left)
-            return force_feedback_left
+            if force_feedback_left != None:
+                force_feedback_left = self.artusLite_jointStreamers['left'].get_joint_feedback_force()
+                # print("Force Feedback Left: ", force_feedback_left)
+                return force_feedback_left
 
         if self.artusLite_jointStreamers['right'] is not None:
             force_feedback_right = self.artusLite_jointStreamers['right'].receive_force_feedback()
             if force_feedback_right != None:
+                force_feedback_right = self.artusLite_jointStreamers['right'].get_joint_feedback_force()
                 print("Force Feedback Right: ", force_feedback_right)
-            return force_feedback_right
+                return force_feedback_right
         else:
             return None
 
