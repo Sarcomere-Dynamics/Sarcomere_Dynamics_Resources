@@ -162,7 +162,7 @@ class ArtusAPI:
         if not self.awake:
             self.logger.warning(f'Hand not ready, send `wake_up` command')
             return
-        self._robot_handler.set_joint_angles(joint_angles=joint_angles,name=False)
+        self._robot_handler.set_joint_angles(joint_angles=joint_angles,name=True)
         robot_set_joint_angles_command = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
         # check communication frequency
         if not self._check_communication_frequency(self._last_command_sent_time):
@@ -519,6 +519,56 @@ def test_artus_api():
     artus_api.disconnect()
 
 # script entry points
+def main():
+    try:
+        # import specific to the cli entry point
+        import argparse
+        
+        parser = argparse.ArgumentParser(
+            description="Artus API CLI Tool"
+        )
+        # add required arguments
+        parser.add_argument('-p','--port',required=True,help="required com port (COMx) or (/dev/ttyUSBx)")
+        parser.add_argument('-r','--robot',default='artus_lite',help="Robot type",choices=['artus_lite','artus_lite_plus'])
+        parser.add_argument('-s','--side',default='right',choices=['left','right'],help='specify hand side, left or right')
+        # parser.add_argument('-b','--baudrate',default=921600,help='specify baudrate',choices=[921600,115200])
+        args = parser.parse_args()
+
+        myrobot = ArtusAPI(robot_type=args.robot, hand_type=args.side, communication_channel_identifier=args.port,baudrate=921600)
+        myrobot.connect()
+        time.sleep(1)
+
+        while(1):
+            input_command = input('Enter command: ')
+            if input_command == 'c1':
+                myrobot.calibrate(calibration_type=1)
+            elif input_command == 'c':
+                myrobot.calibrate()
+            elif input_command == 'h':
+                myrobot.set_home_position()
+            elif input_command == 'm':
+                grasp_dict = {'thumb_spread': {'target_angle': 30}, 'thumb_d2': {'target_angle': 30}, 'thumb_flex': {'target_angle': 30}, 
+                              'index_d2': {'target_angle': 30}, 'index_flex': {'target_angle': 30},
+                              'middle_d2': {'target_angle': 30}, 'middle_flex': {'target_angle': 30}, 
+                              'ring_d2': {'target_angle': 30}, 'ring_flex': {'target_angle': 30},
+                              'pinky_d2': {'target_angle': 30}, 'pinky_flex': {'target_angle': 30}}
+                myrobot.set_joint_angles(grasp_dict)
+            elif input_command == 'q':
+                myrobot.sleep()
+                time.sleep(1)
+                myrobot.disconnect()
+                quit()
+            elif input_command == 'r':
+                j = int(input('Enter joint number: '))
+                m = int(input('Enter motor number: '))
+                myrobot.reset(j,m)
+            else:
+                print(f'Invalid command: {input_command}')
+            time.sleep(1)
+
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+
 
 def main_flash():
     try:
@@ -542,14 +592,14 @@ def main_flash():
         }
         
         parser = argparse.ArgumentParser(
-            description="Artus API CLI Tool"
+            description="Artus API CLI Flash Tool"
         )
 
         # add required arguments
         parser.add_argument('-p','--port',required=True,help="required com port (COMx) or (/dev/ttyUSBx)")
         parser.add_argument('-r','--robot',default='artus_lite',help="Robot type",choices=['artus_lite','artus_lite_plus'])
         parser.add_argument('-s','--side',default='right',choices=['left','right'],help='specify hand side, left or right')
-
+        # parser.add_argument('-b','--baudrate',default=921600,help='specify baudrate',choices=[921600,115200])
         args = parser.parse_args()
 
         type_flash = None
@@ -566,12 +616,14 @@ def main_flash():
         if type_flash == 'actuator':
             file_location = bin_paths['actuator_64']
             driver_to_flash = 0
+            print('Flashing actuator')
         elif type_flash == 'peripheral':
             if args.robot == 'artus_lite':
                 file_location = bin_paths['peripheral_64']
             elif args.robot == 'artus_lite_plus':
                 file_location = bin_paths['peripheral_plus_64']
             driver_to_flash = 9
+            print('Flashing peripheral')
         elif type_flash == 'master':
             if args.robot == 'artus_lite':
                 file_location = bin_paths['master_64']
@@ -581,7 +633,7 @@ def main_flash():
             bootapp_path = bin_paths['master_bootapp0_64']
             partitions_path = bin_paths['master_partitions_64']
             bootloader_path = bin_paths['master_bootloader_64']
-
+            print('Flashing master')
         # write files
         # Download and decode base64 firmware file
         response = requests.get(file_location)
@@ -614,12 +666,14 @@ def main_flash():
 
         # flash through api
         if type_flash != 'master':
-            myrobot = ArtusAPI(robot_type=args.robot, hand_type=args.side, communication_channel_identifier=args.port)
+            myrobot = ArtusAPI(robot_type=args.robot, hand_type=args.side, communication_channel_identifier=args.port,baudrate=921600)
             myrobot.connect()
             print('Connected to robot')
+            time.sleep(1)
 
             file_location = 'flash.bin'
             myrobot.update_firmware(upload_flag='y',file_location=file_location,drivers_to_flash=driver_to_flash)
+            time.sleep(1)
             
             myrobot.disconnect()
             print('Disconnected from robot')

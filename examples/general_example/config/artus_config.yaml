@@ -2,7 +2,7 @@ robot:
   artusLite:
     hand_type: 'right'
     robot_connected: true
-    robot_type: 'artus_lite_plus'
+    robot_type: 'artus_lite'
     communication_method: 'UART' # 'UART' or 'WiFi'
     communication_channel_identifier: '/dev/ttyUSB0' # 'COM*' on windows, '/dev/ttyUSB*' on linux
     start_robot: true

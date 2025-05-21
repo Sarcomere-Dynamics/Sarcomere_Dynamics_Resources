@@ -58,6 +58,7 @@ class ArtusLite:
                 self.velocity = velocity
                 self.feedback_angle = 0
                 self.feedback_current = 0
+                self.feedback_force = 0.0
                 self.feedback_temperature = temperature
                 
             def __str__(self):
@@ -130,10 +131,10 @@ class ArtusLite:
         """
         # set values based on names
         for name,target_data in joint_angles.items():
-            self.hand_joints[name].target_angle = target_data.target_angle*self.hand_joints[name].rotation_direction
+            self.hand_joints[name].target_angle = target_data['target_angle']*self.hand_joints[name].rotation_direction
             
             if 'velocity' in target_data:
-                self.hand_joints[name].velocity = target_data.velocity
+                self.hand_joints[name].velocity = target_data['velocity']
             else: # fill default velocity
                 self.hand_joints[name].velocity = self.joint_velocities[self.hand_joints[name].index]
         self._check_joint_limits(self.hand_joints)
@@ -185,6 +186,7 @@ class ArtusLite:
             for name,joint_data in self.hand_joints.items():
                 joint_data.feedback_angle = feedback_package[1][joint_data.index]
                 joint_data.feedback_current = feedback_package[1][joint_data.index+15]
+                joint_data.feedback_force = round(feedback_package[1][joint_data.index+15] * 0.0035904, 2) # take current value and convert to force
                 joint_data.feedback_temperature = feedback_package[1][joint_data.index+31]
 
                 if joint_data.index in [1,5,8,11,14] and joint_data.feedback_angle < 0:

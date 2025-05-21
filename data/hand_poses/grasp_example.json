@@ -1,13 +1,13 @@
 {
     "thumb_spread":
     {
-        "target_angle": 35,
+        "target_angle": 25,
         "velocity": 50,
         "index": 0
     },
     "thumb_flex":
     {
-        "target_angle": 50,
+        "target_angle": 30,
         "velocity": 50,
         "index": 1
     },
@@ -31,7 +31,7 @@
     },
     "index_flex":
     {
-        "target_angle": 50,
+        "target_angle": 60,
         "velocity": 40,
         "index": 5
     },
@@ -49,7 +49,7 @@
     },
     "middle_flex":
     {
-        "target_angle": 50,
+        "target_angle": 60,
         "velocity": 40,
         "index": 8
     },

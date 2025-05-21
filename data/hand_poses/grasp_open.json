@@ -2,97 +2,97 @@
     "thumb_spread":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 0
     },
     "thumb_flex":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 1
     },
     "thumb_d2":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 2
     },
     "thumb_d1":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 3
     },
     "index_spread":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 4
     },
     "index_flex":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 5
     },
     "index_d2":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 6
     },
     "middle_spread":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 7
     },
     "middle_flex":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 8
     },
     "middle_d2":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 9
     },
     "ring_spread":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 10
     },
     "ring_flex":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 11
     },
     "ring_d2":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 12
     },
     "pinky_spread":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 13
     },
     "pinky_flex":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 14
     },
     "pinky_d2":
     {
         "target_angle": 0,
-        "velocity": 30,
+        "velocity": 40,
         "index": 15
     }
 }
