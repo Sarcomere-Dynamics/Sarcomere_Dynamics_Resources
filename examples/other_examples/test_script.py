@@ -83,8 +83,8 @@ def main(triangle_wave, freq, max):
     artus = ArtusAPI(
         communication_method='UART',
         communication_channel_identifier="/dev/ttyUSB0",  ### @TODO EDIT ME ###
-        robot_type='artus_lite',
-        hand_type='right',
+        robot_type='artus_lite_plus',
+        hand_type='left',
         reset_on_start=0,
         communication_frequency=freq,
         stream=True
@@ -103,11 +103,10 @@ def main(triangle_wave, freq, max):
         # Update all joint angles in the dictionary
         for joint in grasp_dict:
             if grasp_dict[joint]["index"] not in [0, 3, 4, 7, 10, 13]:
-                grasp_dict[joint]["velocity"] = 70
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
             elif grasp_dict[joint]["index"] == 0 and int(triangle_wave[wave_index]) <= 45:
-                grasp_dict[joint]["velocity"] = 70
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index]) - 20
+            grasp_dict[joint]["velocity"] = 50
 
         try:
             if sleeper_flag:
@@ -126,7 +125,10 @@ def main(triangle_wave, freq, max):
 
             x = artus.get_streamed_joint_angles()
             if x:
-                feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.hand_joints.values()]
+                if artus._robot_handler.robot.robot_type == 'artus_lite':
+                    feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.hand_joints.values()]
+                elif artus._robot_handler.robot.robot_type == 'artus_lite_plus':
+                    feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.force_sensors.values()]
                 # print(f'Feedback Forces: {feedback_forces}')
                 logger.warning(f'Current Feedback Forces: {feedback_forces}')
                 time_stamp = time.perf_counter()

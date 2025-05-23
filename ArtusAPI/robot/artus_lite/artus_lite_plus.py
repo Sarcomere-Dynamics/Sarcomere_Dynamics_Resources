@@ -11,7 +11,7 @@ class ArtusLite_Plus(ArtusLite):
                                         1, 1, 1, # middle
                                         1, 1, 1, # ring
                                         1, 1, 1]):
-        super().__init__()
+        super().__init__(joint_rotation_directions=joint_rotation_directions)
         self.robot_type = 'artus_lite_plus'
         self.command_len = 33
         self.recv_len = 76

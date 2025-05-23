@@ -584,10 +584,18 @@ def main_flash():
         "actuator_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/actuator_64.txt",
         "peripheral_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_64.txt",
         "peripheral_plus_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_plus_64.txt",
-        "master_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_64.txt",
-        "master_plus_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_64.txt",
-        "master_bootapp0_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_bootapp0_64.txt",
+
+        "master_64_right": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_64.txt",
+        "master_plus_64_right": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_64.txt",
+
+        "master_64_left": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_left_64.txt",
+        "master_plus_64_left": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_left_64.txt",
+
+
         "master_partitions_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_partitions_64.txt",
+        "master_plus_partitions_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_partitions_64.txt",
+        
+        "master_bootapp0_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_bootapp0_64.txt",
         "master_bootloader_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_bootloader_64.txt"
         }
         
@@ -597,7 +605,7 @@ def main_flash():
 
         # add required arguments
         parser.add_argument('-p','--port',required=True,help="required com port (COMx) or (/dev/ttyUSBx)")
-        parser.add_argument('-r','--robot',default='artus_lite',help="Robot type",choices=['artus_lite','artus_lite_plus'])
+        parser.add_argument('-r','--robot',default='artus_lite',help="Robot type",choices=['lite','lite_plus'])
         parser.add_argument('-s','--side',default='right',choices=['left','right'],help='specify hand side, left or right')
         # parser.add_argument('-b','--baudrate',default=921600,help='specify baudrate',choices=[921600,115200])
         args = parser.parse_args()
@@ -618,25 +626,38 @@ def main_flash():
             driver_to_flash = 0
             print('Flashing actuator')
         elif type_flash == 'peripheral':
-            if args.robot == 'artus_lite':
+            if args.robot == 'lite':
                 file_location = bin_paths['peripheral_64']
-            elif args.robot == 'artus_lite_plus':
+            elif args.robot == 'lite_plus':
                 file_location = bin_paths['peripheral_plus_64']
             driver_to_flash = 9
             print('Flashing peripheral')
+
         elif type_flash == 'master':
-            if args.robot == 'artus_lite':
-                file_location = bin_paths['master_64']
-            elif args.robot == 'artus_lite_plus':
-                file_location = bin_paths['master_plus_64']
-            
+
+            if args.robot == 'lite':
+                if args.side == 'right':
+                    file_location = bin_paths['master_64_right']
+                elif args.side == 'left':
+                    file_location = bin_paths['master_64_left']
+                partitions_path = bin_paths['master_partitions_64']
+
+            elif args.robot == 'lite_plus':
+                if args.side == 'right':
+                    file_location = bin_paths['master_plus_64_right']
+                elif args.side == 'left':
+                    file_location = bin_paths['master_plus_64_left']
+                partitions_path = bin_paths['master_plus_partitions_64']
             bootapp_path = bin_paths['master_bootapp0_64']
-            partitions_path = bin_paths['master_partitions_64']
+            
             bootloader_path = bin_paths['master_bootloader_64']
             print('Flashing master')
         # write files
         # Download and decode base64 firmware file
+        print(f"Downloading firmware from firmware file")
         response = requests.get(file_location)
+        if response.status_code != 200:
+            print(f"Error: Failed to download firmware from {file_location}. Status code: {response.status_code}")
         decoded_firmware = base64.b64decode(response.text)
         
         # Write decoded firmware to flash.bin
@@ -645,20 +666,29 @@ def main_flash():
 
         # For master firmware, also download and decode bootloader files
         if type_flash == 'master':
+            print(f"Downloading bootapp from bootapp file")
             # Download and decode bootapp
             response = requests.get(bootapp_path) 
+            if response.status_code != 200:
+                print(f"Error: Failed to download bootloader from {bootapp_path}. Status code: {response.status_code}")
             decoded_bootapp = base64.b64decode(response.text)
             with open('bootapp0.bin', 'wb') as f:
                 f.write(decoded_bootapp)
 
             # Download and decode partitions
+            print(f"Downloading partitions from partitions file")
             response = requests.get(partitions_path)
+            if response.status_code != 200:
+                print(f"Error: Failed to download partitions from {partitions_path}. Status code: {response.status_code}")
             decoded_partitions = base64.b64decode(response.text)
             with open('partitions.bin', 'wb') as f:
                 f.write(decoded_partitions)
                 
             # Download and decode bootloader
+            print(f"Downloading bootloader from bootloader file")
             response = requests.get(bootloader_path)
+            if response.status_code != 200:
+                print(f"Error: Failed to download bootloader from {bootloader_path}. Status code: {response.status_code}")
             decoded_bootloader = base64.b64decode(response.text)
             with open('bootloader.bin', 'wb') as f:
                 f.write(decoded_bootloader)
@@ -714,7 +744,9 @@ def main_flash():
         print('Done')
 
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        import traceback
+        print("An error occurred:")
+        traceback.print_exc()
         # Clean up any remaining temporary files
         temp_files = ['flash.bin', 'bootloader.bin', 'partitions.bin', 'bootapp0.bin']
         for file in temp_files:

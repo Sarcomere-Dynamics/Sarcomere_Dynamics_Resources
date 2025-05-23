@@ -178,14 +178,14 @@ class ArtusGUIController:
         """
         if self.artusLite_jointStreamers['left'] is not None:
             force_feedback_left = self.artusLite_jointStreamers['left'].receive_force_feedback()
-            if force_feedback_left != None:
+            if force_feedback_left != None and self.sensor_feedback == 'actuator':
                 force_feedback_left = self.artusLite_jointStreamers['left'].get_joint_feedback_force()
                 # print("Force Feedback Left: ", force_feedback_left)
                 return force_feedback_left
 
         if self.artusLite_jointStreamers['right'] is not None:
             force_feedback_right = self.artusLite_jointStreamers['right'].receive_force_feedback()
-            if force_feedback_right != None:
+            if force_feedback_right != None and self.sensor_feedback == 'actuator':
                 force_feedback_right = self.artusLite_jointStreamers['right'].get_joint_feedback_force()
                 print("Force Feedback Right: ", force_feedback_right)
                 return force_feedback_right
