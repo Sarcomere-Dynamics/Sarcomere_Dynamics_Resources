@@ -585,7 +585,7 @@ def main_flash():
         "peripheral_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_64.txt",
         "peripheral_plus_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_plus_64.txt",
 
-        "master_64_right": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_64.txt",
+        "master_64_right": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_right_64.txt",
         "master_plus_64_right": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_64.txt",
 
         "master_64_left": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_left_64.txt",
@@ -595,7 +595,7 @@ def main_flash():
         "master_partitions_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_partitions_64.txt",
         "master_plus_partitions_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_partitions_64.txt",
         
-        "master_bootapp0_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_bootapp0_64.txt",
+        "master_bootapp0_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_bootapp_64.txt",
         "master_bootloader_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_bootloader_64.txt"
         }
         
@@ -605,7 +605,7 @@ def main_flash():
 
         # add required arguments
         parser.add_argument('-p','--port',required=True,help="required com port (COMx) or (/dev/ttyUSBx)")
-        parser.add_argument('-r','--robot',default='artus_lite',help="Robot type",choices=['lite','lite_plus'])
+        parser.add_argument('-r','--robot',default='artus_lite',help="Robot type",choices=['artus_lite','artus_lite_plus'])
         parser.add_argument('-s','--side',default='right',choices=['left','right'],help='specify hand side, left or right')
         # parser.add_argument('-b','--baudrate',default=921600,help='specify baudrate',choices=[921600,115200])
         args = parser.parse_args()
@@ -626,30 +626,30 @@ def main_flash():
             driver_to_flash = 0
             print('Flashing actuator')
         elif type_flash == 'peripheral':
-            if args.robot == 'lite':
+            if args.robot == 'artus_lite':
                 file_location = bin_paths['peripheral_64']
-            elif args.robot == 'lite_plus':
+            elif args.robot == 'artus_lite_plus':
                 file_location = bin_paths['peripheral_plus_64']
             driver_to_flash = 9
             print('Flashing peripheral')
 
         elif type_flash == 'master':
-
-            if args.robot == 'lite':
+            print(f'flashing master with parameters: {args.robot} {args.side}')
+            if args.robot == 'artus_lite':
                 if args.side == 'right':
                     file_location = bin_paths['master_64_right']
                 elif args.side == 'left':
                     file_location = bin_paths['master_64_left']
                 partitions_path = bin_paths['master_partitions_64']
 
-            elif args.robot == 'lite_plus':
+            elif args.robot == 'artus_lite_plus':
                 if args.side == 'right':
                     file_location = bin_paths['master_plus_64_right']
                 elif args.side == 'left':
                     file_location = bin_paths['master_plus_64_left']
                 partitions_path = bin_paths['master_plus_partitions_64']
-            bootapp_path = bin_paths['master_bootapp0_64']
             
+            bootapp_path = bin_paths['master_bootapp0_64']
             bootloader_path = bin_paths['master_bootloader_64']
             print('Flashing master')
         # write files
@@ -728,7 +728,8 @@ def main_flash():
                 '0x10000', 'flash.bin'
             ]
 
-            # Run esptool flash command
+            # Run esptool flash command with verbose output
+            # cmd_args.append('--verbose')
             esptool.main(cmd_args)
 
             # Clean up temporary bootloader files

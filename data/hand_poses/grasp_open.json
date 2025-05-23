@@ -26,13 +26,13 @@
     "index_spread":
     {
         "target_angle": 0,
-        "velocity": 40,
+        "velocity": 60,
         "index": 4
     },
     "index_flex":
     {
         "target_angle": 0,
-        "velocity": 40,
+        "velocity": 60,
         "index": 5
     },
     "index_d2":
