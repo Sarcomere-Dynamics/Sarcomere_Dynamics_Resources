@@ -53,7 +53,7 @@ Below is a list of the ARTUS hand-specific READMEs that are compatible with the 
 ## Getting Started
 
 ### Wiring Diagram
-See below the wiring diagram with the circuit connection names and cable colours. You can use either the 8P nano M8 or the 4P nano M8. 
+See below the wiring diagram with the circuit connection names and cable colours. You can use either the 8P nano M8 or the 4P nano M8. We recommend a 200W rated 24V power supply, please review the power requirements here: [ARTUS Lite Information](/ArtusAPI/robot/artus_lite/README.md)  
 
 <div align=center>
   <img src='data/images/wiring_diagram.png'>
