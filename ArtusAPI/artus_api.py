@@ -433,8 +433,8 @@ class ArtusAPI:
         :return: None
         """
         com = None
-        while com not in ['UART','CAN','RS485']:
-            com = input('Enter Communication Protocol you would like to change to (default: UART, CAN, RS485): ')
+        while com not in ['UART','CAN','RS485','WIFI']:
+            com = input('Enter Communication Protocol you would like to change to (default: UART, CAN, RS485, WIFI): ')
         if com == 'CAN':
             feed = None
             while feed not in ['P','C','ALL']:

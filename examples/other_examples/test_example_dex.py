@@ -75,7 +75,7 @@ def main(triangle_wave,freq,max):
     # Initialize ArtusAPI with specified parameters
     artus = ArtusAPI(
         communication_method='UART',
-        communication_channel_identifier="/dev/ttyUSB1", ### @TODO EDIT ME ###
+        communication_channel_identifier="/dev/ttyUSB0", ### @TODO EDIT ME ###
         robot_type='artus_lite',
         hand_type='right',
         reset_on_start=0,
@@ -110,10 +110,10 @@ def main(triangle_wave,freq,max):
 
     while True:
         # d2s first
-        grasp_dict["thumb_spread"]["target_angle"] = 20
+        grasp_dict["thumb_spread"]["target_angle"] = 10
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
-        grasp_dict["thumb_spread"]["target_angle"] = -20
+        grasp_dict["thumb_spread"]["target_angle"] = -30
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
         

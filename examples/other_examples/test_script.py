@@ -109,11 +109,12 @@ def main(triangle_wave, freq, max):
             grasp_dict[joint]["velocity"] = 50
 
         try:
+            x = artus.get_streamed_joint_angles()
             if sleeper_flag:
                 if time.perf_counter() - sleeper_last > 1:
                     sleeper_flag = False
             # Send updated positions to the robot
-            elif artus.set_joint_angles(grasp_dict,True):
+            elif x is not None and artus.set_joint_angles(grasp_dict,True):
                 if triangle_wave[wave_index] == max:
                     sleeper_flag = True
                     sleeper_last = time.perf_counter()
@@ -123,14 +124,14 @@ def main(triangle_wave, freq, max):
                 # Increment wave index and loop back to start if needed
                 wave_index = (wave_index + 1) % len(triangle_wave)
 
-            x = artus.get_streamed_joint_angles()
+
             if x:
                 if artus._robot_handler.robot.robot_type == 'artus_lite':
                     feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.hand_joints.values()]
-                elif artus._robot_handler.robot.robot_type == 'artus_lite_plus':
-                    feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.force_sensors.values()]
-                # print(f'Feedback Forces: {feedback_forces}')
-                logger.warning(f'Current Feedback Forces: {feedback_forces}')
+                # elif artus._robot_handler.robot.robot_type == 'artus_lite_plus':
+                    # feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.force_sensors.values()]
+                print(f'Feedback data: {x}')
+                logger.warning(f'Current Feedback Forces: {x}')
                 time_stamp = time.perf_counter()
         except KeyboardInterrupt:
             artus.set_home_position()

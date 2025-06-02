@@ -78,9 +78,9 @@ class UART:
         try:
             x = time.perf_counter()
             # # print(f'time start: {x}')
-            while self.esp32.in_waiting < size:
-                if time.perf_counter() - x > 0.001:
-                    break
+            # while self.esp32.in_waiting < size:
+            #     if time.perf_counter() - x > 0.001:
+            #         break
             # print(f'elapsed time: {time.perf_counter() - x}')
             # time.sleep(0.03)
             # check data
