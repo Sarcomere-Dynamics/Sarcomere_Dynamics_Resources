@@ -27,7 +27,12 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(o
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 # import ArtusAPI
-from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI
+try:
+    from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
+    print("Using pip-installed version of ArtusAPI")
+except ModuleNotFoundError:
+    from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
+    print("Using local version of ArtusAPI")
 
 import numpy as np
 
@@ -60,60 +65,56 @@ def generate_triangle_wave(signal_freq, sample_freq,max):
     # Convert to string format
     return points
 
-def main(triangle_wave,freq,max):
+def main(triangle_wave, freq, max):
+    import logging
+
+    # Save logging configuration to a file with date included in the log filename
+    log_filename = f"app_{time.strftime('%Y%m%d')}.log"
+    logging.basicConfig(filename=log_filename, level=logging.WARNING, format='%(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+
     # Path to the hand poses
-    hand_poses_path = os.path.join(PROJECT_ROOT,'Sarcomere_Dynamics_Resources','data','hand_poses')
+    hand_poses_path = os.path.join(PROJECT_ROOT, 'Sarcomere_Dynamics_Resources', 'data', 'hand_poses')
     # make dict
-    with open(os.path.join(hand_poses_path ,'grasp_open.json'),'r') as file:
+    with open(os.path.join(hand_poses_path, 'grasp_open.json'), 'r') as file:
         grasp_dict = json.load(file)
 
     # Initialize ArtusAPI with specified parameters
     artus = ArtusAPI(
         communication_method='UART',
-        communication_channel_identifier="/dev/ttyUSB0", ### @TODO EDIT ME ###
-        robot_type='artus_lite',
-        hand_type='right',
+        communication_channel_identifier="/dev/ttyUSB0",  ### @TODO EDIT ME ###
+        robot_type='artus_lite_plus',
+        hand_type='left',
         reset_on_start=0,
         communication_frequency=freq,
         stream=True
     )
 
-    # artus1 = ArtusAPI(
-    #     communication_method='UART',
-    #     communication_channel_identifier="/dev/ttyUSB1",
-    #     robot_type='artus_lite',
-    #     hand_type='left',
-    #     reset_on_start=0,
-    #     communication_frequency=freq
-    # )
-    # start robot
+    # Start robot
     artus.connect()
-    # artus1.connect()
 
     time.sleep(1)
 
     wave_index = 0
     sleeper_flag = False
-    sleeper_last = time.perf_counter()  
+    sleeper_last = time.perf_counter()
     time_stamp = time.perf_counter()
     while True:
         # Update all joint angles in the dictionary
         for joint in grasp_dict:
-            if grasp_dict[joint]["index"] not in [4,7,10,13] : # :[2,3]
-                grasp_dict[joint]["velocity"] = 60
+            if grasp_dict[joint]["index"] not in [0, 3, 4, 7, 10, 13]:
                 grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
             elif grasp_dict[joint]["index"] == 0 and int(triangle_wave[wave_index]) <= 45:
-                grasp_dict[joint]["velocity"] = 60
-                grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])-20
-            # if grasp_dict[joint]["index"] == 8:
-            #     grasp_dict[joint]["velocity"] = 20
-            #     grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index])
+                grasp_dict[joint]["target_angle"] = int(triangle_wave[wave_index]) - 20
+            grasp_dict[joint]["velocity"] = 50
+
         try:
+            x = artus.get_streamed_joint_angles()
             if sleeper_flag:
-                if time.perf_counter() - sleeper_last > 0.3:
+                if time.perf_counter() - sleeper_last > 1:
                     sleeper_flag = False
             # Send updated positions to the robot
-            elif artus.set_joint_angles(grasp_dict):
+            elif x is not None and artus.set_joint_angles(grasp_dict,True):
                 if triangle_wave[wave_index] == max:
                     sleeper_flag = True
                     sleeper_last = time.perf_counter()
@@ -123,32 +124,31 @@ def main(triangle_wave,freq,max):
                 # Increment wave index and loop back to start if needed
                 wave_index = (wave_index + 1) % len(triangle_wave)
 
-            x = artus.get_streamed_joint_angles()
+
             if x:
-                print(f'Data Returned: {x}')
-                # print({key: value["feedback_current"] for key, value in artus._robot_handler.robot.hand_joints.items() if "feedback_current" in value})
-                # print(f'time period: {(time.perf_counter() - time_stamp)*1000:.2f} ms')
+                if artus._robot_handler.robot.robot_type == 'artus_lite':
+                    feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.hand_joints.values()]
+                # elif artus._robot_handler.robot.robot_type == 'artus_lite_plus':
+                    # feedback_forces = [data.feedback_force for data in artus._robot_handler.robot.force_sensors.values()]
+                print(f'Feedback data: {x}')
+                logger.warning(f'Current Feedback Forces: {x}')
                 time_stamp = time.perf_counter()
-            # else:
-            #     print(f'x.type = {type(x)}')
         except KeyboardInterrupt:
             artus.set_home_position()
             artus.disconnect()
-            print(f'Disconnected from robot')
+            logger.info('Disconnected from robot')
             quit()
         except Exception as e:
-            print(e)
-        # time.sleep(0.05)  # Match the streaming frequency
+            logger.error(e)
 
     artus.disconnect()
-
 
 if __name__ == "__main__":
     # gete com port
     while True:
         try:
             freq = 33
-            max_val = 40
+            max_val = 37
             triangle_wave = generate_triangle_wave(0.5,freq,max_val)
             main(triangle_wave,freq,max_val)
         except Exception as e:

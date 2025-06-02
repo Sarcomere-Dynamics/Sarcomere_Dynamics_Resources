@@ -1,6 +1,7 @@
 robots:
   left_hand_robot:
     robot_connected: false
+    robot_type: 'artus_lite'
     communication_method: 'UART'
     communication_channel_identifier: 'COM7'
     hand_type: 'left'
@@ -12,10 +13,11 @@ robots:
 
   right_hand_robot:
     robot_connected: true
+    robot_type: 'artus_lite'
     communication_method: 'UART'
-    communication_channel_identifier: 'COM6'
+    communication_channel_identifier: '/dev/ttyUSB0'
     hand_type: 'right'
     start_robot: true
     reset_on_start: 0
-    streaming_frequency: 35  # data/seconds
+    streaming_frequency: 20  # data/seconds
     calibrate: false

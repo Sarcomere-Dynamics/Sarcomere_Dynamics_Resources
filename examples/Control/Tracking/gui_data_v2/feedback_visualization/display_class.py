@@ -76,6 +76,8 @@ class RealTimePlots:
                 self.curves.append(self.plots[self.counter].plot(self.data[self.counter]))
                 # color for each finger
                 self.curves[self.counter].setPen(self.colors[self.finger_names[j]])
+                # Set y-range for the plot
+                self.plots[self.counter].setYRange(-15, 15)  # Example range
                 self.counter += 1
                 self.ptr.append(0)
             self.win.nextRow()
@@ -94,6 +96,8 @@ class RealTimePlots:
         *get data from the zmq subscriber and update the plots
         """
         new_data = self._get_data()
+        if new_data is None:
+            return
         counter = 0
         for i in range(4):
             for j in range(5):

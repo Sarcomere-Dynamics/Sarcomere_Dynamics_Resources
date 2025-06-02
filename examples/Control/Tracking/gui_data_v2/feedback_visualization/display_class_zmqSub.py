@@ -46,22 +46,22 @@ class RealTimePlotsZMQ(RealTimePlots):
         """
         Get the data from the ZeroMQ subscriber
         """
-        self.receive_joint_data()
-        data = self.get_joint_data()
+        data = self.receive_joint_data()
+        # data = self.get_joint_data()
         print(data)
         return data
 
 
     def receive_joint_data(self):
         joint_data = self.zmq_subscriber.receive()
-        print("Joint Data Received: ", joint_data)
+        # print("Joint Data Received: ", joint_data)
         if joint_data == None:
             return None
         print(joint_data)
         # Parse the JSON data
         joint_data = json.loads(joint_data)
         self.joint_data = joint_data['data']
-        return joint_data
+        return self.joint_data
     
     def get_joint_data(self):
         return self.joint_data

@@ -159,6 +159,7 @@ class Commands:
     def update_param_command(self,communication='UART', feedback=None):
         """
         Communication Options:
+            'WIFI' - WIFI
             'UART' - USBC
             'RS485' - RS485
             'CAN' - CAN
@@ -178,6 +179,8 @@ class Commands:
                 command_list[17] = 2
             elif communication == 'RS485':
                 command_list[17] = 3
+            elif communication == 'WIFI':
+                command_list[17] = 0
 
         if feedback:
             command_list[2] = 1

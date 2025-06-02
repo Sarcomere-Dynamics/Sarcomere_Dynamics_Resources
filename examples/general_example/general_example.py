@@ -21,10 +21,14 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(o
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 # import ArtusAPI
-from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI
+try:
+    from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
+    print("Using pip-installed version of ArtusAPI")
+except ModuleNotFoundError:
+    from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
+    print("Using local version of ArtusAPI")
 # import the configuration file
 from Sarcomere_Dynamics_Resources.examples.general_example.config.config import ArtusLiteConfig
-
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------
@@ -60,10 +64,12 @@ def example():
     config = ArtusLiteConfig()
     # Create an instance of the ArtusAPI class using the configuration file
     artusapi = ArtusAPI(hand_type=config.config.robot.artusLite.hand_type,
+                        robot_type=config.config.robot.artusLite.robot_type,
                         communication_method=config.config.robot.artusLite.communication_method,
                         communication_channel_identifier=config.config.robot.artusLite.communication_channel_identifier,
                         reset_on_start=config.config.robot.artusLite.reset_on_start,
                         awake = config.config.robot.artusLite.awake,
+                        baudrate=921600,
                         communication_frequency=33)
     # Path to the hand poses
     hand_poses_path = os.path.join(PROJECT_ROOT,'Sarcomere_Dynamics_Resources','data','hand_poses')
@@ -91,7 +97,8 @@ def example():
                 # artusapi.calibrate(joint=13)
                 # artusapi.calibrate(joint=13)
 
-                artusapi.calibrate(calibration_type=1)
+
+                artusapi.calibrate(calibration_type=0,joint=0)
             case "6":
                 with open(os.path.join(hand_poses_path,'grasp_example.json'),'r') as file:
                     grasp_dict = json.load(file)
