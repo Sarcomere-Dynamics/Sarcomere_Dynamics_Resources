@@ -199,6 +199,7 @@ class Communication:
                             self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
                             return 1
                     elif tmp == value:
+                        self.logger.info(f'Artus Version {rc_csum[0]}.{rc_csum[1]}')
                         self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
                         return 1
                     time.sleep(0.01)

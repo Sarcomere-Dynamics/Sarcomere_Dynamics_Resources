@@ -21,7 +21,7 @@ print(desired_path)
 
 
 
-from .communication import Communication
+from .communication import Communication,STARTUP_ACK,NORMAL_ACK
 from .commands import Commands
 from .robot import Robot
 from .firmware_update import FirmwareUpdater
@@ -110,7 +110,7 @@ class ArtusAPI:
         self._communication_handler.send_data(robot_wake_up_command)
 
         # wait for data back
-        if self._communication_handler.wait_for_ack():
+        if self._communication_handler.wait_for_ack(value=STARTUP_ACK):
             self.logger.info(f'Finished calibration')
         else:
             self.logger.warning(f'Error in calibration')
