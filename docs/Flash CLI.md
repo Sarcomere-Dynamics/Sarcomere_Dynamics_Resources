@@ -35,4 +35,6 @@ There are 3 subsystems to flash. The _master_, the _actuator_ and the _periphera
 
 1. Between the two M8 connectors, there is a silicone pad. This is a boot button, that puts the master into boot mode. __This button must be pressed when powered on__. This state can be determined by the LED staying blue for longer than the startup time (~3seconds)
  
- To flash the actuator or peripheral drivers, the system can be powered on normally. 
+To flash the actuator or peripheral drivers, the system can be powered on normally.
+
+After starting the process with the `artusapiflash` command, the user must choose the subsystem to flash by typing in the terminal when the options are presented. 
