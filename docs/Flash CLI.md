@@ -1,4 +1,4 @@
-<img src='data/images/SarcomereLogoHorizontal.svg'>
+<img src='../data/images/SarcomereLogoHorizontal.svg'>
 
 # ArtusAPI Flash CLI Tool Information
 

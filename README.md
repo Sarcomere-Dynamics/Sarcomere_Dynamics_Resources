@@ -10,6 +10,9 @@ Please contact the team if there are any issues that arise through the use of th
 >[!IMPORTANT]
 __Please read through the entire README and the _User Manual_ before using the ARTUS hand__
 
+>[!Note]
+>Please see [changelog folder](/changelog/) for monthly changelogs.
+
 The user manual contains in-depth operational and troubleshooting guidelines for the device. 
 
 This repository contains the following:
@@ -77,7 +80,10 @@ The ArtusAPI is available via pip [here](https://pypi.org/project/ArtusAPI/) usi
 ```python
 pip install ArtusAPI
 ```
-Once this is complete, the software dependecies are all met!
+Once this is complete, the software dependecies are all met! 
+
+>[!Note]
+>Please make sure that the latest version of the pip package is installed.
 
 #### 1.2.2 Use Cloned Repository
 If you plan to eventually make changes to the source code, you will need to clone the GitHub *SARCOMERE_DYNAMICS_RESOURCES* repository. Once cloned, you can utilize the *requirements.txt* included in the package to install the dependencies. With a terminal open, execute the following command:
