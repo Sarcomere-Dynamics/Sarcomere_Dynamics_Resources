@@ -3,7 +3,7 @@
 # ArtusAPI Flash CLI Tool Information
 
 ## Introduction
-The ArtusAPI Flash CLI tool is used for updating firmware on the controllers on the Artus hands that the ArtusAPI supports.
+The ArtusAPI Flash CLI tool is used for updating firmware of the controllers on the Artus hands that the ArtusAPI supports.
 
 ## 1. Usage
 ### 1.1 Initial Arguments
