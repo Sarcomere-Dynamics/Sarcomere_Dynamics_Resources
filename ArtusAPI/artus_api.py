@@ -76,6 +76,8 @@ class ArtusAPI:
         # only used during streaming
         self.last_command_recv_time = time.perf_counter()
 
+        self.last_times = [self._last_command_sent_time,self.last_streamed_feedback_time]
+
         if not logger:
             self.logger = logging.getLogger(__name__)
         else:
@@ -165,7 +167,7 @@ class ArtusAPI:
         self._robot_handler.set_joint_angles(joint_angles=joint_angles,name=name)
         robot_set_joint_angles_command = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
         # check communication frequency
-        if not self._check_communication_frequency(self._last_command_sent_time):
+        if not self._check_communication_frequency(0):
             return False
         return self._communication_handler.send_data(robot_set_joint_angles_command)
     
@@ -197,11 +199,11 @@ class ArtusAPI:
         self._robot_handler.set_home_position()
         robot_set_home_position_command = self._command_handler.get_target_position_command(hand_joints=self._robot_handler.robot.hand_joints)
         # check communication frequency
-        if not self._check_communication_frequency(self._last_command_sent_time):
+        if not self._check_communication_frequency(0):
             return False
         return self._communication_handler.send_data(robot_set_home_position_command)
 
-    def _check_communication_frequency(self,last_command_time):
+    def _check_communication_frequency(self,type:float):
         """
         checks if the time between the last command and the current command is less than the communication period
         Necessary so that the messages stay in sync
@@ -214,7 +216,7 @@ class ArtusAPI:
         :False if the time between the last command and the current command is less than the communication period
         """
         current_time = time.perf_counter()
-        if current_time - last_command_time < self._communication_period:
+        if current_time - self.last_times[type] < self._communication_period:
             self.logger.warning("Command not sent. Communication frequency is too high.")
             return False
         last_command_time = current_time
@@ -254,7 +256,7 @@ class ArtusAPI:
             return
         
         feedback_command = self._receive_feedback()
-        if not self._check_communication_frequency(self._last_command_sent_time):
+        if not self._check_communication_frequency(1):
             return None
         joint_angles = self._robot_handler.get_joint_angles(feedback_command)
         if joint_angles is None:
@@ -289,7 +291,7 @@ class ArtusAPI:
             self.logger.warning(f'Hand not ready, send `wake_up` command')
             return
         
-        if not self._check_communication_frequency(self.last_streamed_feedback_time):
+        if not self._check_communication_frequency(1):
             return None
         else:
             feedback_command = self._communication_handler.receive_data()
@@ -539,13 +541,22 @@ def main():
         time.sleep(1)
 
         while(1):
-            input_command = input('Enter command: ')
-            if input_command == 'c1':
+            input_command = input('''
+                ====================
+                Flash CLI Tool Menu:
+                ==================== 
+                c - calibrate
+                h - (home) set home position
+                m - (move) set joint angles
+                q - quit
+                r - (reset) reset joint
+                p - (param) update communication method
+                w - wipe sd
+                Enter command: ''')
+            if input_command == 'c':
                 myrobot.calibrate(calibration_type=1)
-            elif input_command == 'c':
-                myrobot.calibrate()
             elif input_command == 'h':
-                myrobot.set_home_position()
+                myrobot.set_home_position(home_position=1)
             elif input_command == 'm':
                 grasp_dict = {'thumb_spread': {'target_angle': 30}, 'thumb_d2': {'target_angle': 30}, 'thumb_flex': {'target_angle': 30}, 
                               'index_d2': {'target_angle': 30}, 'index_flex': {'target_angle': 30},
@@ -562,10 +573,19 @@ def main():
                 j = int(input('Enter joint number: '))
                 m = int(input('Enter motor number: '))
                 myrobot.reset(j,m)
+            elif input_command == 'p':
+                myrobot.update_param()
+            elif input_command == 'w':
+                myrobot.wipe_sd()
             else:
                 print(f'Invalid command: {input_command}')
             time.sleep(1)
-
+    except KeyboardInterrupt:
+        print('Keyboard interrupt')
+        myrobot.sleep()
+        time.sleep(1)
+        myrobot.disconnect()
+        quit()
     except Exception as e:
         print(f"An error occurred: {str(e)}")
 

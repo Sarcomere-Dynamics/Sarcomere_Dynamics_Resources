@@ -33,8 +33,20 @@ artusapiflash -p COM3
 ### 1.2 Sub-system to flash
 There are 3 subsystems to flash. The _master_, the _actuator_ and the _peripheral_ drivers. To flash the master, the artus lite and lite plus must be put into boot mode via the following methods.
 
-1. Between the two M8 connectors, there is a silicone pad. This is a boot button, that puts the master into boot mode. __This button must be pressed when powered on__. This state can be determined by the LED staying blue for longer than the startup time (~3seconds)
- 
+#### Master Driver
+A. Between the two M8 connectors, there is a silicone pad. This is a boot button, that puts the master into boot mode. __This button must be pressed when powered on__. This state can be determined by the LED staying blue for longer than the startup time (~3seconds)
+
+[Here](https://sarcomere-my.sharepoint.com/:i:/g/personal/ryan_lee_sarcomeredynamics_com/EaRgIujdOupLmXu5p2fHF-kBT2_uakjZ6yqSocXMBUAnow?e=ZnBW2U) is an image showing a user pressing the button. You should be able to feel the tactile button pressed down. Make sure that the button is _down_ when powering on.
+
+B. The boot mode can also be asserted through the boot toggle switch on the master board. Please remove the 6x base plate Hex bolts. On the connector side, [here is an image of the bolts circled in red](https://sarcomere-my.sharepoint.com/:i:/g/personal/ryan_lee_sarcomeredynamics_com/EaSrkZUUi3dNjmCLcg_06aIBWZ0LvUbPqenTTg6ea9031Q?e=qCtPo2). Remove the bolts at the same position on the opposite side. 
+
+C. [Here is a video of the flashing procedure example on a linux machine](https://sarcomere-my.sharepoint.com/:v:/g/personal/ryan_lee_sarcomeredynamics_com/EVqZAh1sDblDv3EXWk0-lPkBFPpJyu2px3ARVWI8UvYrdg?e=eeiInd)
+
+D. Once this is complete, please power cycle the device. If boot mode was activated through the boot switch, please toggle the switch back to the original position to boot it into normal mode. 
+
+### Actuator + Peripheral Driver
 To flash the actuator or peripheral drivers, the system can be powered on normally.
 
-After starting the process with the `artusapiflash` command, the user must choose the subsystem to flash by typing in the terminal when the options are presented. 
+A. [Here is a video of the flashing procedure example on a linux machine](https://sarcomere-my.sharepoint.com/:v:/g/personal/ryan_lee_sarcomeredynamics_com/EZc3XdjitGZDmLn4BGAFAjkBmVBTnST78S9en-v-EBZyfw)
+
+>You must power cycle the device between flashing the actuator driver and the peripheral driver
