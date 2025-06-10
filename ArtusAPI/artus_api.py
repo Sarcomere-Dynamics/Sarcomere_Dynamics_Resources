@@ -603,7 +603,8 @@ def main_flash():
         bin_paths = {
         "actuator_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/actuator_64.txt",
         "peripheral_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_64.txt",
-        "peripheral_plus_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_plus_64.txt",
+        "peripheral_plus_right_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_plus_right_64.txt",
+        "peripheral_plus_left_64": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/peripheral_plus_left_64.txt",
 
         "master_64_right": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_right_64.txt",
         "master_plus_64_right": "https://gist.githubusercontent.com/SDRyanLee/ad8bbe17164c74e6417d1e2d4d0843d2/raw/master_plus_64.txt",
@@ -646,10 +647,14 @@ def main_flash():
             driver_to_flash = 0
             print('Flashing actuator')
         elif type_flash == 'peripheral':
+            print(f'flashing peripheral with parameters: {args.robot} {args.side}')
             if args.robot == 'artus_lite':
                 file_location = bin_paths['peripheral_64']
             elif args.robot == 'artus_lite_plus':
-                file_location = bin_paths['peripheral_plus_64']
+                if args.side == 'right':
+                    file_location = bin_paths['peripheral_plus_right_64']
+                elif args.side == 'left':
+                    file_location = bin_paths['peripheral_plus_left_64']
             driver_to_flash = 9
             print('Flashing peripheral')
 
