@@ -1,4 +1,4 @@
-<img src='data/images/SarcomereLogoHorizontal.svg'>
+<img src='../data/images/SarcomereLogoHorizontal.svg'>
 
 ### Creating an ArtusAPI Class Object
 Below are some examples of instantiating the ArtusAPI class to control a single hand. Below is a description of the parameters and what they mean.
