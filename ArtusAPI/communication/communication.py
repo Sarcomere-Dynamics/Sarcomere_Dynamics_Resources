@@ -194,13 +194,12 @@ class Communication:
             with tqdm(total=timeout, unit="s", desc="Waiting for ack") as pbar:
                 while 1:
                     tmp,rc_csum = self.receive_data()
-                    if value == NORMAL_ACK:
-                        if tmp is not None:
-                            self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
-                            return 1
-                    elif tmp == value:
-                        self.logger.info(f'Artus Version {rc_csum[0]}.{rc_csum[1]}')
+                    # if value == NORMAL_ACK:
+                    if tmp is not None:
                         self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
+                        if value == STARTUP_ACK:
+                            self.logger.info(f'Artus Version {rc_csum[0]}.{rc_csum[1]}')
+                            print(f'Artus Version {rc_csum[0]}.{rc_csum[1]}')
                         return 1
                     time.sleep(0.01)
                     if time.perf_counter() - start_time > timeout:
@@ -213,6 +212,9 @@ class Communication:
                 tmp,rc_csum = self.receive_data()
                 if tmp is not None:
                     self.logger.info(f'ack received in {time.perf_counter() - start_time} seconds')
+                    if value == STARTUP_ACK:
+                        self.logger.info(f'Artus Version {rc_csum[0]}.{rc_csum[1]}')
+                        print(f'Artus Version {rc_csum[0]}.{rc_csum[1]}')
                     return 1
                 if time.perf_counter() - start_time > timeout:
                     self.logger.error('timeout error\r\ntimeout error\r\ntimeout error')
