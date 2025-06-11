@@ -135,6 +135,8 @@ def main(triangle_wave, freq, max):
                 time_stamp = time.perf_counter()
         except KeyboardInterrupt:
             artus.set_home_position()
+            time.sleep(1)
+            artus.sleep()
             artus.disconnect()
             logger.info('Disconnected from robot')
             quit()
@@ -147,9 +149,9 @@ if __name__ == "__main__":
     # gete com port
     while True:
         try:
-            freq = 33
+            freq = 50
             max_val = 37
-            triangle_wave = generate_triangle_wave(0.5,freq,max_val)
+            triangle_wave = generate_triangle_wave(1.5,freq,max_val)
             main(triangle_wave,freq,max_val)
         except Exception as e:
             print('E::'+e)
