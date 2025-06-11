@@ -1,4 +1,3 @@
-
 """
 Sarcomere Dynamics Software License Notice
 ------------------------------------------
@@ -14,19 +13,23 @@ See the LICENSE file in the repository for full details.
 import time
 import os
 import sys
+import logging
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 sys.path.append(PROJECT_ROOT)
-print("Project Root", PROJECT_ROOT)
+
+# Create a logger for this module
+logger = logging.getLogger(__name__)
+logger.propagate = True  # Ensure logs propagate to parent loggers
 
 # from artus_3d_api.Artus3DAPI import Artus3DAPI
 # sys.path.append(PROJECT_ROOT)
 try:
     from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
-    print("Using pip-installed version of ArtusAPI")
+    logger.info("Using pip-installed version of ArtusAPI")
 except ModuleNotFoundError:
     from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
-    print("Using local version of ArtusAPI")
+    logger.info("Using local version of ArtusAPI")
 
 # 1, 6, 8, 4
 class ArtusLiteJointStreamer:
@@ -42,7 +45,11 @@ class ArtusLiteJointStreamer:
                 start_robot=True,
                 calibrate= False,
                 robot_connected=True,
-                ):
+                logger=None):
+        
+        # Use the passed logger or create a new one that inherits from the root logger
+        self.logger = logger if logger else logging.getLogger(__name__)
+        self.logger.propagate = True  # Ensure logs propagate to parent loggers
         
         self.artusLite_api = ArtusAPI(communication_method=communication_method,
                                     communication_channel_identifier=communication_channel_identifier,
@@ -50,7 +57,8 @@ class ArtusLiteJointStreamer:
                                     hand_type=hand_type,
                                     reset_on_start=reset_on_start,
                                     communication_frequency = streaming_frequency,
-                                    stream = True)
+                                    stream = True,
+                                    logger=self.logger)
                                     
         
         self.communication_channel_identifier = communication_channel_identifier
@@ -74,6 +82,13 @@ class ArtusLiteJointStreamer:
         if self.calibrate:
             self.artusLite_api.calibrate()
         # time.sleep(2)
+    
+    def _disconnect_api(self):
+        self.artusLite_api.set_home_position()
+        time.sleep(1)
+        self.artusLite_api.sleep()
+        self.artusLite_api.disconnect()
+        self.logger.info("Disconnected from Artus Lite API")
 
     def _go_to_zero_position(self):
         self.artusLite_api.set_home_position()
@@ -125,7 +140,10 @@ class ArtusLiteJointStreamer:
         joint_angles = self.artusLite_api.get_streamed_joint_angles()
   
         if joint_angles is None:
+            self.logger.debug("No joint angles received")
             return  # Exit early if there's no data to process
+        
+        self.logger.info(f"Joint Angles: {joint_angles}")
         
         joint_names_local=['thumb_spread', 'thumb_flex', 'thumb_d2', 'thumb_d1', # thumb
             'index_spread', 'index_flex', 'index_d2', # index
@@ -154,6 +172,8 @@ class ArtusLiteJointStreamer:
                 current.append(round(self.artusLite_api._robot_handler.robot.force_sensors[name]['data'].z,2))
             if len(current) == 15:
                 current.append(0)
+
+        self.logger.info(f"Current: {current}")
         return current
 
 def test_artus_joint_streamer():

@@ -12,11 +12,28 @@ See the LICENSE file in the repository for full details.
 
 import time
 import json
-
+import logging
 import os
 import sys
+
+# Configure logging only if it hasn't been configured yet
+if not logging.getLogger().handlers:
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+# Get the root logger and set its level
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+
+# Create a logger for this module
+logger = logging.getLogger(__name__)
+logger.propagate = True  # Ensure logs propagate to parent loggers
+
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
-print("Project Root", PROJECT_ROOT)
+logger.info(f"Project Root: {PROJECT_ROOT}")
 sys.path.append(PROJECT_ROOT)
 from Sarcomere_Dynamics_Resources.examples.Control.configuration.configuration import ArtusLiteConfig
 from Sarcomere_Dynamics_Resources.examples.Control.Tracking.hand_tracking_data import HandTrackingData
@@ -27,6 +44,10 @@ class ArtusGUIController:
         """
         Update the configuration file before running the controller
         """
+        # Initialize logger for this instance
+        self.logger = logging.getLogger(__name__)
+        self.logger.propagate = True
+
         # sensor feedback type
         self.sensor_feedback = 'actuator'
         
@@ -52,7 +73,7 @@ class ArtusGUIController:
 
     def _run_gui_executable(self):
         # # Start GUI executable to receive data
-        # os.startfile(r"C:\Users\yizho\Documents\Sarcomere\Artus\ArtusLite\ArtusLite\ArtusLite\bin\Debug\ArtusLite.exe")
+        # os.startfile(r"C:\Users\yizho\Documents\Sarcomere\Artus\ArtusLite\ArtusLite\bin\Debug\ArtusLite.exe")
         # time.sleep(5)
         pass
 
@@ -67,9 +88,11 @@ class ArtusGUIController:
                                                                             streaming_frequency=self.robot_config.config.robots.left_hand_robot.streaming_frequency,
                                                                             start_robot=self.robot_config.config.robots.left_hand_robot.start_robot,
                                                                             calibrate=self.robot_config.config.robots.left_hand_robot.calibrate,
-                                                                            robot_connected=self.robot_config.config.robots.left_hand_robot.robot_connected)
+                                                                            robot_connected=self.robot_config.config.robots.left_hand_robot.robot_connected,
+                                                                            logger=logger)
             if self.robot_config.config.robots.left_hand_robot.robot_type == 'artus_lite_plus':
                 self.sensor_feedback = 'fingertip'
+            logger.info(f"Left Hand Robot Connected: {self.robot_config.config.robots.left_hand_robot.robot_connected}, Sensor Feedback Type: {self.sensor_feedback}")
             
         # Check and print configuration for right hand robot
         if self.robot_config.config.robots.right_hand_robot.robot_connected:
@@ -81,57 +104,51 @@ class ArtusGUIController:
                                                                             streaming_frequency=self.robot_config.config.robots.right_hand_robot.streaming_frequency,
                                                                             start_robot=self.robot_config.config.robots.right_hand_robot.start_robot,
                                                                             calibrate=self.robot_config.config.robots.right_hand_robot.calibrate,
-                                                                            robot_connected=self.robot_config.config.robots.right_hand_robot.robot_connected)
+                                                                            robot_connected=self.robot_config.config.robots.right_hand_robot.robot_connected,
+                                                                            logger=logger)
             if self.robot_config.config.robots.right_hand_robot.robot_type == 'artus_lite_plus':
                 self.sensor_feedback = 'fingertip'
+            logger.info(f"Right Hand Robot Connected: {self.robot_config.config.robots.right_hand_robot.robot_connected}, Sensor Feedback Type: {self.sensor_feedback}")
 
     # -------------------------------------------------------
     # Stream joint angles from hand tracking GUI to Artus API 
     # -------------------------------------------------------
     def start_streaming(self):
-        current_time_feedback = time.perf_counter()
-        current_time_command = time.perf_counter()
-        publishing_delay = 0.001
-        bidir_flag = False
+        logger.info("Starting joint angle streaming")
         while True:
             try:
-                # if time.perf_counter() - current_time_command > publishing_delay:
-                #     current_time_command = time.perf_counter()
-                    # print("1")
-                    # print("Receiving joint angles from GUI")
+                # GUI side
                 self.hand_tracking_data.receive_joint_angles()
-                # print("2")
                 joint_angles_left = self.hand_tracking_data.get_left_hand_joint_angles()
                 joint_angles_right = self.hand_tracking_data.get_right_hand_joint_angles()
-                # print("3")
-                # print("Sending joint angles to Artus Robot")
-                # prioritize data feedback
+                
+                
                 data = self._receive_force_feedback()
-                self._send_joint_angles(joint_angles_left,joint_angles_right)
-                # print("4")
-                if time.perf_counter() - current_time_feedback > publishing_delay:
-                    current_time_feedback = time.perf_counter()
+                if data is not None:
                     self.publish_force_feedback(data)
+                    self.logger.info(f"Force Feedback: {data}")
+
+                self._send_joint_angles(joint_angles_left,joint_angles_right)
 
             except Exception as e:
-                print(e)
+                logger.error(f"Error in streaming loop: {str(e)}")
                 pass
     def _send_joint_angles(self, joint_angles_left=None, joint_angles_right=None):
         if joint_angles_left is not None:
-            print("Joint Angles Left: ", joint_angles_left)
+            logger.info(f"Joint Angles Left: {joint_angles_left}")
             if self.artusLite_jointStreamers['left'] is not None:
                 self.artusLite_jointStreamers['left'].stream_joint_angles(joint_angles=joint_angles_left)
         else:
             None
-            # print("No joint angles received for left hand")
+            # logger.debug("No joint angles received for left hand")
 
         if joint_angles_right is not None:
-            print("Joint Angles Right: ", joint_angles_right)
+            logger.info(f"Joint Angles Right: {joint_angles_right}")
             if self.artusLite_jointStreamers['right'] is not None:
                 self.artusLite_jointStreamers['right'].stream_joint_angles(joint_angles=joint_angles_right)
         else:
             None
-            # print("No joint angles received for right hand")
+            # logger.debug("No joint angles received for right hand")
 
 
 
@@ -181,14 +198,14 @@ class ArtusGUIController:
             if force_feedback_left != None and self.sensor_feedback == 'actuator':
                 force_feedback_left = self.artusLite_jointStreamers['left'].get_joint_feedback_force()
                 # print("Force Feedback Left: ", force_feedback_left)
-                return force_feedback_left
+            return force_feedback_left
 
         if self.artusLite_jointStreamers['right'] is not None:
             force_feedback_right = self.artusLite_jointStreamers['right'].receive_force_feedback()
             if force_feedback_right != None and self.sensor_feedback == 'actuator':
                 force_feedback_right = self.artusLite_jointStreamers['right'].get_joint_feedback_force()
-                print("Force Feedback Right: ", force_feedback_right)
-                return force_feedback_right
+                # print("Force Feedback Right: ", force_feedback_right)
+            return force_feedback_right
         else:
             return None
 
@@ -201,12 +218,16 @@ class ArtusGUIController:
 # run streaming joint angles and force feedback in parallel
 def main():
     try:
+        logger.info("Initializing Artus GUI Controller")
         artus_gui_controller = ArtusGUIController()
         artus_gui_controller.start_streaming()
 
         time.sleep(1)
     except KeyboardInterrupt as e:
-        ArtusLiteJointStreamer.artusLite_api.disconnect()
+        logger.info("Shutting down Artus GUI Controller")
+        for i,item in artus_gui_controller.artusLite_jointStreamers.items():
+            if item is not None:
+                item._disconnect_api()
         quit()
 
 
