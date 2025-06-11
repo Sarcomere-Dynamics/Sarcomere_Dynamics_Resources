@@ -219,7 +219,7 @@ class ArtusAPI:
         if current_time - self.last_times[type] < self._communication_period:
             self.logger.warning("Command not sent. Communication frequency is too high.")
             return False
-        last_command_time = current_time
+        self.last_times[type] = current_time
         return True
 
     # robot feedback
