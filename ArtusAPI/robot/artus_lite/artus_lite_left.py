@@ -13,4 +13,9 @@ from .artus_lite import ArtusLite
 
 class ArtusLite_LeftHand(ArtusLite): # change any properties for the left hand
     def __init__(self):
-        super().__init__()
+        super().__init__(   joint_rotation_directions=[-1, 1, 1, 1, # thumb
+                                        -1, 1, 1, # index
+                                        -1, 1, 1, # middle
+                                        -1, 1, 1, # ring
+                                        -1, 1, 1], # pinky
+                        )
