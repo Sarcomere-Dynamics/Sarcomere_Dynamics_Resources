@@ -13,7 +13,7 @@ robots:
 
   right_hand_robot:
     robot_connected: true
-    robot_type: 'artus_lite_plus'
+    robot_type: 'artus_lite'
     communication_method: 'UART'
     communication_channel_identifier: '/dev/ttyUSB0'
     hand_type: 'right'

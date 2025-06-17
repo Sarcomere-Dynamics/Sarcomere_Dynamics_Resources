@@ -73,6 +73,20 @@ class WiFiServer:
     """ Start server and listen for connections """
     def open(self):
         try:
+            # Refresh network interfaces on the OS to ensure up-to-date network info
+            sys_platform = platform.system()
+            if sys_platform == "Windows":
+                os.system("ipconfig /release")
+                os.system("ipconfig /renew")
+            elif sys_platform == "Linux":
+                os.system("nmcli networking off")
+                time.sleep(1)
+                os.system("nmcli networking on")
+            elif sys_platform == "Darwin":
+                os.system("sudo ifconfig en0 down")
+                time.sleep(1)
+                os.system("sudo ifconfig en0 up")
+            time.sleep(2)
 
             # look for wifi
             self._find_ssid()
@@ -196,6 +210,8 @@ class WiFiServer:
             else:
                 self.logger.warning(f"Incomplete data received - package size = {len(byte_msg)}")
                 return None
+        except TimeoutError:
+            None
         except Exception as e:
             # TODO logging
             self.logger.warning(f"No data available to receive {e}")
