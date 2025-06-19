@@ -27,7 +27,7 @@ class ArtusLite_Plus(ArtusLite):
                 'indices' : indices[i]
             }
 
-    def get_joint_angles(self, feedback_package:list):
+    def get_joint_angles_force(self, feedback_package:list):
         """
         Get the joint angles and feedback list data
         and populate the feedback fields in the hand_joints dictionary
@@ -54,6 +54,31 @@ class ArtusLite_Plus(ArtusLite):
                 object['data'].z = feedback_slice[i+2]
                 i += 3
                     
+            return feedback_package
+        except TypeError:
+            # print(f'feedback_package is None')
+            return None
+        except Exception as e:
+            print(e)
+            return None
+        
+    def get_joint_angles(self, feedback_package:list):
+        """
+        Get the joint angles and feedback list data
+        and populate the feedback fields in the hand_joints dictionary
+        """
+        # print(f'FB PACKAGE = {feedback_package}')
+        try:
+            for name,joint_data in self.hand_joints.items():
+                joint_data.feedback_angle = feedback_package[1][joint_data.index]
+                joint_data.feedback_current = feedback_package[1][joint_data.index+15]
+                joint_data.feedback_force = round(feedback_package[1][joint_data.index+15] * 0.0035904, 2) # take current value and convert to force
+                joint_data.feedback_temperature = feedback_package[1][joint_data.index+31]
+
+                if joint_data.index in [1,5,8,11,14] and joint_data.feedback_angle < 0:
+                    joint_data.feedback_angle = -joint_data.feedback_angle
+                    feedback_package[1][joint_data.index] = -feedback_package[1][joint_data.index]
+
             return feedback_package
         except TypeError:
             # print(f'feedback_package is None')

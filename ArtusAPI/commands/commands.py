@@ -110,9 +110,11 @@ class Commands:
         command_list.insert(0,self.commands['sleep_command'])
         return command_list
 
-    def get_states_command(self):
+    def get_states_command(self,type=0):
         command_list = [0]*32
         command_list.insert(0,self.commands['get_feedback_command'])
+        if type == 1:
+            command_list[1] = 1 # get actuator data -- only applicable to artus+
         return command_list
     
     def get_firmware_update_command(self):

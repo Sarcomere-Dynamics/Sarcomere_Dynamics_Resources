@@ -71,11 +71,14 @@ class Robot:
         """
         return self.robot.set_home_position()
     
-    def get_joint_angles(self, joint_angles):
+    def get_joint_angles(self, joint_angles,type=0):
         """
         Get the joint angles of the hand
         """
-        return self.robot.get_joint_angles(joint_angles)
+        if type == 1 or self.robot_type == 'artus_lite':
+            return self.robot.get_joint_angles(joint_angles)
+        elif self.robot_type == 'artus_lite_plus':
+            return self.robot.get_joint_angles_force(joint_angles)
     
 
 def main():

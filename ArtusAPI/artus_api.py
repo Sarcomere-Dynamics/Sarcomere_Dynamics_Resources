@@ -223,7 +223,7 @@ class ArtusAPI:
         return True
 
     # robot feedback
-    def _receive_feedback(self):
+    def _receive_feedback(self,type=0):
         """
         Send a request for feedback data and receive feedback data
 
@@ -234,15 +234,19 @@ class ArtusAPI:
             self.logger.warning(f'Hand not ready, send `wake_up` command')
             return
         
-        feedback_command = self._command_handler.get_states_command()
+        feedback_command = self._command_handler.get_states_command(type=type)
         self._communication_handler.send_data(feedback_command)
         # test
         time.sleep(0.001)
         return self._communication_handler.receive_data()
     
-    def get_joint_angles(self):
+
+    def get_joint_angles(self,type=0):
         """
         Populate feedback fields in self._robot_handler.hand_joints dict
+        type: only applicable to artus+
+            0: get joint angles and force values from fingertip
+            1: get actuator data (temperature and current)
 
         Returns:
         :tuple: (ack, angles, velocities, temperatures)
@@ -258,13 +262,13 @@ class ArtusAPI:
         feedback_command = self._receive_feedback()
         if not self._check_communication_frequency(1):
             return None
-        joint_angles = self._robot_handler.get_joint_angles(feedback_command)
+        joint_angles = self._robot_handler.get_joint_angles(feedback_command,type=type)
         if joint_angles is None:
             return None
         
         angles = joint_angles[1][0:16]
 
-        if self._robot_handler.robot_type == 'artus_lite':
+        if self._robot_handler.robot_type == 'artus_lite' or type == 1:
             # separate joint angles into 3 lists    
             velocities = joint_angles[1][16:32]
             temperatures = joint_angles[1][32:48]
@@ -298,7 +302,7 @@ class ArtusAPI:
             if not feedback_command:
                 print(f'feedback is none')
                 return None
-            joint_angles = self._robot_handler.get_joint_angles(feedback_command)
+            joint_angles = self._robot_handler.get_joint_angles(feedback_command,type=0)
         return joint_angles
 
     def update_firmware(self,upload_flag='y',file_location=None,drivers_to_flash=0):
