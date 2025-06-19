@@ -19,3 +19,6 @@ venv3/
 .vscode/
 setup.py
 pip_publish.sh
+
+
+test_workspace/
