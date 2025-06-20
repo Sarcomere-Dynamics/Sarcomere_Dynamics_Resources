@@ -238,7 +238,7 @@ class ArtusAPI:
         self._communication_handler.send_data(feedback_command)
         # test
         time.sleep(0.001)
-        return self._communication_handler.receive_data()
+        return self._communication_handler.receive_data(type)
     
 
     def get_joint_angles(self,type=0):
@@ -259,7 +259,7 @@ class ArtusAPI:
             self.logger.warning(f'Hand not ready, send `wake_up` command')
             return
         
-        feedback_command = self._receive_feedback()
+        feedback_command = self._receive_feedback(type)
         if not self._check_communication_frequency(1):
             return None
         joint_angles = self._robot_handler.get_joint_angles(feedback_command,type=type)

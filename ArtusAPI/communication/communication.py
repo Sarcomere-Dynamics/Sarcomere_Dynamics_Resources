@@ -89,11 +89,11 @@ class Communication:
         # return byte array to send
         return send_data
     
-    def _byte_to_list_decode(self,package:bytearray) -> tuple:
+    def _byte_to_list_decode(self,package:bytearray,type=0) -> tuple:
         recv_data = []
         i = 0
 
-        if self.robot_type == 'artus_lite':
+        if self.robot_type == 'artus_lite' or type == 1:
             # BYTE 0 : ACK
             # BYTE 1 - 16 : 8 BIT POSITION
             # BYTE 17 - 49 : 16 BIT POSITION
@@ -164,7 +164,7 @@ class Communication:
             pass
         return False
 
-    def receive_data(self) -> list:
+    def receive_data(self,type=0) -> list:
         """
         receive message
         """
@@ -174,7 +174,7 @@ class Communication:
             if not byte_msg_recv:
                 # self.logger.warning("No data received")
                 return None,None
-            ack,message_received = self._byte_to_list_decode(byte_msg_recv)
+            ack,message_received = self._byte_to_list_decode(byte_msg_recv,type)
             if ack == 9:
                 self.logger.warning("[E] error ack")
             # print(ack)
