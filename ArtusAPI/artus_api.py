@@ -47,7 +47,7 @@ class ArtusAPI:
         ArtusAPI class controls the communication and control of between a system and an Artus Hand by Sarcomere Dynamics Inc. This file contains the high-level calls that
         are used to control the hand. The low-level calls are separated by robot, command and communication classes.
         :communication_method: communication method that is supported on the Artus Hand, see Robot folder for supported methods. Default is UART over USBC
-            - UART (USBC or RS485), CAN
+            - UART, RS485, CAN
         :communication_channel_identifier: channel identifier for the communication method. Usually a COM Port
         :robot_type: name of the series of robot hand. See Robot folder for list of robots
         :hand_type: left or right

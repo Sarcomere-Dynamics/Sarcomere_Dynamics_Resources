@@ -59,7 +59,9 @@ class Communication:
         """
         # setup communication based on the method
         if self.communication_method == 'UART':
-            self.communicator = UART(port=self.communication_channel_identifier,baudrate=self.baudrate)
+            self.communicator = UART(port=self.communication_channel_identifier,baudrate=921600,type='UART')
+        elif self.communication_method == 'RS485':
+            self.communicator = UART(port=self.communication_channel_identifier,baudrate=115200,type='RS485')
         elif self.communication_method == 'WiFi':
             self.communicator = WiFiServer(target_ssid=self.communication_channel_identifier)
         elif self.communication_method == 'None':

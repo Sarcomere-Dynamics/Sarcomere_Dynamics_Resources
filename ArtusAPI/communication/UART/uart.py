@@ -21,12 +21,14 @@ class UART:
                  port='COM9',
                  baudrate=921600, #115200, 
                  timeout=0.5,
-                 logger = None):
+                 logger = None,
+                 type='UART'):
         
         # automatically connect to the first available port
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
+        self.type = type
 
         self.esp32 = serial.Serial(baudrate=self.baudrate, timeout= self.timeout)
 
@@ -89,7 +91,8 @@ class UART:
                 # print(msg_bytes)
                 return msg_bytes
             elif self.esp32.in_waiting > 0:
-                msg_bytes = self.esp32.read_all()
+                if self.type == 'RS485':
+                    msg_bytes = self.esp32.read_all()
                 # self.logger.warning(f"Incomplete data received - package size = {(self.esp32.in_waiting)}")
                 return None
             else: # non blocking
