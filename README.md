@@ -38,8 +38,9 @@ Below is a list of the ARTUS hand-specific READMEs that are compatible with the 
 * [Basic Usage](#2-basic-usage)
   * [2.1 Normal Startup Procedure](#21-normal-startup-procedure)
   * [2.2 Normal Shutdown Procedure](#22-normal-shutdown-procedure)
-  * [2.3 Running _general_example.py_](#23-running-general_examplepy)
-  * [2.3.1 Video Introduction](#231-video-introduction)
+  * [2.3 LED States](#23-led-states)
+  * [2.4 Running _general_example.py_](#24-running-general_examplepy)
+  * [2.4.1 Video Introduction](#241-video-introduction)
 * [Control Examples](#artus-lite-control-examples-setup)
   * [GUIv2](#1-gui-setup)
   * [ROS2](#2-ros2-node-control-setup)
@@ -110,8 +111,9 @@ This section covers very basic usage of the Artus Lite using the Artus API.
 __Sections__
 * [2.1 Normal Startup Procedure](#21-normal-startup-procedure)
 * [2.2 Normal Shutdown Procedure](#22-normal-shutdown-procedure)
-* [2.3 Running _general_example.py_](#23-running-general_examplepy)
-* [2.3.1 Video Introduction](#231-video-introduction)
+* [2.3 LED States](#23-led-states)
+* [2.4 Running _general_example.py_](#24-running-general_examplepy)
+* [2.4.1 Video Introduction](#241-video-introduction)
 
 ### 2.1 Normal Startup Procedure
 There is a standard series of commands that need to be followed before sending target commands or receiving feedback data is possible. 
@@ -136,10 +138,21 @@ When getting ready to power off the device please do the following:
 >[!NOTE]
 >This is different than the mk8 where the SD Card would save periodically. Now, saving to SD Card is more intentional.
 
-### 2.3 Running _general_example.py_
+### 2.3 LED States
+Here is a detailed table of the LED states during normal operation and a description of the states.
+| LED Colour | Description |
+| --- | --- |
+| Blue | Power on |
+| Green | Idle (Ready to connect, ready for commands) |
+| Red | Error state |
+| Orange/Yellow | Shutdown/Sleep mode, may require power cycle for parameter changes to take effect |
+| Purple | Flashing Actuators |
+
+
+### 2.4 Running _general_example.py_
 See the [General Example README to complete this task](/examples/general_example/README.md)
 
-#### 2.3.1 Video Introduction
+#### 2.4.1 Video Introduction
 [![Getting Started Video](/data/images/thumbnail.png)](https://www.youtube.com/watch?v=30BkuA0EkP4)
 
 ## Artus Lite Control Examples Setup
