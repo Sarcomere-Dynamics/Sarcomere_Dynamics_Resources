@@ -91,6 +91,8 @@ class UDPCLient:
 
             subprocess.run(connect_command, shell=True)
 
+            time.sleep(1)
+
             # clear password
             # self.password = None
 
@@ -99,16 +101,24 @@ class UDPCLient:
             self.logger.error("Unsupported operating system")
 
         # wait X seconds to connect
-        for i in range(10):
-            time.sleep(0.01)
+        time.sleep(0.1)
 
     def _get_device_ip(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        self.ip = [int(x) for x in s.getsockname()[0].split(".")]
-        s.close()
+        ip = (
+            (
+                [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")]
+                or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]
+            )
+            + ["no IP found"]
+        )[0]
 
-        common = ".".join([str(x) for x in self.ip[:3]])
+        if ip == None:
+            self.logger.error("cannot get local ip.")
+            exit()
+
+        self.ip = ip
+
+        common = ".".join([str(x) for x in self.ip.split(".")[:3]])
 
         procs = []
         for i in range(1, 255):
@@ -122,57 +132,57 @@ class UDPCLient:
             ret = proc.stdout.read()
             if ret.startswith(b"Sarcomere Dynamics"):
                 handIp = f"{common}.{i}"
+            elif ret != b"":
+                self.logger.debug(f"{common}.{i} {ret.decode()}")
 
         self.device_ip = handIp
 
     """ Start server and listen for connections """
 
     def open(self):
-        try:
-            # Refresh network interfaces on the OS to ensure up-to-date network info
-            sys_platform = platform.system()
+        # Refresh network interfaces on the OS to ensure up-to-date network info
+        sys_platform = platform.system()
 
-            if shutil.which("nc"):
-                pass
-            else:
-                print('Command "nc" is not found.')
-                print("Required for quickly finding device ip address.")
-                print("Mission abort.")
-                exit()
+        if shutil.which("nc"):
+            pass
+        else:
+            self.logger.error('Command "nc" is not found. Required for quickly finding device ip address. Mission abort.')
+            exit()
 
-            if sys_platform == "Windows":
-                os.system("ipconfig /release")
-                os.system("ipconfig /renew")
-            elif sys_platform == "Linux":
-                os.system("nmcli networking off")
-                time.sleep(1)
-                os.system("nmcli networking on")
-            elif sys_platform == "Darwin":
-                os.system("sudo ifconfig en0 down")
-                time.sleep(1)
-                os.system("sudo ifconfig en0 up")
-            time.sleep(2)
+        if sys_platform == "Windows":
+            os.system("ipconfig /release")
+            os.system("ipconfig /renew")
+        elif sys_platform == "Linux":
+            os.system("nmcli networking off")
+            time.sleep(1)
+            os.system("nmcli networking on")
+        elif sys_platform == "Darwin":
+            os.system("sudo ifconfig en0 down")
+            time.sleep(1)
+            os.system("sudo ifconfig en0 up")
+        time.sleep(5)  # this is a must, anything [Errno 101] other wise
 
-            # look for wifi
-            self._join_target_network()
+        # look for wifi
+        self._join_target_network()
 
-            # get IP addresses associated with local machine and device
-            self._get_device_ip()
+        # get IP addresses associated with local machine and device
+        self._get_device_ip()
 
-            # TCP tuple
-            self.esp = (self.device_ip, self.device_port)
+        # create server socket
+        self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+        # self.socket.setblocking(False)  # blocking timeout to connect
+        self.logger.debug("self ip: ",(self.ip, self.port))
+        self.logger.debug("target ip",(self.device_ip, self.device_port))
 
-            print(self.esp)
+        if self.ip.count(".") != 3:
+            raise Exception("cannot find computer ip.")
 
-            # create server socket
-            self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            self.socket.setblocking(False)  # blocking timeout to connect
-            self.socket.bind((self.ip, self.port))
+        if self.device_ip.count(".") != 3:
+            raise Exception("cannot find hand ip.")
 
-            self.socket.sendto(b"?\n", (self.device_ip, self.device_port))
-        except Exception as e:
-            self.logger.error(f"No Network named {self.target_ssid}")
-            print(e)
+        self.socket.bind((self.ip, self.port))
+
+        self.socket.sendto(b"?\n", (self.device_ip, self.device_port))
 
     def close(self):
         self.socket.close()
@@ -223,3 +233,25 @@ class UDPCLient:
             # TODO insert error logging
             self.logger.error(f"Unable to send data")
             None
+
+
+if __name__ == "__main__":
+
+    comms = UDPCLient(target_ssid="secret_ssid", password="secret_passwd")
+
+    comms.open()
+
+    try:
+        while True:
+
+            bytesAddressPair = comms.socket.recvfrom(1024)
+
+            message = bytesAddressPair[0]
+            address = bytesAddressPair[1]
+
+            clientMsg = "Message from Client:{}".format(message)
+            clientIP = "Client IP Address:{}".format(address)
+
+            print(clientIP, clientMsg)
+    finally:
+        comms.close()

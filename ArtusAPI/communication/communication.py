@@ -18,15 +18,17 @@ from tqdm import tqdm
 
 from .UART.uart import UART
 from .WiFi.wifi_server import WiFiServer
+from .UDP.udp_client import UDPCLient
 
 STARTUP_ACK = 0xaa
 NORMAL_ACK = 0x2
 
 class Communication:
     """
-    This communication class contains two communication methods:
+    This communication class contains three communication methods:
         - UART
         - WiFi
+        - UDP over wifi network
     """
     def __init__(self,
                  communication_method='UART',
@@ -64,6 +66,8 @@ class Communication:
             self.communicator = UART(port=self.communication_channel_identifier,baudrate=115200,type='RS485')
         elif self.communication_method == 'WiFi':
             self.communicator = WiFiServer(target_ssid=self.communication_channel_identifier)
+        elif self.communication_method == 'UDP':
+            self.communicator = UDPCLient(target_ssid=self.communication_channel_identifier[0],password=self.communication_channel_identifier[1])
         elif self.communication_method == 'None':
             pass
         else:
@@ -247,9 +251,28 @@ def test_uart():
                 i+=1
         time.sleep(0.5)
 
+def test_udp():
+    communication = Communication(communication_method='UDP', communication_channel_identifier=("secret_ssid","secret_passwd"))
+    communication.open_connection()
+    time.sleep(1)
+    x = [0]*33
+    x[0] = 210
+    while True:
+        communication.send_data(x)
+        i=0
+        while i < 6:
+
+            # time.sleep(0.002)
+            # print(communication.receive_data()[0])
+            if communication.receive_data() is not None:
+                i+=1
+        time.sleep(0.5)
+
 if __name__ == "__main__":
     # test_wifi()
-    test_uart()
+    # test_uart()
+    test_udp()
+    
 
 
 
