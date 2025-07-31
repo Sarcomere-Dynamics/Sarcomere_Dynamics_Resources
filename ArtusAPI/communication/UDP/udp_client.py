@@ -123,7 +123,7 @@ class UDPCLient:
         procs = []
         for i in range(1, 255):
             # [1,254] inclusive, not including .0 and .255 which are reserved.
-            proc = subprocess.Popen(f'echo "?" | nc -w1 -u {common}.{i} 3210', shell=True, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(f'echo "?" | nc -w5 -u {common}.{i} 3210', shell=True, stdout=subprocess.PIPE)
             procs.append((i, proc))
 
         handIp = None
@@ -171,18 +171,20 @@ class UDPCLient:
         # create server socket
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         # self.socket.setblocking(False)  # blocking timeout to connect
-        self.logger.debug("self ip: ",(self.ip, self.port))
-        self.logger.debug("target ip",(self.device_ip, self.device_port))
+        self.socket.settimeout(10)  # blocking timeout to connect
+        self.logger.debug("self ip: ", (self.ip, self.port))
+        self.logger.debug("target ip", (self.device_ip, self.device_port))
 
-        if self.ip.count(".") != 3:
+        if not isinstance(self.ip, str) or self.ip.count(".") != 3:
             raise Exception("cannot find computer ip.")
 
-        if self.device_ip.count(".") != 3:
+        if not isinstance(self.device_ip, str) or self.device_ip.count(".") != 3:
             raise Exception("cannot find hand ip.")
 
         self.socket.bind((self.ip, self.port))
 
         self.socket.sendto(b"?\n", (self.device_ip, self.device_port))
+        self.socket.recv(128)
 
     def close(self):
         self.socket.close()
@@ -237,7 +239,7 @@ class UDPCLient:
 
 if __name__ == "__main__":
 
-    comms = UDPCLient(target_ssid="secret_ssid", password="secret_passwd")
+    comms = UDPCLient(target_ssid="secret_ssid")
 
     comms.open()
 

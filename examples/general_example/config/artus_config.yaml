@@ -4,8 +4,8 @@ robot:
     hand_type: 'right'
     robot_connected: true
     robot_type: 'artus_lite'
-    communication_method: 'UART' # 'UART' or 'WiFi'
-    communication_channel_identifier: '/dev/ttyUSB1' # 'COM*' on windows, '/dev/ttyUSB*' on linux
+    communication_method: 'UDP' # 'UART' or 'WiFi' or 'UDP'
+    communication_channel_identifier: 'secret_ssid' # 'COM*' on windows, '/dev/ttyUSB*' on linux
     start_robot: true
     reset_on_start: 0
     calibrate: false # calibrate the robot joints
