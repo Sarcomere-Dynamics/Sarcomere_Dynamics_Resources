@@ -17,6 +17,7 @@ import subprocess
 import platform
 import shutil
 import logging
+import sys
 
 
 class UDPCLient:
@@ -29,13 +30,16 @@ class UDPCLient:
         password=None,  # possibility to take in password
         port=3211,
         logger=None,
+        hand_side="RIGHT",
+        hand_type="ARTUS LITE"
     ):
 
         self.HEADER = HEADER
         self.FORMAT = FORMAT
         self.target_ssid = target_ssid
         self.password = password
-
+        self.hand_side = hand_side
+        self.hand_type = hand_type
         self.device_ip = None
         self.device_port = 3210
 
@@ -50,6 +54,8 @@ class UDPCLient:
 
     def _join_target_network(self):
         sys = platform.system()
+
+        connection = None
 
         if sys == "Windows":
             # set profile location
@@ -75,11 +81,31 @@ class UDPCLient:
             else:
                 # refresh wifi scan
 
+
                 # connect to profile
                 connect_command = f"netsh wlan connect ssid={self.target_ssid} name={self.target_ssid} interface=Wi-Fi"
                 subprocess.run(connect_command, shell=True)
 
         elif sys == "Linux":
+            # Check if already connected to the target network
+            try:
+                # Also check ethernet connections
+                result = subprocess.run('nmcli -t -f device,state,type connection show --active', shell=True, capture_output=True, text=True)
+                if result.returncode == 0:
+                    for line in result.stdout.strip().split('\n'):
+                        if 'ethernet' in line.lower() and 'activated' in line:
+                            self.logger.info("Already connected via ethernet")
+                            return 'ethernet'
+                # Get current connection info
+                result = subprocess.run('nmcli -t -f active,ssid dev wifi', shell=True, capture_output=True, text=True)
+                if result.returncode == 0:
+                    for line in result.stdout.strip().split('\n'):
+                        if line.startswith('yes:') and self.target_ssid in line:
+                            self.logger.info(f"Already connected to {self.target_ssid}")
+                            return 'wifi'
+                
+            except Exception as e:
+                self.logger.warning(f"Could not check current network status: {e}")
             # Linux uses the "nmcli" command to connect to Wi-Fi networks
             connect_command = f'nmcli dev wifi connect "{self.target_ssid}"'
 
@@ -103,14 +129,37 @@ class UDPCLient:
         # wait X seconds to connect
         time.sleep(0.1)
 
+        return None
+
     def _get_device_ip(self):
-        ip = (
-            (
-                [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")]
-                or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]
-            )
-            + ["no IP found"]
-        )[0]
+        if self.connection == 'ethernet':
+            # Get IP from ethernet interface
+            result = subprocess.run("ip -4 addr show dev $(ip -o link show | awk -F': ' '/ether/ {print $2}' | head -n1) \
+   | grep -oP '(?<=inet\s)\d+(\.\d+){3}'"
+, shell=True, capture_output=True, text=True)
+            if result.returncode == 0:
+                self.logger.info(f"Ethernet IP: {result.stdout}")
+                ip = result.stdout.strip().split('\n')[0]  
+                # # Extract IP from output like "1.0.0.0 via 192.168.1.1 dev eth0 src 192.168.1.100"
+                # for part in result.stdout.split():
+                #     if part.startswith('src'):
+                #         ip_index = result.stdout.split().index(part) + 1
+                #         if ip_index < len(result.stdout.split()):
+                #             ip = result.stdout.split()[ip_index]
+                #             break
+                # else:
+                #     raise Exception("Could not parse ethernet IP")
+            else:
+                raise Exception("Failed to get ethernet route")  
+        else:
+            # Get IP via wifi or default method
+            ip = (
+                (
+                    [ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")]
+                    or [[(s.connect(("8.8.8.8", 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]
+                )
+                + ["no IP found"]
+            )[0]
 
         if ip == None:
             self.logger.error("cannot get local ip.")
@@ -131,7 +180,14 @@ class UDPCLient:
         for i, proc in procs:
             ret = proc.stdout.read()
             if ret.startswith(b"Sarcomere Dynamics"):
-                handIp = f"{common}.{i}"
+                if self.hand_side == "RIGHT" and ret.endswith(b"RIGHT"):
+                    handIp = f"{common}.{i}"
+                    break
+                elif self.hand_side == "LEFT" and ret.endswith(b"LEFT"):
+                    handIp = f"{common}.{i}"
+                    break
+                else:
+                    self.logger.warning(f"Hand side {self.hand_side} not found in {ret.decode()}")
             elif ret != b"":
                 self.logger.debug(f"{common}.{i} {ret.decode()}")
 
@@ -149,21 +205,21 @@ class UDPCLient:
             self.logger.error('Command "nc" is not found. Required for quickly finding device ip address. Mission abort.')
             exit()
 
-        if sys_platform == "Windows":
-            os.system("ipconfig /release")
-            os.system("ipconfig /renew")
-        elif sys_platform == "Linux":
-            os.system("nmcli networking off")
-            time.sleep(1)
-            os.system("nmcli networking on")
-        elif sys_platform == "Darwin":
-            os.system("sudo ifconfig en0 down")
-            time.sleep(1)
-            os.system("sudo ifconfig en0 up")
+        # if sys_platform == "Windows":
+        #     os.system("ipconfig /release")
+        #     os.system("ipconfig /renew")
+        # elif sys_platform == "Linux":
+        #     os.system("nmcli networking off")
+        #     time.sleep(1)
+        #     os.system("nmcli networking on")
+        # elif sys_platform == "Darwin":
+        #     os.system("sudo ifconfig en0 down")
+        #     time.sleep(1)
+        #     os.system("sudo ifconfig en0 up")
         time.sleep(5)  # this is a must, anything [Errno 101] other wise
 
         # look for wifi
-        self._join_target_network()
+        self.connection = self._join_target_network()
 
         # get IP addresses associated with local machine and device
         self._get_device_ip()
@@ -176,10 +232,11 @@ class UDPCLient:
         self.logger.debug("target ip", (self.device_ip, self.device_port))
 
         if not isinstance(self.ip, str) or self.ip.count(".") != 3:
-            raise Exception("cannot find computer ip.")
+            raise RuntimeError("cannot find computer ip.")
 
         if not isinstance(self.device_ip, str) or self.device_ip.count(".") != 3:
-            raise Exception("cannot find hand ip.")
+            raise RuntimeError("cannot find hand ip.")
+            
 
         self.socket.bind((self.ip, self.port))
 

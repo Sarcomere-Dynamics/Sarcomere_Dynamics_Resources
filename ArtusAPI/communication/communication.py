@@ -32,13 +32,20 @@ class Communication:
         - UDP over wifi network
     """
 
-    def __init__(self, communication_method="UART", communication_channel_identifier="COM9", logger=None, baudrate=921600, robot_type="artus_lite"):
+    def __init__(self, communication_method="UART", communication_channel_identifier="COM9", logger=None, baudrate=921600, robot_type="artus_lite",hand_side="right"):
         # initialize communication
         self.communication_method = communication_method
         self.communication_channel_identifier = communication_channel_identifier
         self.communicator = None
         self.baudrate = baudrate
         self.robot_type = robot_type
+
+        if hand_side == "right":
+            self.hand_side = "RIGHT"
+        elif hand_side == "left":
+            self.hand_side = "LEFT"
+        else:
+            raise ValueError("Invalid hand side")
         # setup communication
         self._setup_communication()
         # params
@@ -66,7 +73,7 @@ class Communication:
         elif self.communication_method == "WiFi":
             self.communicator = WiFiServer(target_ssid=self.communication_channel_identifier)
         elif self.communication_method == "UDP":
-            self.communicator = UDPCLient(target_ssid=self.communication_channel_identifier)
+            self.communicator = UDPCLient(target_ssid=self.communication_channel_identifier, hand_side=self.hand_side, hand_type=self.robot_type)
         elif self.communication_method == "None":
             pass
         else:

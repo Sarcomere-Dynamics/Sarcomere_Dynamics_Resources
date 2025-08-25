@@ -183,6 +183,8 @@ class Commands:
                 command_list[17] = 3
             elif communication == 'WIFI':
                 command_list[17] = 0
+            elif communication == 'UDP':
+                command_list[17] = 4
 
         if feedback:
             command_list[2] = 1

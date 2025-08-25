@@ -60,7 +60,7 @@ class ArtusAPI:
         """
 
         self._communication_handler = Communication(communication_method=communication_method,
-                                                  communication_channel_identifier=communication_channel_identifier,baudrate=baudrate,robot_type=robot_type)
+                                                  communication_channel_identifier=communication_channel_identifier,baudrate=baudrate,robot_type=robot_type,hand_side=hand_type)
         self._command_handler = Commands(reset_on_start=reset_on_start)
         self._robot_handler = Robot(robot_type = robot_type,
                                    hand_type = hand_type)
@@ -439,8 +439,8 @@ class ArtusAPI:
         :return: None
         """
         com = None
-        while com not in ['UART','CAN','RS485','WIFI']:
-            com = input('Enter Communication Protocol you would like to change to (default: UART, CAN, RS485, WIFI): ')
+        while com not in ['UART','CAN','RS485','WIFI','UDP']:
+            com = input('Enter Communication Protocol you would like to change to (default: UART, CAN, RS485, WIFI, UDP): ')
         if com == 'CAN':
             feed = None
             while feed not in ['P','C','ALL']:

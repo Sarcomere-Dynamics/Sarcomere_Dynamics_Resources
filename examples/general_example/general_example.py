@@ -55,6 +55,32 @@ def main_menu():
     
     )
 
+# ------------------------------------------------------------------------------
+# -------------------------------- Logger Setup --------------------------------
+# ------------------------------------------------------------------------------
+import logging
+
+def setup_logger():
+    """
+    Set up a logger for the ArtusAPI with proper formatting
+    """
+    logger = logging.getLogger('ArtusAPI_Example')
+    logger.setLevel(logging.DEBUG)
+    
+    # Create console handler with formatting
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.DEBUG)
+    
+    # Create formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_handler.setFormatter(formatter)
+    
+    # Add handler to logger if not already added
+    if not logger.handlers:
+        logger.addHandler(console_handler)
+    
+    return logger
+
 
 # -------------------------------------------------------------------------------
 # --------------------------------- Example -------------------------------------
@@ -70,7 +96,8 @@ def example():
                         reset_on_start=config.config.robot.artusLite.reset_on_start,
                         awake = config.config.robot.artusLite.awake,
                         baudrate=921600,
-                        communication_frequency=33)
+                        communication_frequency=33,
+                        logger=setup_logger())
     # Path to the hand poses
     hand_poses_path = os.path.join(PROJECT_ROOT,'Sarcomere_Dynamics_Resources','data','hand_poses')
     # Main loop (example)
