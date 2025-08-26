@@ -59,18 +59,41 @@ class HumanoidLiteClient:
             bool: True if connection successful, False otherwise
         """
         try:
-            if self.connected:
+            if self.connected and self.socket:
                 return True
                 
+            # Clean up any existing socket
+            if self.socket:
+                try:
+                    self.socket.close()
+                except:
+                    pass
+                self.socket = None
+                
+            self.logger.info(f"Attempting to connect to {self.host}:{self.port}")
             self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.socket.settimeout(self.timeout)
             self.socket.connect((self.host, self.port))
             self.connected = True
             self._buffer = ""  # Reset buffer on new connection
-            self.logger.info(f"Connected to HumanoidLite server at {self.host}:{self.port}")
+            self.logger.info(f"Successfully connected to HumanoidLite server at {self.host}:{self.port}")
             return True
+        except socket.timeout:
+            self.logger.error(f"Connection timeout to {self.host}:{self.port}")
+            self.connected = False
+            if self.socket:
+                self.socket.close()
+                self.socket = None
+            return False
+        except ConnectionRefusedError:
+            self.logger.error(f"Connection refused by {self.host}:{self.port} - is the server running?")
+            self.connected = False
+            if self.socket:
+                self.socket.close()
+                self.socket = None
+            return False
         except Exception as e:
-            self.logger.error(f"Failed to connect to server: {e}")
+            self.logger.error(f"Failed to connect to server {self.host}:{self.port}: {e}")
             self.connected = False
             if self.socket:
                 self.socket.close()
@@ -133,7 +156,7 @@ class HumanoidLiteClient:
             json_data = json.dumps(command, cls=DateTimeEncoder)
             message = json_data + '\n'
             self.socket.sendall(message.encode('utf-8'))
-            self.logger.debug(f"Sent command: {json_data}")
+            self.logger.info(f"Sent command: {json_data}")
             return True
         except Exception as e:
             self.logger.error(f"Failed to send command: {e}")
@@ -158,7 +181,7 @@ class HumanoidLiteClient:
             json_data = json.dumps(command, cls=DateTimeEncoder)
             message = json_data + '\n'
             self.socket.sendall(message.encode('utf-8'))
-            self.logger.debug(f"Sent raw command: {json_data}")
+            self.logger.info(f"Sent raw command: {json_data}")
             return True
         except Exception as e:
             self.logger.error(f"Failed to send raw command: {e}")
@@ -253,7 +276,7 @@ class HumanoidLiteClient:
 def simple_example():
     """Simple usage example for integration into other scripts"""
     # Setup logging (optional)
-    logging.basicConfig(level=logging.INFO)
+    # logging.basicConfig(level=logging.INFO)
     
     # Create and connect client
     client = HumanoidLiteClient(host="localhost", port=7364)
@@ -298,31 +321,124 @@ def simple_example():
 
 def context_manager_example():
     """Example using context manager for automatic cleanup"""
-    i = 0
-    increment = True
     with HumanoidLiteClient(host="localhost", port=7364) as client:
         if client.is_connected():
-            # Send a command
-            client.send_command(left_angles=[i,0,i,i,i,0,i,i,0,i,i,0,i,i,0,i], right_angles=[i,0,i,i,i,0,i,i,0,i,i,0,i,i,0,i])
-            if increment:
-                i+=1
+            print("Connected successfully!")
+            
+            # Send a simple command first
+            left_angles = [0] * 16
+            right_angles = [0] * 16
+            
+            success = client.send_command(left_angles=left_angles, right_angles=right_angles)
+            print(f"Command sent successfully: {success}")
+            
+            if success:
+                # Get response
+                data = client.receive_data(timeout=2.0)
+                if data:
+                    print(f"Received data: {data}")
+                else:
+                    print("No response received")
             else:
-                i-=1
-            if i == 50:
-                increment = False
-            elif i == 0:
-                increment = True
-            # Get response
-            data = client.receive_data(timeout=1.0)
-            if data:
-                print(f"Received: {data}")
+                print("Failed to send command")
         else:
             print("Failed to connect")
 
 
-if __name__ == "__main__":
-    print("Running simple example...")
-    simple_example()
+def continuous_example():
+    """Example with continuous loop for testing"""
+    print("Starting continuous example...")
     
-    print("\nRunning context manager example...")
-    context_manager_example()
+    client = HumanoidLiteClient(host="localhost", port=7364)
+    
+    if not client.connect():
+        print("Failed to connect to server")
+        return
+    
+    print("Connected! Starting continuous loop...")
+    
+    try:
+        i = 0
+        increment = True
+        
+        for iteration in range(100):  # Run for 20 iterations
+            print(f"\n--- Iteration {iteration + 1} ---")
+            
+            # Create angle pattern
+            # left_angles = [i if j % 3 == 0 else 0 for j in range(16)]
+            # right_angles = [i if j % 3 == 0 else 0 for j in range(16)]
+            ix = i*3
+            left_angles =   [0,ix,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix]
+            right_angles =  [0,ix,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix]
+            
+            # Send command
+            success = client.send_command(left_angles=left_angles, right_angles=right_angles)
+            print(f"Sent command (i={i}): {success}")
+            
+            if not success:
+                print("Failed to send command, attempting to reconnect...")
+                if not client.connect():
+                    print("Reconnection failed, exiting")
+                    break
+                continue
+            
+            # Update counter
+            if increment:
+                i += 1
+                if i >= 25:
+                    increment = False
+            else:
+                i -= 1
+                if i <= 0:
+                    increment = True
+            
+            # Try to receive data
+            data = client.receive_data(timeout=0.5)
+            if data:
+                timestamp = data.get('timestamp', 'N/A')
+                print(f"Received data at {timestamp}")
+                
+                if data.get('left_hand'):
+                    left_received = data['left_hand'].get('angles', [])
+                    print(f"  Left hand angles: {left_received[:3]}...")
+            else:
+                print("No data received this iteration")
+            
+            time.sleep(0.1)  # Small delay between iterations
+
+        ix = 0
+        left_angles =   [0,ix,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix]
+        right_angles =  [0,ix,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix,0,ix,ix]
+        
+        # Send command
+        success = client.send_command(left_angles=left_angles, right_angles=right_angles)
+
+    
+    except KeyboardInterrupt:
+        print("\nInterrupted by user")
+    except Exception as e:
+        print(f"Error: {e}")
+    finally:
+        client.disconnect()
+        print("Disconnected")
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    
+    print("Choose an example to run:")
+    print("1. Simple example")
+    print("2. Context manager example") 
+    print("3. Continuous example")
+    
+    choice = input("Enter choice (1-3) or press Enter for continuous: ").strip()
+    
+    if choice == "1":
+        print("Running simple example...")
+        simple_example()
+    elif choice == "2":
+        print("Running context manager example...")
+        context_manager_example()
+    else:
+        print("Running continuous example...")
+        continuous_example()

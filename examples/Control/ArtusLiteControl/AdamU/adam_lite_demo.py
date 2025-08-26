@@ -24,7 +24,7 @@ from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI
 
 # Create a logger for this module
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.propagate = True  # Ensure logs propagate to parent loggers
 
 # Constants for Setting Up
@@ -32,10 +32,10 @@ COM_METHOD='UDP'
 COM_CHANNEL_LEFT='secret-ssid'
 COM_CHANNEL_RIGHT='secret-ssid'
 
-STREAM_FREQ = 30
+STREAM_FREQ = 10
 START = True
 CALIBRATE = False
-STREAM = False
+STREAM = True
 
 class HumanoidLite:
     def __init__(self, communication_method=COM_METHOD,
@@ -238,7 +238,9 @@ class HumanoidLite:
             try:
                 left_result = self.artus_left.get_streamed_joint_angles()
                 if left_result:
-                    ack, angles, velocities, temperatures = left_result
+                    ack, vals = left_result
+                    angles = vals[:16]
+                    velocities = vals[16:32]
                     data['left_hand'] = {
                         'angles': angles,
                         'velocities': velocities
@@ -250,13 +252,18 @@ class HumanoidLite:
             try:
                 right_result = self.artus_right.get_streamed_joint_angles()
                 if right_result:
-                    ack, angles, velocities, temperatures = right_result
+                    ack, vals = right_result
+                    angles = vals[:16]
+                    velocities = vals[16:32]
                     data['right_hand'] = {
                         'angles': angles,
                         'velocities': velocities
                     }
             except Exception as e:
                 logger.warning(f"Failed to get right hand data: {e}")
+
+            # Log the collected data
+            logger.debug(f"Hand data at {data['timestamp']}: {data}")
             
             return data
             
@@ -330,6 +337,7 @@ class HumanoidLite:
                     left_joint_dict = self.create_empty_joint_dict_list()
                     for i, angle in enumerate(left_angles):
                         left_joint_dict[f'{i}']['target_angle'] = int(angle)
+                        left_joint_dict[f'{i}']['index'] = i
                     
                     # Send to left hand
                     self.artus_left.set_joint_angles(left_joint_dict)
@@ -345,6 +353,7 @@ class HumanoidLite:
                     right_joint_dict = self.create_empty_joint_dict_list()
                     for i, angle in enumerate(right_angles):
                         right_joint_dict[f'{i}']['target_angle'] = int(angle)
+                        right_joint_dict[f'{i}']['index'] = i
                     
                     # Send to right hand
                     self.artus_right.set_joint_angles(right_joint_dict)
@@ -370,6 +379,44 @@ class HumanoidLite:
         self.socket_send_thread.start()
         
         logger.info("All threads started successfully")
+
+    def send_hands_to_home(self):
+        """Send both hands to home position (0 degrees) for safety"""
+        try:
+            logger.info("Sending hands to home position...")
+            
+            for hand in self.hands:
+                try:
+                    hand.set_home_position()
+                    logger.info(f"Sent {hand.robot_handler.hand_type} hand to home position")
+                except Exception as e:
+                    logger.error(f"Failed to send {hand.robot_handler.hand_type} hand to home: {e}")
+            
+            # Give hands time to move to home position
+            time.sleep(2.0)
+            logger.info("Hands moved to home position")
+            
+        except Exception as e:
+            logger.error(f"Error sending hands to home position: {e}")
+
+    def sleep_hands(self):
+        """Put both hands to sleep for safe shutdown"""
+        try:
+            logger.info("Putting hands to sleep...")
+            
+            for i,hand in enumerate(self.hands):
+                try:
+                    result = hand.sleep()
+                    logger.info(f"Sent sleep command to hand {i}")
+                except Exception as e:
+                    logger.error(f"Failed to sleep hand {i}: {e}")
+            
+            # Give hands time to complete sleep sequence
+            time.sleep(1.0)
+            logger.info("Hands are now sleeping")
+            
+        except Exception as e:
+            logger.error(f"Error putting hands to sleep: {e}")
 
     def stop_threads(self):
         """Stop all threads gracefully"""
@@ -421,6 +468,9 @@ class HumanoidLite:
         except Exception as e:
             logger.error(f"Error in main execution: {e}")
         finally:
+            # Safe shutdown sequence: Home -> Sleep -> Stop
+            self.send_hands_to_home()
+            self.sleep_hands()
             self.stop_threads()
 
 
@@ -431,8 +481,16 @@ def main():
         humanoid.run()
     except KeyboardInterrupt:
         logger.info("Application interrupted by user")
+        # Safe shutdown sequence: Home -> Sleep -> Stop
+        humanoid.send_hands_to_home()
+        humanoid.sleep_hands()
+        humanoid.stop_threads()
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
+        # Safe shutdown sequence: Home -> Sleep -> Stop
+        humanoid.send_hands_to_home()
+        humanoid.sleep_hands()
+        humanoid.stop_threads()
     finally:
         logger.info("Application shutting down")
 
