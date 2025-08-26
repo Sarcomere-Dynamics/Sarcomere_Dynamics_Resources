@@ -41,10 +41,13 @@ class UDPCLient:
         self.hand_side = hand_side
         self.hand_type = hand_type
         self.device_ip = None
-        self.device_port = 3210
+        if hand_side == "LEFT":
+            self.device_port = 3210
+        elif hand_side == "RIGHT":
+            self.device_port = 3211
 
         self.ip = None
-        self.port = port
+        self.port = self.device_port
         self.socket = None
 
         if not logger:
@@ -172,7 +175,7 @@ class UDPCLient:
         procs = []
         for i in range(1, 255):
             # [1,254] inclusive, not including .0 and .255 which are reserved.
-            proc = subprocess.Popen(f'echo "?" | nc -w5 -u {common}.{i} 3210', shell=True, stdout=subprocess.PIPE)
+            proc = subprocess.Popen(f'echo "?" | nc -w5 -u {common}.{i} {self.device_port}', shell=True, stdout=subprocess.PIPE)
             procs.append((i, proc))
 
         handIp = None
@@ -182,9 +185,11 @@ class UDPCLient:
             if ret.startswith(b"Sarcomere Dynamics"):
                 if self.hand_side == "RIGHT" and ret.endswith(b"RIGHT"):
                     handIp = f"{common}.{i}"
+                    self.logger.info(f"Right hand found at {handIp}")
                     break
                 elif self.hand_side == "LEFT" and ret.endswith(b"LEFT"):
                     handIp = f"{common}.{i}"
+                    self.logger.info(f"Left hand found at {handIp}")
                     break
                 else:
                     self.logger.warning(f"Hand side {self.hand_side} not found in {ret.decode()}")
@@ -216,7 +221,7 @@ class UDPCLient:
         #     os.system("sudo ifconfig en0 down")
         #     time.sleep(1)
         #     os.system("sudo ifconfig en0 up")
-        time.sleep(5)  # this is a must, anything [Errno 101] other wise
+        time.sleep(1)  # this is a must, anything [Errno 101] other wise
 
         # look for wifi
         self.connection = self._join_target_network()
@@ -228,8 +233,8 @@ class UDPCLient:
         self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
         # self.socket.setblocking(False)  # blocking timeout to connect
         self.socket.settimeout(10)  # blocking timeout to connect
-        self.logger.debug("self ip: ", (self.ip, self.port))
-        self.logger.debug("target ip", (self.device_ip, self.device_port))
+        self.logger.info(f"self ip: {self.ip}, self port: {self.port}")
+        self.logger.info(f"target ip: {self.device_ip}, target port: {self.device_port}")
 
         if not isinstance(self.ip, str) or self.ip.count(".") != 3:
             raise RuntimeError("cannot find computer ip.")
