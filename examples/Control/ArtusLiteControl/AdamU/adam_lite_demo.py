@@ -29,12 +29,12 @@ logger.propagate = True  # Ensure logs propagate to parent loggers
 
 # Constants for Setting Up
 COM_METHOD='UDP'
-COM_CHANNEL_LEFT='secret-ssid'
-COM_CHANNEL_RIGHT='secret-ssid'
+COM_CHANNEL_LEFT='PndAdamU'
+COM_CHANNEL_RIGHT='PndAdamU'
 
 STREAM_FREQ = 10
 START = True
-CALIBRATE = False
+CALIBRATE = True
 STREAM = True
 
 class HumanoidLite:
@@ -97,12 +97,19 @@ class HumanoidLite:
     def start_hands(self):
         """Initialize and start communication with both hands"""
         for hand in self.hands:
+            # always set stream to be false if calibration is required
+            if self.require_calibration:
+                hand.stream = False
             hand.connect()
             time.sleep(0.1)
-
+            
             if self.require_calibration:
                 hand.calibrate()
                 time.sleep(0.5)
+                # send wake up again with stream flag
+                if self.stream_flag:
+                    hand.stream = True
+                    hand.wake_up()
 
     def hand_communication_thread(self):
         """Thread function for continuous hand data communication"""

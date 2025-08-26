@@ -349,7 +349,7 @@ def continuous_example():
     """Example with continuous loop for testing"""
     print("Starting continuous example...")
     
-    client = HumanoidLiteClient(host="localhost", port=7364)
+    client = HumanoidLiteClient(host="192.168.41.228", port=7364)
     
     if not client.connect():
         print("Failed to connect to server")
