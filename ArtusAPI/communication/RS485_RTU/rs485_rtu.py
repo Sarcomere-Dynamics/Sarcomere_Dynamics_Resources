@@ -14,6 +14,14 @@ import minimalmodbus
 from tqdm import tqdm
 import logging
 
+"""
+RS485_RTU class for RS485 communication
+
+This class's function is to simply send and receive data using the minimalmodbus library to send and receive data to the Artus Hand.
+
+The only received data is the feedback data from the hand. This has to be polled. 
+The sent data uses two modbus functions, write single register and write multiple registers.
+"""
 class RS485_RTU:
     def __init__(self, port='COM9', baudrate=115200, timeout=0.5, logger=None, slave_address=0):
         self.port = port
