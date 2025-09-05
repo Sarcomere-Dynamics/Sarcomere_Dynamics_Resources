@@ -110,10 +110,10 @@ def main(triangle_wave,freq,max):
 
     while True:
         # d2s first
-        grasp_dict["thumb_spread"]["target_angle"] = 10
+        grasp_dict["thumb_spread"]["target_angle"] = 20
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
-        grasp_dict["thumb_spread"]["target_angle"] = -30
+        grasp_dict["thumb_spread"]["target_angle"] = -20
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
         
@@ -187,6 +187,7 @@ def main(triangle_wave,freq,max):
         artus.set_joint_angles(grasp_dict)
         time.sleep(sleep_time)
 
+        grasp_dict["thumb_spread"]["target_angle"] = 0
         grasp_dict["index_spread"]["target_angle"] = 0
         grasp_dict["middle_spread"]["target_angle"] = 0
         grasp_dict["ring_spread"]["target_angle"] = 0
