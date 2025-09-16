@@ -35,9 +35,10 @@ class ActuatorState(Enum):
 class CommandType(Enum):
     SETUP_COMMANDS = 6
     TARGET_COMMAND = 16
+    FIRMWARE_COMMAND = 33
 
 class NewCommunication:
-    def __init__(self, port='COM9', baudrate=115200, logger=None, slave_address=0, communication_method="RS485_RTU"):
+    def __init__(self, port='COM9', baudrate=115200, logger=None, slave_address=1, communication_method="RS485_RTU"):
         self.port = port
         self.baudrate = baudrate
         self.logger = logger
@@ -64,13 +65,14 @@ class NewCommunication:
         self.communicator.send(data,command_type)
 
     def receive_data(self,amount_dat:int=1,start:int=ModbusMap().modbus_reg_map['feedback_register']): # default is receive robot state
-        return self.communicator.receive([amount_dat,start])
+        return self.communicator.receive([start,amount_dat])
     
     def close_connection(self):
         self.communicator.close()
 
     def wait_for_ready(self,timeout=30,vis=False):
         start_time = time.perf_counter()
+
         def _check_robot_state(self):
             """Helper function to check robot state and return status"""
             ret = self.receive_data()
@@ -90,7 +92,7 @@ class NewCommunication:
         if vis:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:
-                    result = self._check_robot_state()
+                    result = _check_robot_state(self)
                     if result is not None:
                         return result
                     time.sleep(0.05)

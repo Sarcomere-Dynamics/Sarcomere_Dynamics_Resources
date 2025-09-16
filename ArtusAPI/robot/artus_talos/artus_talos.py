@@ -10,14 +10,14 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from ..common.FeedbackTypes import FeedbackTypes
+from ...common.FeedbackTypes import FeedbackTypes
 
 class ArtusTalos:
     def __init__(self,
                 joint_max_angles=[],
                 joint_min_angles=[],
                 joint_default_angles=[],
-                joint_rotation_directions=[],
+                joint_rotation_directions=[1,1,1,1,1,1],
                 joint_torques=[],
                 joint_names=['thumb_spread','thumb_flex','index_flex',
                             'middle_flex','ring_flex','pinky_flex'],
@@ -33,13 +33,13 @@ class ArtusTalos:
         
         
         class Joint:
-            def __init__(self, index, min_angle, max_angle, default_angle, target_angle, torque, temperature, joint_rotation_direction):
+            def __init__(self, index, min_angle, max_angle, default_angle, target_angle, target_torque, temperature, joint_rotation_direction):
                 self.index = index
                 self.min_angle = min_angle
                 self.max_angle = max_angle
                 self.default_angle = default_angle
                 self.target_angle = target_angle
-                self.target_torque = torque
+                self.target_torque = target_torque
                 self.feedback_angle = 0
                 self.feedback_current = 0
                 self.feedback_force = 0.0
@@ -62,7 +62,8 @@ class ArtusTalos:
                                                       default_angle=0,
                                                       target_angle=0,
                                                       target_torque=0,
-                                                      temperature=0)
+                                                      temperature=0,
+                                                      joint_rotation_direction=self.joint_rotation_directions[joint_index])
 
         # free up mem
         del self.joint_max_angles, self.joint_min_angles, self.joint_default_angles, self.joint_rotation_directions, self.joint_torques

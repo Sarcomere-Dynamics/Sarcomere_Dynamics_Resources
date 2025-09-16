@@ -12,8 +12,10 @@ See the LICENSE file in the repository for full details.
 
 import time
 import logging
+import math
+from .common.ModbusMap import ModbusMap
 from .commands import NewCommands
-from .communication import NewCommunication,ActuatorState,CommandType
+from .communication.new_communication import NewCommunication,ActuatorState,CommandType
 from .robot import Robot
 
 class ArtusAPI_New:
@@ -31,7 +33,7 @@ class ArtusAPI_New:
                 hand_type='left',
                 communication_frequency = 50, # hz
                 logger = None,
-                baudrate = 921600):
+                baudrate = 115200):
         self._communication_handler = NewCommunication(communication_method=communication_method,
                                                     logger=logger, port=communication_channel_identifier,
                                                     baudrate=baudrate)
@@ -123,8 +125,27 @@ class ArtusAPI_New:
         return self._communication_handler.send_data(robot_set_home_position_cmd,CommandType.TARGET_COMMAND.value)
 
     def get_joint_angles(self,dat_type=0):
-        feedback_data = self._communication_handler.receive_data(data_type=dat_type)
+        # only get status of hand
+        if dat_type == 0:
+            start_reg = ModbusMap().modbus_reg_map['feedback_register']
+            amount_data = math.ceil(self.num_joints/2) + 1
+        elif dat_type == 1:
+            start_reg = ModbusMap().modbus_reg_map['feedback_register']
+            amount_data = math.ceil(self.num_joints/2) + 1 + self.num_joints*2
+        elif dat_type == 2:
+            start_reg = ModbusMap().modbus_reg_map['feedback_torque_start_reg']
+            amount_data = self.num_joints*2
+        elif dat_type == 3:
+            start_reg = ModbusMap().modbus_reg_map['feedback_temperature_start_reg']
+            amount_data = math.ceil(self.num_joints/2)
+        else:
+            raise ValueError("Invalid data type")
+
+        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
         status_data,decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data)
 
         # populate hand joint dict based on robot
         self._robot_handler.get_joint_angles(decoded_feedback_data,dat_type)
+    
+    def get_robot_status(self):
+        feedback_data = self._communication_handler.receive_data()

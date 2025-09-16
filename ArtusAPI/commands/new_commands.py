@@ -33,7 +33,7 @@ class NewCommands(Commands,ModbusMap):
         else:
             self.logger = logger
 
-    def get_robot_start_command(self, stream:bool, freq:int) -> list:
+    def get_robot_start_command(self, stream:bool=False, freq:int=50) -> list:
         return [self.commands['start_command']]
 
     def get_target_position_command(self,hand_joints:dict) -> list:
