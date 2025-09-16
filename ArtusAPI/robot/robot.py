@@ -10,12 +10,15 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
+# Artus Lite Hands
 from .artus_lite.artus_lite_left import ArtusLite_LeftHand
 from .artus_lite.artus_lite_right import ArtusLite_RightHand
 from .artus_lite.artus_lite_plus_right import ArtusLite_Plus_RightHand
 from .artus_lite.artus_lite_plus_left import ArtusLite_Plus_LeftHand
-# Artus 3D Robots
 
+# Artus Talos
+from .artus_talos.artus_talos_left import ArtusTalos_Left
+from .artus_talos.artus_talos_right import ArtusTalos_Right
 
 class Robot:
     def __init__(self,
@@ -51,6 +54,13 @@ class Robot:
                 self.robot = ArtusLite_Plus_LeftHand()
             else:
                 raise ValueError("Unknown hand")
+        elif self.robot_type == 'artus_talos':
+            if self.hand_type == 'right':
+                self.robot = ArtusTalos_Right()
+            elif self.hand_type == 'left':
+                self.robot = ArtusTalos_Left()
+            else:
+                raise ValueError("Unknown hand")
         else:
             raise ValueError("Unknown robot type")
         
@@ -71,14 +81,16 @@ class Robot:
         """
         return self.robot.set_home_position()
     
-    def get_joint_angles(self, joint_angles,type=0):
+    def get_joint_angles(self, joint_angles,feedback_type=0):
         """
         Get the joint angles of the hand
         """
-        if type == 1 or self.robot_type == 'artus_lite':
+        if feedback_type == 1 or self.robot_type == 'artus_lite':
             return self.robot.get_joint_angles(joint_angles)
         elif self.robot_type == 'artus_lite_plus':
             return self.robot.get_joint_angles_force(joint_angles)
+        else:
+            return self.robot.get_joint_angles(joint_angles,feedback_type)
     
 
 def main():

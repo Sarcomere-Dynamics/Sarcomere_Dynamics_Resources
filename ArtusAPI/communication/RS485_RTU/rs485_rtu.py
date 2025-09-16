@@ -58,11 +58,13 @@ class RS485_RTU:
                 self.logger.info(f"Sent command: {command} with data: {data}")
             else:
                 self.logger.error(f"Unknown command: {command}")
+        except Exception as e:
+                self.logger.error(e)
 
     def receive(self,data:list):
         ret_list = self.instrument.read_registers(register_address=data[0],number_of_registers=data[1])
         self.logger.info(f"Received data: {ret_list}")
-        return ret_list
+        return ret_list # only returns the data from the registers specified
 
     def close(self):
         self.instrument.close()

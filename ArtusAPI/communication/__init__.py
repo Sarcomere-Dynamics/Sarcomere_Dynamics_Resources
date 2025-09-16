@@ -1,1 +1,2 @@
 from .communication import Communication,STARTUP_ACK,NORMAL_ACK
+from .new_communication import NewCommunication

@@ -13,6 +13,7 @@ See the LICENSE file in the repository for full details.
 import os
 import json
 import time
+
 class Commands:
 
     def __init__(self,

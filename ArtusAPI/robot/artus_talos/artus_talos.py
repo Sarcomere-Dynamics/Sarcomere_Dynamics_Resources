@@ -10,6 +10,8 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
+from ..common.FeedbackTypes import FeedbackTypes
+
 class ArtusTalos:
     def __init__(self,
                 joint_max_angles=[],
@@ -65,14 +67,17 @@ class ArtusTalos:
         # free up mem
         del self.joint_max_angles, self.joint_min_angles, self.joint_default_angles, self.joint_rotation_directions, self.joint_torques
         
-    def set_joint_angles(self, joint_angles:dict)
+    def set_joint_angles(self, joint_angles:dict):
         # verify that items are in order of index 
         sorted_items = sorted(joint_angles.items(), key=lambda x:x[1]['index'])
         ordered_joint_angles = {key:value for key,value in sorted_items}
         # set values based on index
         for name,target_data in ordered_joint_angles.items():
+            if target_data['index'] >= self.number_of_joints: # if trying to give more than the available joints, skip
+                self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints: {self.number_of_joints}")
+                continue
             self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
-            if 'target_torque' in target_data:
+            if 'target_torque' in target_data or 'velocity' in target_data: # backward compatibility with current grasp dict
                 self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
             else:
                 self.hand_joints[self.joint_names[target_data['index']]].target_torque = self.joint_torques[target_data['index']]
@@ -86,7 +91,7 @@ class ArtusTalos:
         # set values based on names
         for name,target_data in joint_angles.items():
             self.hand_joints[name].target_angle = target_data['target_angle'] * self.hand_joints[name].joint_rotation_direction
-            if 'target_torque' in target_data:
+            if 'target_torque' in target_data or 'velocity' in target_data: # backward compatibility with current grasp dicts
                 self.hand_joints[name].target_torque = target_data['target_torque']
             else:
                 self.hand_joints[name].target_torque = self.joint_torques[self.hand_joints[name].index]
@@ -128,7 +133,28 @@ class ArtusTalos:
         joint_angles = {key: {'index': value.index, 'target_angle':value.default_angle,'velocity':self.joint_velocities[value.index]} for key,value in self.hand_joints.items()}
         # print(self.hand_joints['thumb_spread'])
         return self.set_joint_angles(joint_angles)
+    
+    def get_joint_angles(self, feedback_package:list,feed_type=0):
+        """
+        Get the joint angles and feedback list data
+        and populate the feedback fields in the hand_joints dictionary
+        """
+        # TODO logging
+        try:
+            for name,joint_data in self.hand_joints.items():
+                if feed_type in [FeedbackTypes.POSITION.value,FeedbackTypes.POSITION_TORQUE.value]:
+                    joint_data.feedback_angle = feedback_package[joint_data.index]
+                if feed_type == FeedbackTypes.POSITION_TORQUE.value:
+                    joint_data.feedback_torque = feedback_package[joint_data.index+self.number_of_joints]
+                if feed_type == FeedbackTypes.TORQUE.value:
+                    joint_data.feedback_torque = feedback_package[joint_data.index]
+                if feed_type == FeedbackTypes.TEMPERATURE.value:
+                    joint_data.feedback_temperature = feedback_package[joint_data.index]
 
-    def get_joint_angles(self, feedback_package:list):
-        for name,joint in self.hand_joints.items():
-            
+            return feedback_package
+        except TypeError:
+            # TODO logging
+            return None
+        except Exception as e:
+            print(e)
+            return None
