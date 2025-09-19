@@ -198,17 +198,17 @@ class ManusGlovesHandTrackingData:
         #  ring_1,    ring_2,    ring_3,
         #  pinky_1,   pinky_2,   pinky_3]
 
-        # self.joint_angles_left = [-joint_angles_L[4],joint_angles_L[9],joint_angles_L[14], joint_angles_L[19], # thumb
-        #                       -joint_angles_L[0], joint_angles_L[5], joint_angles_L[10], # index
-        #                       -joint_angles_L[1], joint_angles_L[6], joint_angles_L[11], # middle
-        #                       -joint_angles_L[3], joint_angles_L[8], joint_angles_L[13], # ring
-        #                       -joint_angles_L[2], joint_angles_L[7], joint_angles_L[12]] # pinky
-
         self.joint_angles_left = [-joint_angles_L[4],joint_angles_L[9],joint_angles_L[14], joint_angles_L[19], # thumb
                               -joint_angles_L[0], joint_angles_L[5], joint_angles_L[10], # index
-                              0, 0, 0, # middle
-                              0, 0, 0, # ring
-                              0, 0, 0] # pinky
+                              -joint_angles_L[1], joint_angles_L[6], joint_angles_L[11], # middle
+                              -joint_angles_L[3], joint_angles_L[8], joint_angles_L[13], # ring
+                              -joint_angles_L[2], joint_angles_L[7], joint_angles_L[12]] # pinky
+
+        # self.joint_angles_left = [-joint_angles_L[4],joint_angles_L[9],joint_angles_L[14], joint_angles_L[19], # thumb
+        #                       -joint_angles_L[0], joint_angles_L[5], joint_angles_L[10], # index
+        #                       0, 0, 0, # middle
+        #                       0, 0, 0, # ring
+        #                       0, 0, 0] # pinky
         
         self.joint_angles_right = [-joint_angles_R[4],joint_angles_R[9],joint_angles_R[14], joint_angles_R[19], # thumb
                               -joint_angles_R[0], joint_angles_R[5], joint_angles_R[10], # index
