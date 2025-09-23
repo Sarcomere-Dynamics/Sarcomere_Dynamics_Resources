@@ -21,7 +21,7 @@ This repository contains the following:
 * [Examples](/examples/)
 
 Below is a list of the ARTUS hand-specific READMEs that are compatible with the API. This includes _electrical wiring specifics_, _joint maps_ and more:
-* [ARTUS Lite Information](/ArtusAPI/robot/artus_lite/README.md)
+* [ARTUS Lite Information](/ArtusAPI/robot/artus_lite/ARTUS_LITE.md)
 
 ### VERY IMPORTANT
 * [Requirements](#requirements)

@@ -14,6 +14,8 @@ import minimalmodbus
 from tqdm import tqdm
 import logging
 
+from ...common.ModbusMap import CommandType
+
 """
 RS485_RTU class for RS485 communication
 
@@ -37,7 +39,7 @@ class RS485_RTU:
 
     def open(self):
         try:
-            self.instrument = minimalmodbus.Instrument(port=self.port, slaveaddress=self.slave_address,debug=True)
+            self.instrument = minimalmodbus.Instrument(port=self.port, slaveaddress=self.slave_address,debug=False)
             self.instrument.serial.baudrate = self.baudrate
             self.instrument.serial.timeout = self.timeout
             self.instrument.address = self.slave_address
@@ -50,14 +52,23 @@ class RS485_RTU:
         
     def send(self, data:list,command:int):
         try:
-            if command == 0x06:
-                self.instrument.write_register(registeraddress=0,functioncode=0x06,value=data[0])
+            if command == CommandType.SETUP_COMMANDS.value:
+                if len(data) != 1:
+                    # Create 16-bit value from two 8-bit values
+                    # Validate that both values are 8-bit (0-255)
+                    if not (0 <= data[0] <= 255 and 0 <= data[1] <= 255):
+                        self.logger.error(f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}")
+                        return
+                    value = (data[0] << 8) | data[1]
+                else:
+                    value = data[0]
+                self.instrument.write_register(registeraddress=0,functioncode=0x06,value=data)
                 self.logger.info(f"Sent command: {command} with data: {data}")
-            elif command == 16:
+            elif command == CommandType.TARGET_COMMAND.value:
                 self.instrument.write_registers(registeraddress=data[0],values=data[1:])
                 self.logger.info(f"Sent command: {command} with data: {data}")
-            elif command == 33:
-                self.instrument.write_registers(registeraddress=data[0],values=data[1:])
+            elif command == CommandType.FIRMWARE_COMMAND.value:
+                self.instrument.write_registers(registeraddress=0,values=data) # reg addr doesn't matter for firmware commmands
                 self.logger.info(f"Sent command: {command} with data: {data}")
             else:
                 self.logger.error(f"Unknown command: {command}")

@@ -68,7 +68,15 @@ class NewCommands(Commands,ModbusMap):
         if all_have_target_angle:
             self.logger.info(f"Setting target angles")
             for name, joint_data in hand_joints.items():
-                command_list.append(int(joint_data.target_angle))
+                tmp = int(joint_data.target_angle)
+                if tmp > 127 or tmp < -128:
+                    self.logger.warning(f"Target angle {tmp} exceeds 8-bit range (-128 to 127), clamping value")
+                    tmp = max(-128, min(127, tmp))
+                self.logger.info(f"Target angle: {tmp}")
+                if joint_data.index%2 == 0:
+                    command_list.append(tmp)
+                else:
+                    command_list[-1] = command_list[-1] << 8 | tmp # this is assuming it is in order which is an OK assumption due to parameter requirement
             starting_reg = list(hand_joints.values())[0].index # get first joint index
             
             attribute = 'target_angle'
@@ -206,6 +214,8 @@ class NewCommands(Commands,ModbusMap):
         return [self.commands['get_feedback_command']]
 
     # @todo implement firmware flashing
+    def get_firmware_command(self,drivers):
+        return [self.commands['firmware_update_command'],drivers]
 
 
 class TestNewCommands(unittest.TestCase):

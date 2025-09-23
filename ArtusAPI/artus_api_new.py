@@ -50,9 +50,18 @@ class ArtusAPI_New:
         self._communication_period = 1 / communication_frequency
         self.last_time = time.perf_counter()
 
+        self.awake = False
+
+    def _check_awake(self):
+        if not self.awake:
+            self.logger.warning(f'Hand not ready, send `wake_up` command')
+            return False
+        return True
+
     def connect(self):
         self._communication_handler.open_connection()
         time.sleep(1)
+        self.wake_up()
     
     def wake_up(self):
         wake_command = self._command_handler.get_robot_start_command()
@@ -64,8 +73,11 @@ class ArtusAPI_New:
         else:
             self.logger.info("Hand ready")
             self.state = ActuatorState.ACTUATOR_IDLE
+            self.awake = True
 
     def calibrate(self,joint=0):
+        if not self._check_awake():
+            return
         calibrate_cmd = self._command_handler.get_calibration_command()
         if joint > 0:
             self.logger.info(f"Calibrating joint {joint}")
@@ -82,6 +94,8 @@ class ArtusAPI_New:
             self.state = ActuatorState.ACTUATOR_IDLE
 
     def set_joint_angles(self, joint_angles:dict):
+        if not self._check_awake():
+            return
         self._robot_handler.set_joint_angles(joint_angles)
         set_joint_angles_cmd = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
         self._communication_handler.send_data(set_joint_angles_cmd)
@@ -117,6 +131,8 @@ class ArtusAPI_New:
         return True
     
     def set_home_position(self):
+        if not self._check_awake():
+            return
         # create hand joint dict with zero value angles
         self._robot_handler.set_home_position()
         robot_set_home_position_cmd = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
@@ -125,6 +141,8 @@ class ArtusAPI_New:
         return self._communication_handler.send_data(robot_set_home_position_cmd,CommandType.TARGET_COMMAND.value)
 
     def get_joint_angles(self,dat_type=0):
+        if not self._check_awake():
+            return
         # only get status of hand
         if dat_type == 0:
             start_reg = ModbusMap().modbus_reg_map['feedback_register']
@@ -147,5 +165,48 @@ class ArtusAPI_New:
         # populate hand joint dict based on robot
         self._robot_handler.get_joint_angles(decoded_feedback_data,dat_type)
     
+    # for compatibility
+    def get_streamed_joint_angles(self,dat_type=0):
+        return self.get_joint_angles(dat_type)
+    
     def get_robot_status(self):
+        if not self._check_awake():
+            return
         feedback_data = self._communication_handler.receive_data()
+
+    def update_firmware(self,file_location=None,drivers_to_flash=None):
+        
+        if file_location is None or (isinstance(file_location, str) and not file_location.endswith('.bin')):
+            file_location = input('Please enter absolute filepath of binary file: ')
+
+        self._firmware_updater = FirmwareUpdaterNew(communication_handler=self._communication_handler,
+                                                    command_handler=self._command_handler,
+                                                    file_location=file_location,
+                                                    logger=self.logger)
+        
+        fw_size = self._firmware_updater.get_bin_file_info()
+
+        # get driver to flash
+        if drivers_to_flash == None:
+            while drivers_to_flash is None or drivers_to_flash not in range(0, 7):
+                drivers_to_flash = int(input(
+                    f'''
+                    Please Enter Drivers to Flash:
+                    0-5: Specific Actuator mapped to joint number
+                    6: All Actuators
+                    '''
+                    ))
+        
+        # send commmand
+        firmware_cmd = self._command_handler.get_firmware_command(drivers_to_flash)
+        self._communication_handler.send_data(firmware_cmd) # sent firmware upload command to command register
+
+        # send firmware data
+        self._firmware_updater.update_firmware(fw_size)
+
+        # wait for hand state ready
+        if not self._communication_handler.wait_for_ready(vis=True):
+            self.logger.error("Hand timed out waiting for ready")
+        else:
+            self.logger.info("Hand ready")
+            

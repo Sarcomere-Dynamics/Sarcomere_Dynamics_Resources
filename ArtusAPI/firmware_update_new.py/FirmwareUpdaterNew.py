@@ -15,8 +15,8 @@ import time
 import logging
 from tqdm import tqdm
 
-from ..communication.new_communication import CommandType
-BYTES_CHUNK = 128
+from ..common.ModbusMap import CommandType
+BYTES_CHUNK = 200
 
 
 class FirmwareUpdaterNew:
@@ -38,16 +38,43 @@ class FirmwareUpdaterNew:
         self.logger.info(f"Bin file size = {file_size} @ location {self.file_location}")
         return file_size
 
-    def send_firmware(self,file_size):
+    # this function is only managing sending the actuatl binary data to the master
+    # it is not managing starting the firmware update process on the master
+    def update_firmware(self,file_size):
         i = 0
         ret = False
-        with tqdm(total=len(file_data), unit="B", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
-            while i < len(file_data):
-                chunk = list(file_data[i:i+BYTES_CHUNK])
+
+        file = open(self.file_location,'rb')
+        file_data = file.read()
+        file.close()
+
+        chunks_required = int(file_size/BYTES_CHUNK) + 1
+        self.logger.info(f"Binary File will be sent in {BYTES_CHUNK} byte packages for a total of {chunks_required} chunks")
+        
+        with tqdm(total=file_size, unit="B", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
+            while i < file_size:
+                if i+BYTES_CHUNK > file_size:
+                    chunk = list(file_data[i:])
+                    while len(chunk) < BYTES_CHUNK:
+                        chunk.append(0xFF)
+                else:
+                    chunk = list(file_data[i:i+BYTES_CHUNK])
+
+                # take each pair and make it into a 16bit value
+                for pc in range(0, len(chunk), 2):
+                    if pc + 1 < len(chunk):
+                        chunk[pc] = chunk[pc] << 8 | chunk[pc + 1]
+                    else:
+                        chunk[pc] = chunk[pc] << 8 | 0x00
+
+                chunk.insert(0,self._command_handler.commands['firmware_update_command']) # this has to be the first element every time
+
                 self._communication_handler.send_data(chunk,CommandType.FIRMWARE_COMMAND.value)
                 i += BYTES_CHUNK
                 pbar.update(BYTES_CHUNK)
-                time.sleep(0.01)
-                if ret:
-                    i += BYTES_CHUNK
-                    ret = 0
+
+        # send eof is when firmware update commmand is not the  first element in the list
+        eof_list = [0x0,0x0]
+        self._communication_handler.send_data(eof_list,CommandType.FIRMWARE_COMMAND.value)
+
+        self.logger.info("Firmware Update is in progress..")

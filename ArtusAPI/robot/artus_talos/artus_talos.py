@@ -11,6 +11,7 @@ See the LICENSE file in the repository for full details.
 """
 
 from ...common.FeedbackTypes import FeedbackTypes
+from ...sensors import ForceSensor
 
 class ArtusTalos:
     def __init__(self,
@@ -22,6 +23,17 @@ class ArtusTalos:
                 joint_names=['thumb_spread','thumb_flex','index_flex',
                             'middle_flex','ring_flex','pinky_flex'],
                 number_of_joints=6):
+
+        # force sensor init
+        self.force_sensors = {}
+        fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
+        indices = [[0,1],[2],[3],[4],[5]]
+        
+        for i in range(len(fingers)):
+            self.force_sensors[fingers[i]] = {
+                'data' : ForceSensor(),
+                'indices' : indices[i]
+            }
         
         self.joint_max_angles = joint_max_angles
         self.joint_min_angles = joint_min_angles
@@ -30,7 +42,6 @@ class ArtusTalos:
         self.joint_torques = joint_torques
         self.joint_names = joint_names
         self.number_of_joints = number_of_joints
-        
         
         class Joint:
             def __init__(self, index, min_angle, max_angle, default_angle, target_angle, target_torque, temperature, joint_rotation_direction):
@@ -151,6 +162,8 @@ class ArtusTalos:
                     joint_data.feedback_torque = feedback_package[joint_data.index]
                 if feed_type == FeedbackTypes.TEMPERATURE.value:
                     joint_data.feedback_temperature = feedback_package[joint_data.index]
+                if feed_type == FeedbackTypes.FORCE_SENSOR.value:
+                    joint_data.feedback_force = feedback_package[joint_data.index]
 
             return feedback_package
         except TypeError:

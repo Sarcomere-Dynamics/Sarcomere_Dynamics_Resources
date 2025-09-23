@@ -16,26 +16,7 @@ import struct
 from tqdm import tqdm
 
 from .RS485_RTU.rs485_rtu import RS485_RTU
-from ..common.ModbusMap import ModbusMap
-
-from enum import Enum
-
-class ActuatorState(Enum):
-    ACTUATOR_INITIALIZING = 0
-    ACTUATOR_IDLE = 1
-    ACTUATOR_CALIBRATING_LL = 2  # calibrating the rotor position for foc
-    ACTUATOR_CALIBRATED_LL = 3
-    ACTUATOR_CALIBRATING_HL = 4  # calibrating the endstop position finding for homing
-    ACTUATOR_CALIBRATING_STROKE = 5  # calibrating the stroke of the finger
-    ACTUATOR_CALIBRATION_FAILED = 6
-    ACTUATOR_READY = 7  # ready to receive commmands, setup control modes, etc.
-    ACTUATOR_WAIT_ACK = 8  # wait for ack from actuator
-    ACTUATOR_ERROR = 9
-
-class CommandType(Enum):
-    SETUP_COMMANDS = 6
-    TARGET_COMMAND = 16
-    FIRMWARE_COMMAND = 33
+from ..common.ModbusMap import ModbusMap,ActuatorState,CommandType
 
 class NewCommunication:
     def __init__(self, port='COM9', baudrate=115200, logger=None, slave_address=1, communication_method="RS485_RTU"):
@@ -51,10 +32,13 @@ class NewCommunication:
 
         self._setup_communication()
 
+        self.roundtrip_time = 0
+        self.n_trips = 0
+
     
     def _setup_communication(self):
         if self.communication_method == "RS485_RTU":
-            self.communicator = RS485_RTU(port=self.port, baudrate=self.baudrate, timeout=0.5, logger=self.logger, slave_address=self.slave_address)
+            self.communicator = RS485_RTU(port=self.port, baudrate=self.baudrate, timeout=0.1, logger=self.logger, slave_address=self.slave_address)
         else:
             raise ValueError("Unknown communication method")
 
@@ -62,6 +46,8 @@ class NewCommunication:
         self.communicator.open()
 
     def send_data(self, data:list,command_type:int=CommandType.SETUP_COMMANDS.value):
+        if len(data) > 1 and len(data)%2 != 0:
+            self.logger.error(f"Data length should be even")
         self.communicator.send(data,command_type)
 
     def receive_data(self,amount_dat:int=1,start:int=ModbusMap().modbus_reg_map['feedback_register']): # default is receive robot state
@@ -70,12 +56,14 @@ class NewCommunication:
     def close_connection(self):
         self.communicator.close()
 
-    def wait_for_ready(self,timeout=30,vis=False):
+    def wait_for_ready(self,timeout=5,vis=False):
         start_time = time.perf_counter()
 
         def _check_robot_state(self):
             """Helper function to check robot state and return status"""
             ret = self.receive_data()
+            self.roundtrip_time += self.communicator.instrument.roundtrip_time
+            self.n_trips += 1
             if isinstance(ret, int) and ret <= 0xFFFF:  # Check if ret is a 16-bit value
                 high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits
                 low_byte = ret & 0xFF          # Extract lower 8 bits
@@ -95,10 +83,16 @@ class NewCommunication:
                     result = _check_robot_state(self)
                     if result is not None:
                         return result
-                    time.sleep(0.05)
+                    time.sleep(0.1)
+                    if progresbar.n + 0.1 >= timeout:
+                        self.logger.error("Timeout waiting for robot ready")
+                        break
+                    progresbar.update(0.1)
+                self.logger.info(f"Roundtrip time: {self.roundtrip_time/self.n_trips} seconds")
+                print(f"Roundtrip time: {self.roundtrip_time/self.n_trips} seconds")
         else:
             while 1:
                 result = self._check_robot_state()
                 if result is not None:
                     return result
-                time.sleep(0.05)
+                time.sleep(0.1)

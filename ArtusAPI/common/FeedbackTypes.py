@@ -5,3 +5,4 @@ class FeedbackTypes(Enum):
     POSITION_TORQUE = 1
     TORQUE = 2
     TEMPERATURE = 3
+    FORCE_SENSOR = 4

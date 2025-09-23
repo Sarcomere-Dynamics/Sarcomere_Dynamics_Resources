@@ -20,6 +20,10 @@ import sys
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
+
+# import the configuration file
+from Sarcomere_Dynamics_Resources.examples.general_example.config.config import ArtusLiteConfig
+
 # import ArtusAPI
 try:
     from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
@@ -27,8 +31,9 @@ try:
 except ModuleNotFoundError:
     from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
     print("Using local version of ArtusAPI")
-# import the configuration file
-from Sarcomere_Dynamics_Resources.examples.general_example.config.config import ArtusLiteConfig
+
+# import ArtusAPI_New
+from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api_new import ArtusAPI_New
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------
@@ -88,16 +93,28 @@ def setup_logger():
 def example():
     # Load the configuration file
     config = ArtusLiteConfig()
+
+    artusapi = None
+    # new api
+    if 'talos' in config.config.robot.artusLite.robot_type:
+        artusapi = ArtusAPI_New(hand_type=config.config.robot.artusLite.hand_type,
+                                robot_type=config.config.robot.artusLite.robot_type,
+                                communication_method=config.config.robot.artusLite.communication_method,
+                                communication_channel_identifier=config.config.robot.artusLite.communication_channel_identifier,
+                                baudrate=921600,
+                                communication_frequency=33,
+                                logger=setup_logger())
+    else:
     # Create an instance of the ArtusAPI class using the configuration file
-    artusapi = ArtusAPI(hand_type=config.config.robot.artusLite.hand_type,
-                        robot_type=config.config.robot.artusLite.robot_type,
-                        communication_method=config.config.robot.artusLite.communication_method,
-                        communication_channel_identifier=config.config.robot.artusLite.communication_channel_identifier,
-                        reset_on_start=config.config.robot.artusLite.reset_on_start,
-                        awake = config.config.robot.artusLite.awake,
-                        baudrate=921600,
-                        communication_frequency=33,
-                        logger=setup_logger())
+        artusapi = ArtusAPI(hand_type=config.config.robot.artusLite.hand_type,
+                            robot_type=config.config.robot.artusLite.robot_type,
+                            communication_method=config.config.robot.artusLite.communication_method,
+                            communication_channel_identifier=config.config.robot.artusLite.communication_channel_identifier,
+                            reset_on_start=config.config.robot.artusLite.reset_on_start,
+                            awake = config.config.robot.artusLite.awake,
+                            baudrate=921600,
+                            communication_frequency=33,
+                            logger=setup_logger())
     # Path to the hand poses
     hand_poses_path = os.path.join(PROJECT_ROOT,'Sarcomere_Dynamics_Resources','data','hand_poses')
     # Main loop (example)
@@ -140,37 +157,64 @@ def example():
                     grasp_dict = json.load(file)
                     artusapi.set_joint_angles(grasp_dict) 
             case 'f':
-                artusapi.update_firmware(upload_flag=None,file_location=None,drivers_to_flash=None)  
-            case 'r':
-                artusapi.reset()
-            case 'c':
-                artusapi.hard_close()
-            case 's':
-                while True:
-                    n = input('Enter index value to save grasp in (1-6):')
-                    num = None if not n else int(n) if n.isdigit() and 1 <= int(n) <= 6 else None
-                    if num is not None or num is None and not n:
-                        break
-                if num == None:
-                    artusapi.save_grasp_onhand() # default save index 1
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('firmware update is not supported yet')
                 else:
-                    artusapi.save_grasp_onhand(num)
+                    artusapi.update_firmware(upload_flag=None,file_location=None,drivers_to_flash=None)  
+            case 'r':
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('reset is not supported yet')
+                else:
+                    artusapi.reset()
+            case 'c':
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('hard close is not supported yet')
+                else:
+                    artusapi.hard_close()
+            case 's':
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('save grasp is not supported yet')
+                else:
+                    while True:
+                        n = input('Enter index value to save grasp in (1-6):')
+                        num = None if not n else int(n) if n.isdigit() and 1 <= int(n) <= 6 else None
+                        if num is not None or num is None and not n:
+                            break
+                    if num == None:
+                        artusapi.save_grasp_onhand() # default save index 1
+                    else:
+                        artusapi.save_grasp_onhand(num)
             case 'g':
-                artusapi.get_saved_grasps_onhand()
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('get saved grasps is not supported yet')
+                else:
+                    artusapi.get_saved_grasps_onhand()
             case 'p':
-                artusapi.update_param()
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('update param is not supported yet')
+                else:
+                    artusapi.update_param()
             case 'e':
-                while True:
-                    n = input('Enter index value to execute grasp from (1-6):')
-                    num = None if not n else int(n) if n.isdigit() and 1 <= int(n) <= 6 else None
-                    if num is not None:
-                        break
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('execute grasp is not supported yet')
+                else:
+                    while True:
+                        n = input('Enter index value to execute grasp from (1-6):')
+                        num = None if not n else int(n) if n.isdigit() and 1 <= int(n) <= 6 else None
+                        if num is not None:
+                            break
 
                 artusapi.execute_grasp(num)
             case 'w':
-                artusapi.wipe_sd()
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('wipe sd is not supported yet')
+                else:
+                    artusapi.wipe_sd()
             case 'q':
-                artusapi.set_zero_manual_calibration()
+                if 'talos' in config.config.robot.artusLite.robot_type:
+                    print('set zero manual calibration is not supported yet')
+                else:
+                    artusapi.set_zero_manual_calibration()
 
 
 # ----------------------------------------------------------------------------------
