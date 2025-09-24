@@ -32,13 +32,12 @@ class NewCommunication:
 
         self._setup_communication()
 
-        self.roundtrip_time = 0
-        self.n_trips = 0
+        self.ntrips = 0
 
     
     def _setup_communication(self):
         if self.communication_method == "RS485_RTU":
-            self.communicator = RS485_RTU(port=self.port, baudrate=self.baudrate, timeout=0.1, logger=self.logger, slave_address=self.slave_address)
+            self.communicator = RS485_RTU(port=self.port, baudrate=self.baudrate, timeout=0.018, logger=self.logger, slave_address=self.slave_address)
         else:
             raise ValueError("Unknown communication method")
 
@@ -46,8 +45,8 @@ class NewCommunication:
         self.communicator.open()
 
     def send_data(self, data:list,command_type:int=CommandType.SETUP_COMMANDS.value):
-        if len(data) > 1 and len(data)%2 != 0:
-            self.logger.error(f"Data length should be even")
+        # if len(data) > 1 and len(data)%2 != 0:
+        #     self.logger.error(f"Data length should be even")
         self.communicator.send(data,command_type)
 
     def receive_data(self,amount_dat:int=1,start:int=ModbusMap().modbus_reg_map['feedback_register']): # default is receive robot state
@@ -62,8 +61,6 @@ class NewCommunication:
         def _check_robot_state(self):
             """Helper function to check robot state and return status"""
             ret = self.receive_data()
-            self.roundtrip_time += self.communicator.instrument.roundtrip_time
-            self.n_trips += 1
             if isinstance(ret, int) and ret <= 0xFFFF:  # Check if ret is a 16-bit value
                 high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits
                 low_byte = ret & 0xFF          # Extract lower 8 bits
@@ -81,18 +78,27 @@ class NewCommunication:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:
                     result = _check_robot_state(self)
+                    time_diff = time.perf_counter() - start_time
+                    self.ntrips += 1
                     if result is not None:
                         return result
-                    time.sleep(0.1)
-                    if progresbar.n + 0.1 >= timeout:
+                    # time.sleep(0.1)
+                    if progresbar.n + time_diff >= timeout:
                         self.logger.error("Timeout waiting for robot ready")
                         break
-                    progresbar.update(0.1)
-                self.logger.info(f"Roundtrip time: {self.roundtrip_time/self.n_trips} seconds")
-                print(f"Roundtrip time: {self.roundtrip_time/self.n_trips} seconds")
+                    progresbar.update(time_diff)
+                    start_time = time.perf_counter()
+                self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
+                print(f"Roundtrip time: {self.ntrips/timeout} trips per second")
         else:
             while 1:
-                result = self._check_robot_state()
+                result = _check_robot_state(self)
+                self.ntrips += 1
                 if result is not None:
                     return result
-                time.sleep(0.1)
+                # time.sleep(0.1)
+                if time.perf_counter() - start_time > timeout:
+                    self.logger.error("Timeout waiting for robot ready")
+                    break
+            self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
+            print(f"Roundtrip time: {self.ntrips/timeout} trips per second")

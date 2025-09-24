@@ -1,1 +1,2 @@
 from .firmware_updater import FirmwareUpdater
+from .FirmwareUpdaterNew import FirmwareUpdaterNew

@@ -86,11 +86,14 @@ class ArtusTalos:
         # set values based on index
         for name,target_data in ordered_joint_angles.items():
             if target_data['index'] >= self.number_of_joints: # if trying to give more than the available joints, skip
-                self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints: {self.number_of_joints}")
+                # self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints: {self.number_of_joints}")
                 continue
             self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
             if 'target_torque' in target_data or 'velocity' in target_data: # backward compatibility with current grasp dict
-                self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
+                if 'velocity' in target_data:
+                    self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['velocity']
+                else:
+                    self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
             else:
                 self.hand_joints[self.joint_names[target_data['index']]].target_torque = self.joint_torques[target_data['index']]
 
@@ -102,9 +105,15 @@ class ArtusTalos:
         """
         # set values based on names
         for name,target_data in joint_angles.items():
+            if name not in self.hand_joints:
+                # self.logger.warning(f"Trying to set joint {name} which is not in the hand_joints dictionary")
+                continue
             self.hand_joints[name].target_angle = target_data['target_angle'] * self.hand_joints[name].joint_rotation_direction
             if 'target_torque' in target_data or 'velocity' in target_data: # backward compatibility with current grasp dicts
-                self.hand_joints[name].target_torque = target_data['target_torque']
+                if 'velocity' in target_data:
+                    self.hand_joints[name].target_torque = target_data['velocity']
+                else:
+                    self.hand_joints[name].target_torque = target_data['target_torque']
             else:
                 self.hand_joints[name].target_torque = self.joint_torques[self.hand_joints[name].index]
         self._check_joint_limits(self.hand_joints)

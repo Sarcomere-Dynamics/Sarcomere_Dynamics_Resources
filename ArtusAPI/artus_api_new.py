@@ -17,6 +17,7 @@ from .common.ModbusMap import ModbusMap
 from .commands import NewCommands
 from .communication.new_communication import NewCommunication,ActuatorState,CommandType
 from .robot import Robot
+from .firmware_update import FirmwareUpdaterNew
 
 class ArtusAPI_New:
     """
@@ -53,22 +54,22 @@ class ArtusAPI_New:
         self.awake = False
 
     def _check_awake(self):
-        if not self.awake:
-            self.logger.warning(f'Hand not ready, send `wake_up` command')
-            return False
+        # if not self.awake:
+        #     self.logger.warning(f'Hand not ready, send `wake_up` command')
+        #     return False
         return True
 
     def connect(self):
         self._communication_handler.open_connection()
         time.sleep(1)
-        self.wake_up()
+        # self.wake_up()
     
     def wake_up(self):
         wake_command = self._command_handler.get_robot_start_command()
         self._communication_handler.send_data(wake_command)
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True):
+        if not self._communication_handler.wait_for_ready(vis=False):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")
@@ -96,18 +97,17 @@ class ArtusAPI_New:
     def set_joint_angles(self, joint_angles:dict):
         if not self._check_awake():
             return
-        self._robot_handler.set_joint_angles(joint_angles)
+        self._robot_handler.set_joint_angles(joint_angles,name=True)
         set_joint_angles_cmd = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
-        self._communication_handler.send_data(set_joint_angles_cmd)
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True):
-            self.logger.error("Hand timed out waiting for ready")
-        else:
-            self.logger.info("Hand ready")
+        # if not self._communication_handler.wait_for_ready(vis=True):
+        #     self.logger.error("Hand timed out waiting for ready")
+        # else:
+        #     self.logger.info("Hand ready")
 
-        if not self._check_communication_frequency(0):
-            return False
+        # if not self._check_communication_frequency(0):
+        #     return False
         
         return self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
 
@@ -146,16 +146,16 @@ class ArtusAPI_New:
         # only get status of hand
         if dat_type == 0:
             start_reg = ModbusMap().modbus_reg_map['feedback_register']
-            amount_data = math.ceil(self.num_joints/2) + 1
+            amount_data = math.ceil(self._robot_handler.robot.number_of_joints/2) + 1
         elif dat_type == 1:
             start_reg = ModbusMap().modbus_reg_map['feedback_register']
-            amount_data = math.ceil(self.num_joints/2) + 1 + self.num_joints*2
+            amount_data = math.ceil(self._robot_handler.robot.number_of_joints/2) + 1 + self._robot_handler.robot.number_of_joints*2
         elif dat_type == 2:
             start_reg = ModbusMap().modbus_reg_map['feedback_torque_start_reg']
-            amount_data = self.num_joints*2
+            amount_data = self.robot_handler.robot.number_of_joints*2
         elif dat_type == 3:
             start_reg = ModbusMap().modbus_reg_map['feedback_temperature_start_reg']
-            amount_data = math.ceil(self.num_joints/2)
+            amount_data = math.ceil(self.robot_handler.robot.number_of_joints/2)
         else:
             raise ValueError("Invalid data type")
 

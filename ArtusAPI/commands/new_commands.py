@@ -68,6 +68,7 @@ class NewCommands(Commands,ModbusMap):
         if all_have_target_angle:
             self.logger.info(f"Setting target angles")
             for name, joint_data in hand_joints.items():
+                # command_list.append(int(joint_data.target_angle))
                 tmp = int(joint_data.target_angle)
                 if tmp > 127 or tmp < -128:
                     self.logger.warning(f"Target angle {tmp} exceeds 8-bit range (-128 to 127), clamping value")
@@ -81,7 +82,8 @@ class NewCommands(Commands,ModbusMap):
             
             attribute = 'target_angle'
             command_list.insert(0, self.modbus_reg_map['target_position_start_reg'] + int(starting_reg/2))
-            self.logger.info(f"Starting register: {self.modbus_reg_map['target_position_start_reg'] + int(starting_reg/2)}")
+            command_list.insert(0, 0)
+            # self.logger.info(f"Starting register: {self.modbus_reg_map['target_position_start_reg'] + int(starting_reg/2)}")
 
         if all_have_target_torque:
             self.logger.info(f"Setting target angles")
@@ -99,7 +101,7 @@ class NewCommands(Commands,ModbusMap):
             if attribute is None: # only if target_angle is not actively being set/used
                 starting_reg = list(hand_joints.values())[0].index # get first joint index
                 command_list.insert(0, self.modbus_reg_map['target_torque_start_reg'] + int(starting_reg*2))
-                self.logger.info(f"Starting register: {self.modbus_reg_map['target_torque_start_reg'] + int(starting_reg*2)}")
+                # self.logger.info(f"Starting register: {self.modbus_reg_map['target_torque_start_reg'] + int(starting_reg*2)}")
 
         return command_list
 

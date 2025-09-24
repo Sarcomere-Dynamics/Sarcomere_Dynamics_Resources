@@ -16,7 +16,7 @@ import logging
 from tqdm import tqdm
 
 from ..common.ModbusMap import CommandType
-BYTES_CHUNK = 200
+BYTES_CHUNK = 64
 
 
 class FirmwareUpdaterNew:
