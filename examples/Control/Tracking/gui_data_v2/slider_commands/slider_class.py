@@ -16,6 +16,130 @@ from PyQt5.QtGui import QColor
 import numpy as np
 
 
+class EditableValueLabel(QtWidgets.QLabel):
+    """
+    A custom QLabel that supports double-click editing for joint values.
+    """
+    def __init__(self, text, title, joint_number, slider, min_value, max_value, parent=None):
+        super().__init__(text, parent)
+        self.title = title
+        self.joint_number = joint_number
+        self.slider = slider
+        self.min_value = min_value
+        self.max_value = max_value
+        self.is_editing = False
+        self.parent_controller = None
+        
+        # EditableValueLabel created
+        
+        # Set up the label appearance
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(False)
+        self.setFont(font)
+        self.setAlignment(QtCore.Qt.AlignCenter)
+        self.setStyleSheet("""
+            QLabel {
+                color: black; 
+                border: 1px solid transparent; 
+                padding: 2px;
+                background-color: transparent;
+            }
+            QLabel:hover {
+                border: 1px solid gray; 
+                background-color: #f0f0f0;
+                cursor: pointer;
+            }
+        """)
+        
+        # Enable mouse tracking for hover effects
+        self.setMouseTracking(True)
+        
+        # Install event filter for more reliable event handling
+        self.installEventFilter(self)
+    
+    def set_parent_controller(self, controller):
+        """Set the parent controller to handle edit operations."""
+        self.parent_controller = controller
+    
+    def reset_editing_state(self):
+        """Reset the editing state if it gets stuck."""
+        self.is_editing = False
+        self.setStyleSheet("""
+            QLabel {
+                color: black; 
+                border: 1px solid transparent; 
+                padding: 2px;
+                background-color: transparent;
+            }
+            QLabel:hover {
+                border: 1px solid gray; 
+                background-color: #f0f0f0;
+                cursor: pointer;
+            }
+        """)
+    
+    def eventFilter(self, obj, event):
+        """Event filter for more reliable mouse event handling."""
+        if obj == self:
+            if event.type() == QtCore.QEvent.MouseButtonDblClick:
+                # Reset editing state if it's stuck
+                if self.is_editing:
+                    self.reset_editing_state()
+                
+                if event.button() == QtCore.Qt.LeftButton and self.parent_controller and not self.is_editing:
+                    self.parent_controller._start_edit_value(self)
+                    return True
+            elif event.type() == QtCore.QEvent.MouseButtonPress:
+                if event.button() == QtCore.Qt.LeftButton:
+                    pass  # Single click detected
+            elif event.type() == QtCore.QEvent.Enter:
+                pass  # Mouse entered
+            elif event.type() == QtCore.QEvent.Leave:
+                pass  # Mouse left
+        
+        return super().eventFilter(obj, event)
+    
+    def mouseDoubleClickEvent(self, event):
+        """Handle double-click events to start editing."""
+        if event.button() == QtCore.Qt.LeftButton and self.parent_controller and not self.is_editing:
+            self.parent_controller._start_edit_value(self)
+        super().mouseDoubleClickEvent(event)
+    
+    def mousePressEvent(self, event):
+        """Handle single click events."""
+        if event.button() == QtCore.Qt.LeftButton:
+            pass  # Single click detected
+        super().mousePressEvent(event)
+    
+    def enterEvent(self, event):
+        """Handle mouse enter events for hover effects."""
+        if not self.is_editing:
+            self.setStyleSheet("""
+                QLabel {
+                    color: black; 
+                    border: 1px solid gray; 
+                    padding: 2px;
+                    background-color: #f0f0f0;
+                    cursor: pointer;
+                }
+            """)
+        super().enterEvent(event)
+    
+    def leaveEvent(self, event):
+        """Handle mouse leave events for hover effects."""
+        if not self.is_editing:
+            self.setStyleSheet("""
+                QLabel {
+                    color: black; 
+                    border: 1px solid transparent; 
+                    padding: 2px;
+                    background-color: transparent;
+                }
+            """)
+        super().leaveEvent(event)
+
+
 class SliderControl:
     def __init__(self, rows=5, cols=4, win=None):
         self.rows = rows
@@ -119,6 +243,196 @@ class SliderControl:
         label.setStyleSheet(f"color: {color.name()}")
         return label
     
+    def create_editable_value_label(self, text, title, joint_number, slider, min_value, max_value):
+        """
+        Create an editable value label that allows double-click to edit the value.
+        """
+        label = EditableValueLabel(text, title, joint_number, slider, min_value, max_value)
+        label.set_parent_controller(self)
+        return label
+    
+    def _start_edit_value(self, label):
+        """
+        Start editing the value label by replacing it with a line edit.
+        """
+        # Reset editing state if it's stuck
+        if label.is_editing:
+            label.reset_editing_state()
+            return
+        
+        # Double-check that we're not already editing
+        if label.is_editing:
+            return
+            
+        label.is_editing = True
+        
+        # Create a line edit widget
+        line_edit = QtWidgets.QLineEdit()
+        line_edit.setText(label.text())
+        line_edit.setAlignment(QtCore.Qt.AlignCenter)
+        line_edit.setFont(label.font())
+        line_edit.setStyleSheet("border: 2px solid blue; padding: 2px; background-color: white;")
+        
+        # Ensure the line edit is properly focused and ready for editing
+        line_edit.setFocus()
+        line_edit.activateWindow()
+        line_edit.raise_()
+        line_edit.selectAll()
+        
+        # Force the line edit to be editable
+        line_edit.setReadOnly(False)
+        line_edit.setEnabled(True)
+        
+        # Position the line edit over the label
+        parent_widget = label.parent()
+        if parent_widget:
+            # Get the label's geometry relative to its parent
+            label_rect = label.geometry()
+            line_edit.setGeometry(label_rect)
+        else:
+            return
+        
+        # Set the line edit as a child of the same parent as the label
+        line_edit.setParent(parent_widget)
+        
+        # Make the label transparent but keep it in layout to maintain space
+        label.setStyleSheet("color: transparent; border: 1px solid transparent; padding: 2px; background-color: transparent;")
+        line_edit.show()
+        line_edit.raise_()  # Bring to front
+        
+        # Ensure the line edit gets focus after being shown
+        QtCore.QTimer.singleShot(10, lambda: line_edit.setFocus())
+        
+        # Store reference to the line edit
+        label.line_edit = line_edit
+        
+        # Connect signals
+        line_edit.returnPressed.connect(lambda: self._finish_edit_value(label))
+        line_edit.editingFinished.connect(lambda: self._finish_edit_value(label))
+        
+        # Handle focus out event properly
+        def focus_out_event(event):
+            self._finish_edit_value(label)
+            QtWidgets.QLineEdit.focusOutEvent(line_edit, event)
+        
+        line_edit.focusOutEvent = focus_out_event
+        
+        # Install event filter on parent widget to detect clicks outside
+        if parent_widget:
+            self.click_filter = self._create_click_outside_filter(line_edit, label)
+            parent_widget.installEventFilter(self.click_filter)
+        
+        # Handle escape key to cancel editing
+        def key_press_event(event):
+            if event.key() == QtCore.Qt.Key_Escape:
+                self._cancel_edit_value(label)
+            else:
+                QtWidgets.QLineEdit.keyPressEvent(line_edit, event)
+        
+        line_edit.keyPressEvent = key_press_event
+    
+    def _finish_edit_value(self, label):
+        """
+        Finish editing and update the slider value.
+        """
+        if not label.is_editing or not hasattr(label, 'line_edit'):
+            return
+            
+        line_edit = label.line_edit
+        try:
+            # Get the new value and validate it
+            new_value = int(line_edit.text())
+            
+            # Clamp the value to the valid range
+            new_value = max(label.min_value, min(label.max_value, new_value))
+            
+            # Update the slider value
+            label.slider.setValue(new_value)
+            
+            # Update the joint value (this will trigger the ZMQ publisher)
+            self._update_joint_value(label.title, label.joint_number, new_value)
+            
+        except ValueError:
+            # If the input is not a valid integer, revert to the original value
+            new_value = label.slider.value()
+        
+        # Restore the label
+        self._restore_label(label, str(new_value))
+    
+    def _cancel_edit_value(self, label):
+        """
+        Cancel editing and restore the original value.
+        """
+        if not label.is_editing or not hasattr(label, 'line_edit'):
+            return
+            
+        # Restore the label with the current slider value
+        original_value = label.slider.value()
+        self._restore_label(label, str(original_value))
+    
+    def _restore_label(self, label, text):
+        """
+        Restore the label widget and remove the line edit.
+        """
+        if not label.is_editing or not hasattr(label, 'line_edit'):
+            return
+            
+        line_edit = label.line_edit
+        
+        # Hide the line edit and show the label
+        line_edit.hide()
+        line_edit.setParent(None)  # Remove from parent
+        
+        # Remove the click outside filter
+        if hasattr(self, 'click_filter'):
+            parent_widget = label.parent()
+            if parent_widget:
+                parent_widget.removeEventFilter(self.click_filter)
+            delattr(self, 'click_filter')
+        
+        # Update the label text
+        label.setText(text)
+        
+        # Clean up
+        line_edit.deleteLater()
+        delattr(label, 'line_edit')
+        label.is_editing = False
+        
+        # Reset the label style
+        label.setStyleSheet("""
+            QLabel {
+                color: black; 
+                border: 1px solid transparent; 
+                padding: 2px;
+                background-color: transparent;
+            }
+            QLabel:hover {
+                border: 1px solid gray; 
+                background-color: #f0f0f0;
+                cursor: pointer;
+            }
+        """)
+        # Label restored
+    
+    def _create_click_outside_filter(self, line_edit, label):
+        """Create an event filter to detect clicks outside the line edit."""
+        class ClickOutsideFilter(QtCore.QObject):
+            def __init__(self, line_edit, label, parent_controller):
+                super().__init__()
+                self.line_edit = line_edit
+                self.label = label
+                self.parent_controller = parent_controller
+            
+            def eventFilter(self, obj, event):
+                if event.type() == QtCore.QEvent.MouseButtonPress:
+                    # If click is outside the line edit, finish editing
+                    if obj != self.line_edit and not self.line_edit.geometry().contains(event.pos()):
+                        self.parent_controller._finish_edit_value(self.label)
+                        return True
+                return False
+        
+        return ClickOutsideFilter(line_edit, label, self)
+    
     def create_slider_with_value(self, title, joint_number, value=0, min_value=0, max_value=100, tick_interval=10, row=0, col=0):
         layout = QtWidgets.QVBoxLayout() 
 
@@ -137,8 +451,8 @@ class SliderControl:
         # callback function
         slider.valueChanged.connect(lambda value: self._update_joint_value(title, joint_number, value))
 
-        # value label
-        value_label = self.create_label(str(value), size=10, alignment=QtCore.Qt.AlignCenter, color=QColor('black'), bold=False)
+        # value label - make it editable on double-click
+        value_label = self.create_editable_value_label(str(value), title, joint_number, slider, min_value, max_value)
 
         slider.valueChanged.connect(lambda value: value_label.setText(str(value)))
 
