@@ -1,1 +1,82 @@
-{"Thumb_1": 35, "Thumb_2": 43, "Thumb_3": 16, "Thumb_4": 17, "Index_1": 0, "Index_2": 69, "Index_3": 28, "Middle_1": 0, "Middle_2": 65, "Middle_3": 24, "Ring_1": 0, "Ring_2": 60, "Ring_3": 21, "Pinky_1": 0, "Pinky_2": 57, "Pinky_3": 42}
+{
+    "thumb_spread": {
+        "target_angle": 35,
+        "velocity": 50,
+        "index": 0
+    },
+    "thumb_flex": {
+        "target_angle": 43,
+        "velocity": 50,
+        "index": 1
+    },
+    "thumb_d2": {
+        "target_angle": 16,
+        "velocity": 50,
+        "index": 2
+    },
+    "thumb_d1": {
+        "target_angle": 17,
+        "velocity": 50,
+        "index": 3
+    },
+    "index_spread": {
+        "target_angle": 0,
+        "velocity": 50,
+        "index": 4
+    },
+    "index_flex": {
+        "target_angle": 69,
+        "velocity": 50,
+        "index": 5
+    },
+    "index_d2": {
+        "target_angle": 28,
+        "velocity": 50,
+        "index": 6
+    },
+    "middle_spread": {
+        "target_angle": 0,
+        "velocity": 50,
+        "index": 7
+    },
+    "middle_flex": {
+        "target_angle": 65,
+        "velocity": 50,
+        "index": 8
+    },
+    "middle_d2": {
+        "target_angle": 24,
+        "velocity": 50,
+        "index": 9
+    },
+    "ring_spread": {
+        "target_angle": 0,
+        "velocity": 50,
+        "index": 10
+    },
+    "ring_flex": {
+        "target_angle": 60,
+        "velocity": 50,
+        "index": 11
+    },
+    "ring_d2": {
+        "target_angle": 21,
+        "velocity": 50,
+        "index": 12
+    },
+    "pinky_spread": {
+        "target_angle": 0,
+        "velocity": 50,
+        "index": 13
+    },
+    "pinky_flex": {
+        "target_angle": 57,
+        "velocity": 50,
+        "index": 14
+    },
+    "pinky_d2": {
+        "target_angle": 42,
+        "velocity": 50,
+        "index": 15
+    }
+}

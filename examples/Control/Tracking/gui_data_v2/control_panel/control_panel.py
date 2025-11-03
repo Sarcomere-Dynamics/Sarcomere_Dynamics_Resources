@@ -23,6 +23,13 @@ class ControlPanelWidget(QtWidgets.QWidget):
         self.hand_poses_directory = hand_poses_directory
 
         self.slider_control = slider_control  # Pass slider control to interact with the sliders
+        
+        # Store velocities per joint (preserved from loaded files)
+        # Maps: {"thumb_spread": 50, "thumb_flex": 50, ...}
+        # Default velocity used when no velocity was previously loaded
+        self.default_velocity = 50
+        self.joint_velocities = {}
+        
         # self.layout = QtWidgets.QVBoxLayout() # for vertical layout
         self.layout = QtWidgets.QHBoxLayout()  # for horizontal layout
 
@@ -102,18 +109,50 @@ class ControlPanelWidget(QtWidgets.QWidget):
         print(f"Sending data: {data}")
 
     def save_data(self):
-        # Save the current slider values to a file
+        # Save the current slider values to a file in grasp format
         filename = self.save_filename_input.text()
         if not filename:
             print("Please enter a filename.")
             return
 
-        data = self.slider_control.get_joint_values()  # Use joint values instead of slider values
+        # Map from internal slider keys to grasp format
+        internal_to_grasp = {
+            "Thumb_1": "thumb_spread", "Thumb_2": "thumb_flex", "Thumb_3": "thumb_d2", "Thumb_4": "thumb_d1",
+            "Index_1": "index_spread", "Index_2": "index_flex", "Index_3": "index_d2",
+            "Middle_1": "middle_spread", "Middle_2": "middle_flex", "Middle_3": "middle_d2",
+            "Ring_1": "ring_spread", "Ring_2": "ring_flex", "Ring_3": "ring_d2",
+            "Pinky_1": "pinky_spread", "Pinky_2": "pinky_flex", "Pinky_3": "pinky_d2"
+        }
+        
+        # Joint index mapping (0-15)
+        joint_index = {
+            "thumb_spread": 0, "thumb_flex": 1, "thumb_d2": 2, "thumb_d1": 3,
+            "index_spread": 4, "index_flex": 5, "index_d2": 6,
+            "middle_spread": 7, "middle_flex": 8, "middle_d2": 9,
+            "ring_spread": 10, "ring_flex": 11, "ring_d2": 12,
+            "pinky_spread": 13, "pinky_flex": 14, "pinky_d2": 15
+        }
+        
+        # Collect data directly from sliders in grasp format
+        # Use stored velocities if available, otherwise use default
+        grasp_data = {}
+        
+        for internal_key, grasp_key in internal_to_grasp.items():
+            if internal_key in self.slider_control.sliders:
+                angle = self.slider_control.sliders[internal_key].value()
+                # Use stored velocity if available, otherwise default
+                velocity = self.joint_velocities.get(grasp_key, self.default_velocity)
+                grasp_data[grasp_key] = {
+                    "target_angle": angle,
+                    "velocity": velocity,
+                    "index": joint_index[grasp_key]
+                }
+        
         # Save it in the hand_poses_directory
         file_path = os.path.join(self.hand_poses_directory, f"{filename}.json")
 
         with open(file_path, 'w') as f:
-            json.dump(data, f)
+            json.dump(grasp_data, f, indent=4)
 
         print(f"Saved data to {file_path}")
         self.update_file_selector()
@@ -126,14 +165,50 @@ class ControlPanelWidget(QtWidgets.QWidget):
             with open(file_path, 'r') as f:
                 data = json.load(f)
                 print(f"Loaded data from {file_path}: {data}")
-                # Update sliders with the loaded data
+                
+                # Map from grasp format back to internal slider keys
+                grasp_to_internal = {
+                    "thumb_spread": "Thumb_1", "thumb_flex": "Thumb_2", "thumb_d2": "Thumb_3", "thumb_d1": "Thumb_4",
+                    "index_spread": "Index_1", "index_flex": "Index_2", "index_d2": "Index_3",
+                    "middle_spread": "Middle_1", "middle_flex": "Middle_2", "middle_d2": "Middle_3",
+                    "ring_spread": "Ring_1", "ring_flex": "Ring_2", "ring_d2": "Ring_3",
+                    "pinky_spread": "Pinky_1", "pinky_flex": "Pinky_2", "pinky_d2": "Pinky_3"
+                }
+                
+                # Check if this is the new grasp format (nested objects) or old format (flat dict)
+                first_value = list(data.values())[0] if data else None
+                is_grasp_format = isinstance(first_value, dict) and ("target_angle" in first_value or "input_angle" in first_value)
+                
+                # Clear existing velocities before loading new ones
+                if is_grasp_format:
+                    self.joint_velocities.clear()
+                
+                # Update sliders with the loaded data and preserve velocities
                 for key, value in data.items():
-                    if key in self.slider_control.sliders:
-                        self.slider_control.sliders[key].setValue(value)
-                        # Explicitly update the joint_values dictionary
-                        self.slider_control.joint_values[key] = value
+                    if is_grasp_format:
+                        # New grasp format: extract angle and velocity from nested object
+                        if isinstance(value, dict):
+                            angle = value.get("target_angle") or value.get("input_angle", 0)
+                            # Store velocity from file (supports both "velocity" and "input_speed")
+                            velocity = value.get("velocity") or value.get("input_speed")
+                            if velocity is not None:
+                                # Store velocity for this joint (using grasp format key)
+                                self.joint_velocities[key] = velocity
+                            internal_key = grasp_to_internal.get(key)
+                        else:
+                            continue
                     else:
-                        print(f"Warning: Slider key {key} not found.")
+                        # Old format: direct value, key is already internal format
+                        # No velocity information in old format, keep existing or use default
+                        angle = value
+                        internal_key = key
+                    
+                    if internal_key and internal_key in self.slider_control.sliders:
+                        self.slider_control.sliders[internal_key].setValue(angle)
+                        # Explicitly update the joint_values dictionary
+                        self.slider_control.joint_values[internal_key] = angle
+                    elif internal_key:
+                        print(f"Warning: Slider key {internal_key} not found.")
         else:
             print("Please select a file to load.")
 
