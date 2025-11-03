@@ -176,6 +176,36 @@ class SliderControl:
             "Pinky": [(-15, 15), (0, 90), (0, 90)]
         }
 
+        # Joint naming convention mapping based on the provided image
+        self.joint_naming_convention = {
+            "Thumb": {
+                1: "spread",
+                2: "flex",
+                3: "d2",
+                4: "d1"
+            },
+            "Index": {
+                1: "spread",
+                2: "flex",
+                3: "d2*"
+            },
+            "Middle": {
+                1: "spread",
+                2: "flex",
+                3: "d2*"
+            },
+            "Ring": {
+                1: "spread",
+                2: "flex",
+                3: "d2*"
+            },
+            "Pinky": {
+                1: "spread",
+                2: "flex",
+                3: "d2*"
+            }
+        }
+
 
         # Create sliders and add them to the window
         # self._create_sliders() # not used
@@ -203,8 +233,10 @@ class SliderControl:
                     finger_layout.addWidget(QtWidgets.QLabel())
                     finger_layout.addWidget(QtWidgets.QLabel())
                     break
-                # create joint label
-                joint_label = self.create_label(f"Joint {i}", size=12, alignment=QtCore.Qt.AlignCenter, color=self.colors[self.finger_names[k]], bold=False)
+                # create joint label using naming convention
+                finger_name = self.finger_names[k]
+                joint_name = self.joint_naming_convention[finger_name][i]
+                joint_label = self.create_label(joint_name, size=12, alignment=QtCore.Qt.AlignCenter, color=self.colors[finger_name], bold=False)
                 finger_layout.addWidget(joint_label)
                 # create slider
                 slider = self.create_slider_with_value(title=self.finger_names[k], joint_number=i, value=0, min_value=self.min_max_values[self.finger_names[k]][i-1][0], max_value=self.min_max_values[self.finger_names[k]][i-1][1], tick_interval=10)
