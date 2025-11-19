@@ -53,18 +53,52 @@ class ArtusLiteGUI:
         # Another layout for the sliders and plots
         slider_and_plot_layout = QtWidgets.QHBoxLayout()
         if control_hand:
+            # ------------------------
             # Create the SliderControl
+            # ------------------------
             self.slider_control = SliderControl(rows=rows, cols=cols)
-            # Create control panel and add it to the layout (below the sliders/plots)
-            self.control_panel = ControlPanelWidget(slider_control=self.slider_control,
-                                                    zmq_sliderCommands_pubPort = zmq_sliderCommands_pubPort,
-                                                    win=self.slider_control.win,
-                                                    hand_poses_directory = self.directory)
-            # add panel horizontally at the top
-            self.layout.addWidget(self.control_panel, 0, QtCore.Qt.AlignTop)
-            
+
+            # ------------------------
+            # Create the Control Panel
+            # ------------------------
+            self.control_panel = ControlPanelWidget(
+                slider_control=self.slider_control,
+                zmq_sliderCommands_pubPort=zmq_sliderCommands_pubPort,
+                win=self.slider_control.win,
+                hand_poses_directory=self.directory
+            )
+            # Make the control panel flexible
+            self.control_panel.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                             QtWidgets.QSizePolicy.Preferred)
+
+            # ------------------------
+            # Create the HEX / ACK display
+            # ------------------------
+            self.hex_display = QtWidgets.QLabel("Message: 0x00")
+            self.hex_display.setAlignment(QtCore.Qt.AlignCenter)
+            self.hex_display.setStyleSheet(
+                "border: 1px solid black; padding: 4px;"
+            ) 
+            self.hex_display.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                           QtWidgets.QSizePolicy.Preferred)
+
+            # ------------------------
+            # Top horizontal bar layout
+            # ------------------------
+            top_bar_layout = QtWidgets.QHBoxLayout()
+            top_bar_layout.addWidget(self.control_panel)
+            top_bar_layout.addWidget(self.hex_display)
+            top_bar_layout.setSpacing(10)  # optional spacing between widgets
+
+            # Add the top bar to the main vertical layout
+            self.layout.addLayout(top_bar_layout)
+
+            # ------------------------
+            # Slider and plot layout
+            # ------------------------
             slider_and_plot_layout.addWidget(self.slider_control.win)
 
+            # Keep track of ZMQ port
             self.zmq_sliderCommands_pubPort = zmq_sliderCommands_pubPort
             # self._setup_zmq_publisher(address="tcp://127.0.0.1:" + str(self.zmq_sliderCommands_pubPort))
 
@@ -78,8 +112,6 @@ class ArtusLiteGUI:
             
         # Add the slider and plot layout to the main layout
         self.layout.addLayout(slider_and_plot_layout)
-            
-  
     
         # Set the main window layout
         self.main_window.setLayout(self.layout)
