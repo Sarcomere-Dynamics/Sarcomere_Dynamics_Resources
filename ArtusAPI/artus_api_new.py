@@ -46,7 +46,7 @@ class ArtusAPI_New:
         else:
             self.logger = logger
 
-        self.state = ActuatorState.ACTUATOR_INITIALIZING
+        self.state = ActuatorState.ACTUATOR_INITIALIZING.value
 
         self._communication_period = 1 / communication_frequency
         self.last_time = time.perf_counter()
@@ -69,12 +69,20 @@ class ArtusAPI_New:
         self._communication_handler.send_data(wake_command)
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=False):
-            self.logger.error("Hand timed out waiting for ready")
-        else:
-            self.logger.info("Hand ready")
-            self.state = ActuatorState.ACTUATOR_IDLE
-            self.awake = True
+        # if not self._communication_handler.wait_for_ready(vis=False):
+        #     self.logger.error("Hand timed out waiting for ready")
+        # else:
+        #     self.logger.info("Hand ready")
+        #     self.state = ActuatorState.ACTUATOR_IDLE
+        #     self.awake = True
+
+    def sleep(self):
+        sleep_command = self._command_handler.get_sleep_command()
+        self._communication_handler.send_data(sleep_command)
+    
+    def get_actuator_status(self):
+        return self._communication_handler._check_robot_state()
+
 
     def calibrate(self,joint=0):
         if not self._check_awake():
@@ -85,14 +93,14 @@ class ArtusAPI_New:
             calibrate_cmd.append(joint)
         
         self._communication_handler.send_data(calibrate_cmd)
-        self.state = ActuatorState.CALIBRATING_STROKE
+        self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True):
-            self.logger.error("Hand timed out waiting for ready")
-        else:
-            self.logger.info("Hand ready")
-            self.state = ActuatorState.ACTUATOR_IDLE
+        # if not self._communication_handler.wait_for_ready(vis=True):
+        #     self.logger.error("Hand timed out waiting for ready")
+        # else:
+        #     self.logger.info("Hand ready")
+        #     self.state = ActuatorState.ACTUATOR_IDLE
 
     def set_joint_angles(self, joint_angles:dict):
         if not self._check_awake():
@@ -202,10 +210,10 @@ class ArtusAPI_New:
         self._communication_handler.send_data(firmware_cmd) # sent firmware upload command to command register
 
         # send firmware data
-        self._firmware_updater.update_firmware(fw_size)
+        self._firmware_updater.update_firmware_piecewise(fw_size)
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True):
+        if not self._communication_handler.wait_for_ready(vis=False):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")

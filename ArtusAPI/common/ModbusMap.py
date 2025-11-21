@@ -1,6 +1,7 @@
 
 from enum import Enum
 
+# in-house link https://sarcomere-my.sharepoint.com/:x:/g/personal/ryan_lee_sarcomeredynamics_com/EZc0Efig0G1FmhJh-1EKzkMBEruf7tcIM2OreEytxHWceA?e=opvYYD
 class ModbusMap: # Artus Generic Modbus Map
     def __init__(self):
         self.modbus_reg_map = {
@@ -18,8 +19,12 @@ class ModbusMap: # Artus Generic Modbus Map
             'feedback_torque_start_reg': 250, # input feedback torque registers
             # size is byte
             'feedback_temperature_start_reg': 400, # input feedback temperature registers
+            # size is byte
+            'feedback_actuator_error_reg' : 500,    # feedback error reports
+            # size is byte
+            'feedback_atuator_motor_mode_reg' : 600, # feedback motor mode
             # size is float
-            'feedback_force_sensor_start_reg': 500 # input feedback fingertip force sensors
+            'feedback_force_sensor_start_reg': 650 # input feedback fingertip force sensors
         }
 
 class ActuatorState(Enum):
@@ -31,8 +36,9 @@ class ActuatorState(Enum):
     ACTUATOR_CALIBRATING_STROKE = 5  # calibrating the stroke of the finger
     ACTUATOR_CALIBRATION_FAILED = 6
     ACTUATOR_READY = 7  # ready to receive commmands, setup control modes, etc.
-    ACTUATOR_WAIT_ACK = 8  # wait for ack from actuator
+    ACTUATOR_BUSY = 8  # wait for ack from actuator
     ACTUATOR_ERROR = 9
+    ACTUATOR_FLASHING_ACK = 10
 
 class CommandType(Enum):
     SETUP_COMMANDS = 6

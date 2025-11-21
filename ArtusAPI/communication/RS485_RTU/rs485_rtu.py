@@ -44,7 +44,7 @@ class RS485_RTU:
     def open(self):
         try:
             # minimalmodbus
-            self.instrument = minimalmodbus.Instrument(port=self.port, slaveaddress=self.slave_address,debug=False)
+            self.instrument = minimalmodbus.Instrument(port=self.port, slaveaddress=self.slave_address,debug=True)
             self.instrument.serial.baudrate = self.baudrate
             self.instrument.serial.timeout = self.timeout
             self.instrument.address = self.slave_address

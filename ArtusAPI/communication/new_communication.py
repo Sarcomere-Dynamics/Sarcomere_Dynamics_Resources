@@ -55,32 +55,26 @@ class NewCommunication:
     def close_connection(self):
         self.communicator.close()
 
+    def _check_robot_state(self):
+        """Helper function to check robot state and return status"""
+        ret = self.receive_data()
+        if isinstance(ret, int) and ret <= 0xFFFF:  # Check if ret is a 16-bit value
+            high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits
+            low_byte = ret & 0xFF          # Extract lower 8 bits
+            return low_byte
+        else:
+            raise ValueError("Received data is not a 16-bit value")
+        return None  # Continue waiting
     def wait_for_ready(self,timeout=5,vis=False):
         start_time = time.perf_counter()
-
-        def _check_robot_state(self):
-            """Helper function to check robot state and return status"""
-            ret = self.receive_data()
-            if isinstance(ret, int) and ret <= 0xFFFF:  # Check if ret is a 16-bit value
-                high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits
-                low_byte = ret & 0xFF          # Extract lower 8 bits
-                if low_byte == ActuatorState.ACTUATOR_READY.value:
-                    self.logger.info("Robot ready")
-                    return True
-                elif low_byte == ActuatorState.ACTUATOR_CALIBRATION_FAILED.value or low_byte == ActuatorState.ACTUATOR_ERROR.value:
-                    self.logger.error("Calibration failed or error")
-                    return False
-            else:
-                raise ValueError("Received data is not a 16-bit value")
-            return None  # Continue waiting
 
         if vis:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:
-                    result = _check_robot_state(self)
+                    result = self._check_robot_state()
                     time_diff = time.perf_counter() - start_time
                     self.ntrips += 1
-                    if result is not None:
+                    if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value]:
                         return result
                     # time.sleep(0.1)
                     if progresbar.n + time_diff >= timeout:
@@ -88,17 +82,20 @@ class NewCommunication:
                         break
                     progresbar.update(time_diff)
                     start_time = time.perf_counter()
-                self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
-                print(f"Roundtrip time: {self.ntrips/timeout} trips per second")
+                # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
+                # print(f"Roundtrip time: {self.ntrips/timeout} trips per second")
         else:
             while 1:
-                result = _check_robot_state(self)
+                result = self._check_robot_state()
                 self.ntrips += 1
-                if result is not None:
+                if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value]:
                     return result
                 # time.sleep(0.1)
                 if time.perf_counter() - start_time > timeout:
                     self.logger.error("Timeout waiting for robot ready")
                     break
-            self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
-            print(f"Roundtrip time: {self.ntrips/timeout} trips per second")
+
+        if result == ActuatorState.ACTUATOR_BUSY.value:
+            self.logger.error(f"Robot Busy")
+            # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
+            # print(f"Roundtrip time: {self.ntrips/timeout} trips per second")

@@ -14,14 +14,16 @@ import os
 import time
 import logging
 from tqdm import tqdm
+import math
 
-from ..common.ModbusMap import CommandType
+from ..common.ModbusMap import CommandType,ActuatorState
+from ..communication.new_communication import NewCommunication
 BYTES_CHUNK = 64
 
 
 class FirmwareUpdaterNew:
     def __init__(self,
-                 communication_handler = None,
+                 communication_handler:NewCommunication = None,
                  command_handler = None,
                  file_location = None,
                  logger = None):
@@ -37,6 +39,74 @@ class FirmwareUpdaterNew:
         file_size = int(os.path.getsize(self.file_location))
         self.logger.info(f"Bin file size = {file_size} @ location {self.file_location}")
         return file_size
+    
+    def flashing_ack_checker(self):
+        while True:
+            ret = self._communication_handler._check_robot_state()
+
+            if ret == ActuatorState.ACTUATOR_FLASHING_ACK.value:
+                return True
+            elif ret == ActuatorState.ACTUATOR_ERROR.value:
+                return False
+            else:
+                time.sleep(1)
+    
+    def update_firmware_piecewise(self,file_size):
+        """
+        @info function to update brushless drivers through masterboard
+        """
+        byte_counter = 0
+        page_counter = 0
+        ret = None
+
+        file = open(self.file_location,'rb')
+        file_data = file.read()
+        file.close()
+
+        time.sleep(1)
+
+        # wait for the initial communication/erase function
+        if not self.flashing_ack_checker():
+            return False
+
+        pages_required = math.ceil(file_size/256)
+        self.logger.info(f"Upload requires {pages_required} page writes")
+
+        # over total number of bytes
+        with tqdm(total=pages_required, unit="pages", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
+            # page loop
+            page_byte_counter = 0
+            while page_byte_counter < 256:
+                # fill byte data
+
+                concat_chunk = []
+                # take each pair and make it into a 16bit value
+                while len(concat_chunk) < 64: # 128 bytes
+                    if byte_counter >= file_size:
+                        concat_chunk.append(0xffff)
+                    if byte_counter+1 >= file_size:
+                        concat_chunk.append(file_data[byte_counter] << 8 | 0xff) 
+                    concat_chunk.append(file_data[byte_counter] << 8 | file_data[byte_counter+1])
+                    byte_counter += 2
+
+                concat_chunk.insert(0,self._command_handler.commands['firmware_update_command']) # this has to be the first element every time
+
+                self._communication_handler.send_data(concat_chunk,CommandType.FIRMWARE_COMMAND.value)
+                page_byte_counter+=128
+
+            time.sleep(0.1)
+
+            # a full page has been uploaded
+            if not self.flashing_ack_checker():
+                return False
+
+            # reset page_byte_counter
+            page_byte_counter = 0
+            page_counter+=1
+            pbar.update(1)
+
+
+
 
     # this function is only managing sending the actuatl binary data to the master
     # it is not managing starting the firmware update process on the master
@@ -48,10 +118,13 @@ class FirmwareUpdaterNew:
         file_data = file.read()
         file.close()
 
+        time.sleep(1)
+
         chunks_required = int(file_size/BYTES_CHUNK) + 1
         self.logger.info(f"Binary File will be sent in {BYTES_CHUNK} byte packages for a total of {chunks_required} chunks")
         
         with tqdm(total=file_size, unit="B", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
+            loop_cnt = 0
             while i < file_size:
                 if i+BYTES_CHUNK > file_size:
                     chunk = list(file_data[i:])
@@ -60,18 +133,23 @@ class FirmwareUpdaterNew:
                 else:
                     chunk = list(file_data[i:i+BYTES_CHUNK])
 
+                concat_chunk = []
                 # take each pair and make it into a 16bit value
                 for pc in range(0, len(chunk), 2):
                     if pc + 1 < len(chunk):
-                        chunk[pc] = chunk[pc] << 8 | chunk[pc + 1]
+                        concat_chunk.append(chunk[pc] << 8 | chunk[pc + 1])
                     else:
-                        chunk[pc] = chunk[pc] << 8 | 0x00
+                        concat_chunk.append(chunk[pc] << 8 | 0x00)
 
-                chunk.insert(0,self._command_handler.commands['firmware_update_command']) # this has to be the first element every time
+                concat_chunk.insert(0,self._command_handler.commands['firmware_update_command']) # this has to be the first element every time
 
-                self._communication_handler.send_data(chunk,CommandType.FIRMWARE_COMMAND.value)
+                self._communication_handler.send_data(concat_chunk,CommandType.FIRMWARE_COMMAND.value)
                 i += BYTES_CHUNK
+                loop_cnt+=1
                 pbar.update(BYTES_CHUNK)
+
+                if i % 1000 == 0:
+                    continue
 
         # send eof is when firmware update commmand is not the  first element in the list
         eof_list = [0x0,0x0]

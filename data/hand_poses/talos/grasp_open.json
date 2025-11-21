@@ -1,0 +1,38 @@
+{
+    "thumb_spread":
+    {
+        "target_angle": 0,
+        "force": 40, 
+        "index": 0
+    },
+    "thumb_flex":
+    {
+        "target_angle": 0,
+        "force": 40,
+        "index": 1
+    },
+    "index_flex":
+    {
+        "target_angle": 0,
+        "force": 40,
+        "index": 2
+    },
+    "middle_flex":
+    {
+        "target_angle": 0,
+        "force": 40,
+        "index": 3
+    },
+    "ring_flex":
+    {
+        "target_angle": 0,
+        "force": 40,
+        "index": 4
+    },
+    "pinky_flex":
+    {
+        "target_angle": 0,
+        "force": 40,
+        "index": 5
+    }
+}

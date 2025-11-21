@@ -175,6 +175,7 @@ class NewCommands(Commands,ModbusMap):
 
 
         # do the actual decoding
+        # todo update with more feedbacks
         decoded_data = []
         match estimated_feedback_type:
             case FeedbackTypes.POSITION.value:
