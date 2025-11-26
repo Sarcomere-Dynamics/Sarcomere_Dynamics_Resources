@@ -15,8 +15,9 @@ import os
 import sys
 import logging
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
 sys.path.append(PROJECT_ROOT)
+print(PROJECT_ROOT)
 
 # Create a logger for this module
 logger = logging.getLogger(__name__)
@@ -28,20 +29,20 @@ try:
     from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
     logger.info("Using pip-installed version of ArtusAPI")
 except ModuleNotFoundError:
-    from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
+    from artus_wifi.Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
     logger.info("Using local version of ArtusAPI")
 
 # 1, 6, 8, 4
 class ArtusLiteJointStreamer:
 
     def __init__(self,                 
-                communication_method= 'UART',
+                communication_method= 'UDP',
                 robot_type='artus_lite',
-                communication_channel_identifier='COM7',
-                hand_type = 'left',
+                communication_channel_identifier='PNDAdamU',
+                hand_type = 'right',
                 reset_on_start = 0,
                 
-                streaming_frequency = 30, # data/seconds
+                streaming_frequency = 20, # data/seconds
                 start_robot=True,
                 calibrate= False,
                 robot_connected=True,
@@ -57,7 +58,7 @@ class ArtusLiteJointStreamer:
                                     hand_type=hand_type,
                                     reset_on_start=reset_on_start,
                                     communication_frequency = streaming_frequency,
-                                    stream = True,
+                                    stream = False,
                                     logger=self.logger)
                                     
         
@@ -76,11 +77,11 @@ class ArtusLiteJointStreamer:
     def _initialize_api(self):
         self.artusLite_api.connect()
         time.sleep(1)
-        if self.robot_start:
-            self.artusLite_api.wake_up()
+        # if self.robot_start:
+        #     self.artusLite_api.wake_up()
             # time.sleep(2)
         if self.calibrate:
-            self.artusLite_api.calibrate()
+            self.artusLite_api.calibrate(calibration_type=1)
         # time.sleep(2)
     
     def _disconnect_api(self):
@@ -103,16 +104,8 @@ class ArtusLiteJointStreamer:
             joint = {'index':i, 'target_angle': joint_angles[i], 'velocity' : 60}
             hand_joints[i] = joint
             
-        # set joint angles
-        # if self._check_streaming_rate():
-            # print(f"Sending {self.communication_channel_identifier}...{hand_joints}")
-            # print(f'******************************** hand joints : ************************************************/n {hand_joints}')
-            # print(f'hand joints sent to hand: {hand_joints[0:4]}')
         self.artusLite_api.set_joint_angles(joint_angles=hand_joints)
-            # return joint_angles
-        # else:
-            # print(f'missed {self.communication_channel_identifier}')
-            # return None
+
         
     def _check_streaming_rate(self):
         """
@@ -137,7 +130,7 @@ class ArtusLiteJointStreamer:
         return [joint.feedback_force for joint in self.artusLite_api._robot_handler.robot.hand_joints.values()]
 
     def receive_force_feedback(self):
-        joint_angles = self.artusLite_api.get_streamed_joint_angles()
+        joint_angles = self.artusLite_api.get_joint_angles()
   
         if joint_angles is None:
             self.logger.debug("No joint angles received")
@@ -180,10 +173,10 @@ def test_artus_joint_streamer():
     artus_joint_streamer = ArtusLiteJointStreamer(communication_method='UART',
                                                   communication_channel_identifier='/dev/ttyUSB0',
                                                   hand_type='right',
-                                                  reset_on_start=0,
+                                                  reset_on_start=1,
                                                   streaming_frequency=20,
                                                   start_robot=True,
-                                                  calibrate=False,
+                                                  calibrate=True,
                                                   robot_connected=True)
     joint_angles_1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     joint_angles_2 = [0, 20, 30, 30, 10, 50, 70, 10, 50, 70, 10, 50, 70, 10, 50, 70]
@@ -203,11 +196,11 @@ def test_artus_joint_streamer():
 
 
 def test_feedback_streaming():
-    artus_joint_streamer = ArtusLiteJointStreamer(communication_method='UART',
-                                                  communication_channel_identifier='/dev/ttyUSB0',
-                                                  robot_type='artus_lite_plus',
+    artus_joint_streamer = ArtusLiteJointStreamer(communication_method='UDP',
+                                                  communication_channel_identifier='PndAdamU',
+                                                  robot_type='artus_lite',
                                                   hand_type='right',
-                                                  reset_on_start=0,
+                                                  reset_on_start=1,
                                                   streaming_frequency=20,
                                                   start_robot=True,
                                                   calibrate=False,
@@ -226,7 +219,8 @@ def test_feedback_streaming():
 
       
 
-        joint_angles_1 = [0,0,5,5,0,5,5,0,5,5,0,5,5,0,5,5]
+        # joint_angles_1 = [0,0,5,5,0,5,5,0,5,5,0,5,5,0,5,5]
+        joint_angles_1 = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         artus_joint_streamer.stream_joint_angles(joint_angles=joint_angles_1)
         force_data = artus_joint_streamer.receive_force_feedback()
         if force_data is not None:
