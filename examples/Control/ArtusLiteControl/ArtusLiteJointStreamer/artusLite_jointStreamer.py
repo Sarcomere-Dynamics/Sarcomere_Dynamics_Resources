@@ -15,7 +15,7 @@ import os
 import sys
 import logging
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
 sys.path.append(PROJECT_ROOT)
 print(PROJECT_ROOT)
 
@@ -29,7 +29,7 @@ try:
     from ArtusAPI.artus_api import ArtusAPI  # Attempt to import the pip-installed version
     logger.info("Using pip-installed version of ArtusAPI")
 except ModuleNotFoundError:
-    from artus_wifi.Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
+    from Sarcomere_Dynamics_Resources.ArtusAPI.artus_api import ArtusAPI  # Fallback to the local version
     logger.info("Using local version of ArtusAPI")
 
 # 1, 6, 8, 4
