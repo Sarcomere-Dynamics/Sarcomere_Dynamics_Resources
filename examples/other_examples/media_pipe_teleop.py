@@ -85,7 +85,7 @@ hands = mp_hands.Hands(
 
 # Landmark index triplets for angle computation (geometric method)
 JOINTS = {
-    "thumb_cmc": (0, 1, 2),
+    "thumb_cmc": (5, 0, 1),
     "thumb_mcp": (1, 2, 3),
     "thumb_ip":  (2, 3, 4),
     "thumb_dip": (2,3,4),
@@ -116,6 +116,36 @@ JOINT_ORDER = [
     "pinky_mcp", "pinky_pip", "pinky_dip",
 ]
 
+def map_range(value, in_min, in_max, out_min, out_max, clamp=True):
+    """
+    Linearly map a value from one range to another.
+
+    value   : number to transform
+    in_min  : lower bound of input range
+    in_max  : upper bound of input range
+    out_min : lower bound of output range
+    out_max : upper bound of output range
+    clamp   : if True, restrict output to [out_min, out_max]
+
+    Returns a float.
+    """
+
+    # Avoid division by zero
+    if in_max - in_min == 0:
+        raise ValueError("Input range cannot be zero.")
+
+    # Linear interpolation
+    scaled = (value - in_min) / (in_max - in_min)
+    mapped = out_min + scaled * (out_max - out_min)
+
+    # Clamp output
+    if clamp:
+        if out_min < out_max:
+            mapped = max(out_min, min(out_max, mapped))
+        else:
+            mapped = max(out_max, min(out_min, mapped))
+
+    return mapped
 
 def map_angle_for_artus(joint_name, flex_deg):
     """
@@ -137,18 +167,24 @@ def map_angle_for_artus(joint_name, flex_deg):
         # 0 → -45    |   180 → +45
         # slope = 90 / 180 = 0.5
         # intercept = -45
-        cmd = 0.5 * flex - 45.0
+        #cmd = 0.5 * flex - 45.0
+        cmd = map_range(flex, 120, 140, -45, 45, True)
+        #cmd = flex
 
     elif joint_name in {"index_mcp", "middle_mcp", "ring_mcp", "pinky_mcp"}:
         # 0 → -17    |   180 → +17
         # slope = 34 / 180
-        cmd = (34.0 / 180.0) * flex - 17.0
+        #cmd = (34.0 / 180.0) * flex - 17.0
+        #cmd = flex*1.25-10.0
+        cmd = map_range(flex, 9, 20, -17, 17, True)
 
     # ============ DEFAULT CASE ============
     else:
         # 0 → 0      |   180 → 90
         # slope = 90 / 180 = 0.5
-        cmd = 0.5 * flex
+        if flex >= 90.0:
+            flex = 90.0
+        cmd = flex
 
     return int(round(cmd))
 
@@ -509,6 +545,9 @@ def main():
         stream=False
     )
 
+    #Need to uncomment to connect the hand
+    #artus.connect()
+
     # === CALIBRATION STEP (FINGER LINK LENGTHS) ===
     finger_link_lengths = calibrate_finger_lengths(cap, hands, target_samples=50)
     # finger_link_lengths:
@@ -642,8 +681,16 @@ def main():
 
                 last_print = now
 
-            # Draw smoothed angles on frame
-            draw_finger_angles(frame, smoothed_angles)
+            # # Draw smoothed angles on frame
+            # draw_finger_angles(frame, smoothed_angles)
+            # Build a dict of mapped angles keyed by joint name for drawing
+            mapped_angle_dict = {
+                joint_name: float(angle)
+                for joint_name, angle in zip(JOINT_ORDER, joint_angles)
+            }
+
+            # Draw **mapped** joint angles on frame
+            draw_finger_angles(frame, mapped_angle_dict)
 
         cv2.imshow("Hand Tracking with IK + Kalman", frame)
         key = cv2.waitKey(1) & 0xFF
