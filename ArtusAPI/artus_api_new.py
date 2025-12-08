@@ -148,30 +148,33 @@ class ArtusAPI_New:
             return False
         return self._communication_handler.send_data(robot_set_home_position_cmd,CommandType.TARGET_COMMAND.value)
 
-    def get_joint_angles(self,dat_type=0):
+    
+    def get_joint_angles(self,start_reg=0):
+        """
+        named get_joint_angles for consistency with v1 api
+        actually should be `get_feedback`
+        
+        :param start_reg: according to modbusmap
+        """
         if not self._check_awake():
             return
-        # only get status of hand
-        if dat_type == 0:
-            start_reg = ModbusMap().modbus_reg_map['feedback_register']
-            amount_data = math.ceil(self._robot_handler.robot.number_of_joints/2) + 1
-        elif dat_type == 1:
-            start_reg = ModbusMap().modbus_reg_map['feedback_register']
-            amount_data = math.ceil(self._robot_handler.robot.number_of_joints/2) + 1 + self._robot_handler.robot.number_of_joints*2
-        elif dat_type == 2:
-            start_reg = ModbusMap().modbus_reg_map['feedback_torque_start_reg']
-            amount_data = self.robot_handler.robot.number_of_joints*2
-        elif dat_type == 3:
-            start_reg = ModbusMap().modbus_reg_map['feedback_temperature_start_reg']
-            amount_data = math.ceil(self.robot_handler.robot.number_of_joints/2)
+        # check starting reg
+        start_reg_confirmed = False
+        for key,value in ModbusMap().modbus_reg_map:
+            if value == start_reg:
+                start_reg_confirmed = key
+                break
+
+        if start_reg_confirmed is not None:
+            amount_data = ModbusMap().data_type_map[start_reg_confirmed] * self._robot_handler.robot.number_of_joints
         else:
-            raise ValueError("Invalid data type")
+            raise ValueError('Start Register is not recognized -- see ModbusMap.pdf in robot/$robot$/data')
 
         feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        status_data,decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data)
+        status_data,decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_confirmed)
 
         # populate hand joint dict based on robot
-        self._robot_handler.get_joint_angles(decoded_feedback_data,dat_type)
+        self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg)
     
     # for compatibility
     def get_streamed_joint_angles(self,dat_type=0):

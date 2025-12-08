@@ -85,7 +85,7 @@ class Robot:
         """
         Get the joint angles of the hand
         """
-        if feedback_type == 1 or self.robot_type == 'artus_lite':
+        if (feedback_type and self.robot_type == 'artus_lite_plus') or self.robot_type == 'artus_lite':
             return self.robot.get_joint_angles(joint_angles)
         elif self.robot_type == 'artus_lite_plus':
             return self.robot.get_joint_angles_force(joint_angles)

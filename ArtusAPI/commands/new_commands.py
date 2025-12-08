@@ -105,8 +105,9 @@ class NewCommands(Commands,ModbusMap):
 
         return command_list
 
-    def get_decoded_feedback_data(self,feedback_data:list) -> list:
+    def get_decoded_feedback_data(self,feedback_data:list,modbus_key:str='feedback_register') -> list:
         """
+        @param start_reg: starting register of the feedback data
         Decode the feedback data from byte specific joint map to general list to be put into the hand joint dictionary
         @param feedback_data: list of uint16 values that need to be decoded into properly formatted values (bytes,floats,etc. ) based on value type
         @return decoded_data: list of decoded data in the correct format based on the value type
@@ -130,7 +131,7 @@ class NewCommands(Commands,ModbusMap):
                 decoded_data.append(low_byte)
 
             # check length of decoded data and make sure it matches the number of joints, if not then remove last element
-            if len(decoded_data) != self.num_joints:
+            if len(decoded_data) != self.num_joints and len(decoded_data) > 0:
                 decoded_data.pop()
             return decoded_data
 
@@ -154,53 +155,20 @@ class NewCommands(Commands,ModbusMap):
         size_of_feedback_data = len(feedback_data)
         self.logger.info(f"Size of feedback data: {size_of_feedback_data} & num joints: {self.num_joints}")
 
-        # from here, guess how much data was sent
-        # @todo enumerate feedback types
-        if size_of_feedback_data == math.ceil(self.num_joints/2) + 1: # only position data and status
-            estimated_feedback_type = FeedbackTypes.POSITION.value
-        elif size_of_feedback_data == math.ceil(self.num_joints/2) + 1 + self.num_joints*2  : # both position and torque data and status
-            estimated_feedback_type = FeedbackTypes.POSITION_TORQUE.value
-        
-        elif size_of_feedback_data == self.num_joints*2 : # only torque data
-            estimated_feedback_type = FeedbackTypes.TORQUE.value
-
-        elif size_of_feedback_data == math.ceil(self.num_joints/2) : # only temperature data
-            estimated_feedback_type = FeedbackTypes.TEMPERATURE.value
-
-        else:
-            self.logger.error(f"Unknown feedback data type - feedback length received: {size_of_feedback_data}")
-            return None
-
-        self.logger.info(f"Estimated feedback type: {estimated_feedback_type}")
-
+        # only 1 data type is allowed to be sent back at a time
 
         # do the actual decoding
         # todo update with more feedbacks
         decoded_data = []
-        match estimated_feedback_type:
-            case FeedbackTypes.POSITION.value:
-                # create different lists for data
-                position_data = feedback_data[1:math.ceil(self.num_joints/2)+1] # position data
-                decoded_data = helper_decode_feedback_16b_8b(position_data)
-            case FeedbackTypes.POSITION_TORQUE.value:
-                # create different lists for data
-                position_data = feedback_data[1:math.ceil(self.num_joints/2)+1] # position data
-                torque_data = feedback_data[int(self.num_joints/2)+1:] # torque data until the end
-                decoded_data = helper_decode_feedback_16b_8b(position_data)
-                decoded_data += helper_decode_feedback_16b_float(torque_data)
-            case FeedbackTypes.TORQUE.value:
-                torque_data = feedback_data # torque data until the end
-                decoded_data = helper_decode_feedback_16b_float(torque_data)
-            case FeedbackTypes.TEMPERATURE.value:
-                temperature_data = feedback_data # temperature data until the end
-                decoded_data = helper_decode_feedback_16b_8b(temperature_data)
-            case _:
-                self.logger.error(f"Unknown feedback data type - feedback length received: {size_of_feedback_data}")
-                decoded_data = None
+        match ModbusMap().data_type_multiplier_map[modbus_key]:
+            case 0.5:
+                decoded_data = helper_decode_feedback_16b_8b(feedback_data)
+            case 2:
+                decoded_data = helper_decode_feedback_16b_float(feedback_data)
+            case 1:
+                decoded_data = [(feedback_data[0] >> 8) & 0xFF, feedback_data[0] & 0xFF] 
 
-        # decode uiint16_t to uint8_t status data in reg 0
-        status_data = [(feedback_data[0] >> 8) & 0xFF, feedback_data[0] & 0xFF]
-        return status_data,decoded_data
+        return decoded_data
 
 
 
@@ -240,7 +208,7 @@ class TestNewCommands(unittest.TestCase):
         
         result = self.new_commands.get_target_position_command(hand_joints)
         
-        expected = [1, 45]  # start_reg + index/2, target_angle
+        expected = [0, 1, 45]  # 0, start_reg + index/2, target_angle
         self.assertEqual(result, expected)
         # self.logger.info.assert_called()
     
@@ -279,7 +247,9 @@ class TestNewCommands(unittest.TestCase):
         
         result = self.new_commands.get_target_position_command(hand_joints)
         
-        expected = [1, 30, 60]  # start_reg, joint1_angle, joint2_angle
+        # The function packs joint1 (index 0, even) and joint2 (index 1, odd) into one 16-bit value
+        # joint1 (30) goes in first, joint2 (60) gets shifted and ORed: 30 << 8 | 60 = 7740
+        expected = [0, 1, 7740]  # 0, start_reg, packed_angles
         self.assertEqual(result, expected)
     
     def test_get_set_zero_command(self):
@@ -339,48 +309,38 @@ class TestNewCommands(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_get_decoded_feedback_data_position_only(self):
-        """Test get_decoded_feedback_data with position data only (type 0)"""
-        # For 5 joints, we expect int(num_joints/2) + 1 = int(2.5) + 1 = 2 + 1 = 3 values
-        # Status byte + position data for 5 joints (2 registers, rounded down)
-        feedback_data = [0x01, 0x1234, 0x5678,0x1200]  # status + 2 position registers
+        """Test get_decoded_feedback_data with position data only"""
+        # Position data for 5 joints (3 registers to cover 5 joints)
+        feedback_data = [0x1234, 0x5678, 0x1200]  # 3 position registers
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data)
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_position_start_reg')
         
         # Position data should be decoded from 16-bit to 8-bit pairs
-        # Skipping first element (status), decode remaining elements
+        # All elements decoded, then trimmed to match num_joints (5)
         expected = [
             0x12, 0x34,  # First position register
-            0x56, 0x78,
-            0x12  
+            0x56, 0x78,  # Second position register
+            0x12         # Third position register (trimmed to 5 joints)
         ]
         self.assertEqual(result, expected)
     
-    def test_get_decoded_feedback_data_position_and_torque(self):
-        """Test get_decoded_feedback_data with position and torque data (type 1)"""
-        # For 5 joints: num_joints/2 + 1 + num_joints*2 = 2.5 + 1 + 10 = 13.5 (rounded to 14)
-        # But the actual calculation is: 5/2 + 1 + 5*2 = 2.5 + 1 + 10 = 13.5
-        # Since we're dealing with integer division, let's use 4 joints for cleaner math
+    def test_get_decoded_feedback_data_position_separate(self):
+        """Test get_decoded_feedback_data with position data using position register"""
+        # Use 4 joints for cleaner math
         test_commands = NewCommands(num_joints=4)
         
-        # 4 joints: 4/2 + 1 + 4*2 = 2 + 1 + 8 = 11 total values
-        feedback_data = [0x01,  # status
-                        0x1234, 0x5678,  # position data (2 registers for 4 joints)
-                        0x0000, 0x3F80,  # torque 1 (float 1.0)
-                        0x0000, 0x4000,  # torque 2 (float 2.0)  
-                        0x0000, 0x4040,  # torque 3 (float 3.0)
-                        0x0000, 0x4080]  # torque 4 (float 4.0)
+        # Position data for 4 joints (2 registers)
+        feedback_data = [0x1234, 0x5678]  # position data (2 registers for 4 joints)
         
-        result = test_commands.get_decoded_feedback_data(feedback_data)
+        result = test_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_position_start_reg')
         
-        # Position data (8-bit pairs) + torque data (floats)
-        expected_position = [0x12, 0x34, 0x56, 0x78]
-        expected_torques = [1.0, 2.0, 3.0, 4.0]
-        expected = expected_position + expected_torques
+        # Position data should be decoded from 16-bit to 8-bit pairs
+        expected = [0x12, 0x34, 0x56, 0x78]
         
         self.assertEqual(result, expected)
     
     def test_get_decoded_feedback_data_torque_only(self):
-        """Test get_decoded_feedback_data with torque data only (type 2)"""
+        """Test get_decoded_feedback_data with torque data only"""
         # For 5 joints: num_joints*2 = 10 values (5 torque floats, 2 registers each)
         feedback_data = [0x0000, 0x3F80,  # 1.0
                         0x0000, 0x4000,   # 2.0
@@ -388,40 +348,47 @@ class TestNewCommands(unittest.TestCase):
                         0x0000, 0x4080,   # 4.0
                         0x0000, 0x40A0]   # 5.0
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data)
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
         
         expected = [1.0, 2.0, 3.0, 4.0, 5.0]
         self.assertEqual(result, expected)
     
     def test_get_decoded_feedback_data_temperature_only(self):
-        """Test get_decoded_feedback_data with temperature data only (type 3)"""
-        # For 5 joints: num_joints/2 = 2.5 (rounded to 3) = 3 values
+        """Test get_decoded_feedback_data with temperature data only"""
+        # For 6 joints: num_joints/2 = 3 registers
         test_commands = NewCommands(num_joints=6)  # Use 6 joints for cleaner math
         feedback_data = [0x1A2B, 0x3C4D, 0x5E6F]  # 3 temperature registers for 6 joints
         
-        result = test_commands.get_decoded_feedback_data(feedback_data)
+        result = test_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_temperature_start_reg')
         
         # Temperature data should be decoded from 16-bit to 8-bit pairs
         expected = [0x1A, 0x2B, 0x3C, 0x4D, 0x5E, 0x6F]
         self.assertEqual(result, expected)
     
-    def test_get_decoded_feedback_data_unknown_type(self):
-        """Test get_decoded_feedback_data with unknown data type"""
-        # Provide data that doesn't match any expected pattern
-        feedback_data = [0x01, 0x02]  # Too small for any known type
-        print(f"Feedback data: {feedback_data} and num joints: {self.new_commands.num_joints}")
+    def test_get_decoded_feedback_data_status_register(self):
+        """Test get_decoded_feedback_data with status register (multiplier = 1)"""
+        # Status register returns status bytes
+        feedback_data = [0x1234]  # Single status register
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data)
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_register')
         
-        self.assertIsNone(result)
+        # Should return high and low bytes of the status register
+        expected = [0x12, 0x34]
+        self.assertEqual(result, expected)
     
     def test_get_decoded_feedback_data_empty(self):
         """Test get_decoded_feedback_data with empty data"""
         feedback_data = []
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data)
+        # For position/temperature data (0.5 multiplier), empty data should return empty list
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_position_start_reg')
+        expected = []
+        self.assertEqual(result, expected)
         
-        self.assertIsNone(result)
+        # For torque data (2 multiplier), empty data should return empty list
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
+        expected = []
+        self.assertEqual(result, expected)
     
     def test_helper_decode_feedback_16b_8b(self):
         """Test the helper function for 16-bit to 8-bit conversion"""
@@ -429,56 +396,55 @@ class TestNewCommands(unittest.TestCase):
         test_data = [0x1234, 0x5678, 0xABCD]
         
         # Since helper functions are nested, we'll test them indirectly through the main function
-        # Use temperature data type (type 3) which uses the 16b->8b helper
+        # Use temperature data type which uses the 16b->8b helper
         test_commands = NewCommands(num_joints=6)
-        result = test_commands.get_decoded_feedback_data(test_data)
+        result = test_commands.get_decoded_feedback_data(test_data, modbus_key='feedback_temperature_start_reg')
         
         expected = [18, 52, 86, 120, 171-256, 205-256]
         self.assertEqual(result, expected)
     
     def test_helper_decode_feedback_16b_float(self):
         """Test the helper function for 16-bit to float conversion"""
-        # Test torque-only data (type 2) which uses the 16b->float helper
+        # Test torque data which uses the 16b->float helper
         feedback_data = [0x0000, 0x3F80,  # 1.0
                         0x0000, 0x4000,   # 2.0
                         0x0000, 0x4040,   # 3.0
                         0x0000, 0x4080,   # 4.0
                         0x0000, 0x40A0]   # 5.0
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data)
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
         
         expected = [1.0, 2.0, 3.0, 4.0, 5.0]
         self.assertEqual(result, expected)
     
-    def test_feedback_data_size_calculations(self):
-        """Test that feedback data size calculations work correctly"""
+    def test_feedback_data_different_modbus_keys(self):
+        """Test that different modbus keys work correctly with appropriate data"""
         # Test different joint counts
         for num_joints in [4, 6, 8, 10]:
             test_commands = NewCommands(num_joints=num_joints)
             
-            # Type 0: position only - should be num_joints/2 + 1
-            size_type0 = int(num_joints/2) + 1
-            mock_data = [0] * size_type0
-            result = test_commands.get_decoded_feedback_data(mock_data)
-            self.assertIsNotNone(result, f"Type 0 failed for {num_joints} joints")
+            # Position data - multiplier 0.5 (byte data)
+            size_position = int(num_joints/2) if num_joints % 2 == 0 else int(num_joints/2) + 1
+            mock_data = [0] * size_position
+            result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_position_start_reg')
+            self.assertIsNotNone(result, f"Position failed for {num_joints} joints")
             
-            # Type 1: position + torque - should be num_joints/2 + 1 + num_joints*2  
-            size_type1 = int(num_joints/2) + 1 + num_joints*2
-            mock_data = [0] * size_type1
-            result = test_commands.get_decoded_feedback_data(mock_data)
-            self.assertIsNotNone(result, f"Type 1 failed for {num_joints} joints")
+            # Torque data - multiplier 2 (float data)
+            size_torque = num_joints * 2
+            mock_data = [0] * size_torque  
+            result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_torque_start_reg')
+            self.assertIsNotNone(result, f"Torque failed for {num_joints} joints")
             
-            # Type 2: torque only - should be num_joints*2
-            size_type2 = num_joints*2
-            mock_data = [0] * size_type2  
-            result = test_commands.get_decoded_feedback_data(mock_data)
-            self.assertIsNotNone(result, f"Type 2 failed for {num_joints} joints")
+            # Temperature data - multiplier 0.5 (byte data)
+            size_temperature = int(num_joints/2) if num_joints % 2 == 0 else int(num_joints/2) + 1
+            mock_data = [0] * size_temperature
+            result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_temperature_start_reg')
+            self.assertIsNotNone(result, f"Temperature failed for {num_joints} joints")
             
-            # Type 3: temperature only - should be num_joints/2
-            size_type3 = int(num_joints/2)
-            mock_data = [0] * size_type3
-            result = test_commands.get_decoded_feedback_data(mock_data)
-            self.assertIsNotNone(result, f"Type 3 failed for {num_joints} joints")
+            # Status register - multiplier 1 (status data)
+            mock_data = [0x1234]
+            result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_register')
+            self.assertIsNotNone(result, f"Status failed for {num_joints} joints")
     
     def test_struct_packing_accuracy(self):
         """Test that struct packing/unpacking maintains float accuracy"""
@@ -493,12 +459,38 @@ class TestNewCommands(unittest.TestCase):
             int_low = struct.unpack('<H', byte_representation[2:])[0]
             feedback_data.extend([int_high,int_low])
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data)
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
         
         # Should get back the original float values (with some float precision tolerance)
         self.assertEqual(len(result), len(test_floats))
         for i, expected_float in enumerate(test_floats):
             self.assertAlmostEqual(result[i], expected_float, places=2)
+    
+    def test_get_decoded_feedback_data_force_sensor(self):
+        """Test get_decoded_feedback_data with force sensor data"""
+        # Force sensor data (multiplier = 2, same as torque)
+        feedback_data = [0x0000, 0x3F80,  # 1.0 N
+                        0x0000, 0x4000,   # 2.0 N
+                        0x0000, 0x4040,   # 3.0 N
+                        0x0000, 0x4080,   # 4.0 N
+                        0x0000, 0x40A0]   # 5.0 N
+        
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_force_sensor_start_reg')
+        
+        expected = [1.0, 2.0, 3.0, 4.0, 5.0]
+        self.assertEqual(result, expected)
+    
+    def test_get_decoded_feedback_data_error_register(self):
+        """Test get_decoded_feedback_data with error register data"""
+        # Error register data (multiplier = 0.5, byte data)
+        test_commands = NewCommands(num_joints=6)
+        feedback_data = [0x0102, 0x0304, 0x0506]  # 3 registers for 6 joints
+        
+        result = test_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_actuator_error_reg')
+        
+        # Should decode to individual bytes
+        expected = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06]
+        self.assertEqual(result, expected)
 
     @classmethod
     def run_tests(cls):

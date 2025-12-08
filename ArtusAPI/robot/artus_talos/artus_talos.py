@@ -155,25 +155,32 @@ class ArtusTalos:
         # print(self.hand_joints['thumb_spread'])
         return self.set_joint_angles(joint_angles)
     
-    def get_joint_angles(self, feedback_package:list,feed_type=0):
+    def get_joint_angles(self, feedback_package:list,modbus_key:str='feedback_position_start_reg'):
         """
+        only named get_joint_angles for consistency with v1 api
         Get the joint angles and feedback list data
         and populate the feedback fields in the hand_joints dictionary
         """
         # TODO logging
         try:
-            for name,joint_data in self.hand_joints.items():
-                if feed_type in [FeedbackTypes.POSITION.value,FeedbackTypes.POSITION_TORQUE.value]:
-                    joint_data.feedback_angle = feedback_package[joint_data.index]
-                if feed_type == FeedbackTypes.POSITION_TORQUE.value:
-                    joint_data.feedback_torque = feedback_package[joint_data.index+self.number_of_joints]
-                if feed_type == FeedbackTypes.TORQUE.value:
-                    joint_data.feedback_torque = feedback_package[joint_data.index]
-                if feed_type == FeedbackTypes.TEMPERATURE.value:
-                    joint_data.feedback_temperature = feedback_package[joint_data.index]
-                if feed_type == FeedbackTypes.FORCE_SENSOR.value:
-                    joint_data.feedback_force = feedback_package[joint_data.index]
 
+            if modbus_key == 'feedback_force_sensor_start_reg':
+                # force sensor data is special, so we need to loop through the force sensors
+                for key,value in self.force_sensors.items():
+                    value['data'].x = feedback_package[value['indices'][0]]
+                    value['data'].y = feedback_package[value['indices'][1]]
+                    value['data'].z = feedback_package[value['indices'][2]]
+            else:
+                # normal loop through joint data and populate feedback fields
+                for name,joint_data in self.hand_joints.items():
+                    if modbus_key == 'feedback_position_start_reg':
+                        joint_data.feedback_angle = feedback_package[joint_data.index]
+                    elif modbus_key == 'feedback_torque_start_reg':
+                        joint_data.feedback_torque = feedback_package[joint_data.index]
+                    elif modbus_key == 'feedback_temperature_start_reg':
+                        joint_data.feedback_temperature = feedback_package[joint_data.index]
+
+            # return feedback package no matter what -- ability to read control registers too
             return feedback_package
         except TypeError:
             # TODO logging
