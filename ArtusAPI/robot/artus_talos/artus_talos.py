@@ -115,7 +115,7 @@ class ArtusTalos:
                 else:
                     self.hand_joints[name].target_torque = target_data['target_torque']
             else:
-                self.hand_joints[name].target_torque = self.joint_torques[self.hand_joints[name].index]
+                self.hand_joints[name].target_torque = None
         self._check_joint_limits(self.hand_joints)
 
 

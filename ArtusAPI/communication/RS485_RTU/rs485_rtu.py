@@ -61,8 +61,11 @@ class RS485_RTU:
             self.logger.error(e)
             self.logger.error(f"Error opening {self.port} @ {self.baudrate} baudrate")
             quit()
-        
+    
     def send(self, data:list,command:int):
+        """
+        Data needs to be in 16b format
+        """
         try:
             if command == CommandType.SETUP_COMMANDS.value:
                 if len(data) != 1:

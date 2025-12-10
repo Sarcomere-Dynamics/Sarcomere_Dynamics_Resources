@@ -59,7 +59,7 @@ class NewCommands(Commands,ModbusMap):
 
         all_have_target_torque = True   
         for name, joint_data in hand_joints.items():
-            if not hasattr(joint_data, 'target_torque'):
+            if not hasattr(joint_data, 'target_torque') or joint_data.target_torque is None:
                 all_have_target_torque = False
                 break
 
@@ -82,7 +82,6 @@ class NewCommands(Commands,ModbusMap):
             
             attribute = 'target_angle'
             command_list.insert(0, self.modbus_reg_map['target_position_start_reg'] + int(starting_reg/2))
-            command_list.insert(0, 0)
             # self.logger.info(f"Starting register: {self.modbus_reg_map['target_position_start_reg'] + int(starting_reg/2)}")
 
         if all_have_target_torque:
