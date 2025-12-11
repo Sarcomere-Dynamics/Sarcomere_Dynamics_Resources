@@ -332,7 +332,10 @@ class ArtusAPI_New:
         self.last_time = time.perf_counter()
 
         # send firmware data
-        self._firmware_updater.update_firmware_piecewise(fw_size)
+        # self._firmware_updater.update_firmware_piecewise(fw_size)
+
+        # send firmware data 
+        self._firmware_updater.update_firmware(fw_size)
 
         # wait for hand state ready
         # if not self._communication_handler.wait_for_ready(vis=False):

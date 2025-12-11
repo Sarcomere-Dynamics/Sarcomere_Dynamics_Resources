@@ -129,8 +129,9 @@ class FirmwareUpdaterNew:
     # this function is only managing sending the actuatl binary data to the master
     # it is not managing starting the firmware update process on the master
     def update_firmware(self,file_size):
-        i = 0
-        ret = False
+        byte_counter = 0
+        page_counter = 0
+        ret = None
 
         file = open(self.file_location,'rb')
         file_data = file.read()
@@ -138,40 +139,57 @@ class FirmwareUpdaterNew:
 
         time.sleep(1)
 
-        chunks_required = int(file_size/BYTES_CHUNK) + 1
-        self.logger.info(f"Binary File will be sent in {BYTES_CHUNK} byte packages for a total of {chunks_required} chunks")
-        
-        with tqdm(total=file_size, unit="B", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
-            loop_cnt = 0
-            while i < file_size:
-                if i+BYTES_CHUNK > file_size:
-                    chunk = list(file_data[i:])
-                    while len(chunk) < BYTES_CHUNK:
-                        chunk.append(0xFF)
-                else:
-                    chunk = list(file_data[i:i+BYTES_CHUNK])
+        # wait for the initial communication/erase function
+        if not self.flashing_ack_checker():
+            return False
 
+        pages_required = math.ceil(file_size/256)
+        self.logger.info(f"Upload requires {pages_required} page writes")
+
+        # over total number of bytes
+        with tqdm(total=pages_required, unit="pages", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
+            while page_counter < pages_required:
+
+                    # fill byte data
                 concat_chunk = []
                 # take each pair and make it into a 16bit value
-                for pc in range(0, len(chunk), 2):
-                    if pc + 1 < len(chunk):
-                        concat_chunk.append(chunk[pc] << 8 | chunk[pc + 1])
+                while len(concat_chunk) < 64: # 128 bytes
+                    if byte_counter >= file_size:
+                        concat_chunk.append(0xffff)
+                    elif byte_counter+1 >= file_size:
+                        concat_chunk.append(file_data[byte_counter] << 8 | 0xff) 
                     else:
-                        concat_chunk.append(chunk[pc] << 8 | 0x00)
+                        concat_chunk.append(file_data[byte_counter] << 8 | file_data[byte_counter+1])
+                    byte_counter += 2
 
                 concat_chunk.insert(0,self._command_handler.commands['firmware_update_command']) # this has to be the first element every time
 
                 self._communication_handler.send_data(concat_chunk,CommandType.FIRMWARE_COMMAND.value)
-                self.logger.info(f"Sent chunk {loop_cnt} of {chunks_required}")
-                i += BYTES_CHUNK
-                loop_cnt+=1
-                pbar.update(BYTES_CHUNK)
+                # page_byte_counter += 128
 
-                if i % 1000 == 0:
-                    continue
+                time.sleep(0.01)
 
-        # send eof is when firmware update commmand is not the  first element in the list
+                self.logger.info(f"Sent page {page_counter} of {pages_required}")
+
+                # a full page has been uploaded
+                # if not self.flashing_ack_checker():
+                #     return False
+                # while not self.flashing_ack_checker():
+                #     time.sleep(0.1)
+
+                self.logger.info(f"Page {page_counter} of {pages_required} uploaded - ACK received")
+
+                time.sleep(0.01)
+
+                # reset page_byte_counter
+                # page_byte_counter = 0
+                page_counter += 0.5 # update by 0.5 pages becaause sending 128 bytes (1/2 page) instead of 256 bytes (full page)
+                pbar.update(0.5)
+
+                if page_counter % 50 == 0:
+                    time.sleep(0.1)
+
+        # send 0000 to end the firmware update process
         eof_list = [0x0,0x0]
         self._communication_handler.send_data(eof_list,CommandType.FIRMWARE_COMMAND.value)
-
         self.logger.info("Firmware Update is in progress..")
