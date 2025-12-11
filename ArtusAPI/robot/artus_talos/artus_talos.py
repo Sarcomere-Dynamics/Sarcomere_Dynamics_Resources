@@ -10,8 +10,9 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from ...common.FeedbackTypes import FeedbackTypes
+from curses import has_key
 from ...sensors import ForceSensor
+import logging
 
 class ArtusTalos:
     def __init__(self,
@@ -28,6 +29,8 @@ class ArtusTalos:
         self.force_sensors = {}
         fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
         indices = [[0,1],[2],[3],[4],[5]]
+
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_torque_start_reg', 'feedback_velocity_start_reg','feedback_force_sensor_start_reg']
         
         for i in range(len(fingers)):
             self.force_sensors[fingers[i]] = {
@@ -42,7 +45,7 @@ class ArtusTalos:
         self.joint_torques = joint_torques
         self.joint_names = joint_names
         self.number_of_joints = number_of_joints
-        
+
         class Joint:
             def __init__(self, index, min_angle, max_angle, default_angle, target_angle, target_torque, temperature, joint_rotation_direction):
                 self.index = index
@@ -81,42 +84,65 @@ class ArtusTalos:
         
     def set_joint_angles(self, joint_angles:dict):
         # verify that items are in order of index 
+        available_control = 0
         sorted_items = sorted(joint_angles.items(), key=lambda x:x[1]['index'])
         ordered_joint_angles = {key:value for key,value in sorted_items}
         # set values based on index
         for name,target_data in ordered_joint_angles.items():
             if target_data['index'] >= self.number_of_joints: # if trying to give more than the available joints, skip
-                # self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints: {self.number_of_joints}")
+                self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints ({self.number_of_joints})")
                 continue
-            self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
-            if 'target_torque' in target_data or 'velocity' in target_data: # backward compatibility with current grasp dict
-                if 'velocity' in target_data:
-                    self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['velocity']
-                else:
-                    self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
-            else:
-                self.hand_joints[self.joint_names[target_data['index']]].target_torque = self.joint_torques[target_data['index']]
+
+
+            # fill data based on control type
+            if hasattr(ordered_joint_angles[name], 'target_angle'):
+                self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
+            elif hasattr(ordered_joint_angles[name], 'target_velocity'):
+                self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
+            elif hasattr(ordered_joint_angles[name], 'target_torque'):
+                self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
+            
+            # fill data based on control type
+            if 'target_angle' in target_data:
+                available_control |= 0b1
+                self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
+            elif 'target_velocity' in target_data:
+                available_control |= 0b10
+                self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
+            elif 'target_torque' in target_data:
+                available_control |= 0b100
+                self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
 
         self._check_joint_limits(self.hand_joints)
+
+        return available_control
 
     def set_joint_angles_by_name(self, joint_angles:dict):
         """
         Set the joint angles of the hand by name
         """
+        available_control = 0
         # set values based on names
         for name,target_data in joint_angles.items():
-            if name not in self.hand_joints:
-                # self.logger.warning(f"Trying to set joint {name} which is not in the hand_joints dictionary")
+            if target_data['index'] >= self.number_of_joints: # if trying to give more than the available joints, skip
+                self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints ({self.number_of_joints})")
                 continue
-            self.hand_joints[name].target_angle = target_data['target_angle'] * self.hand_joints[name].joint_rotation_direction
-            if 'target_torque' in target_data or 'velocity' in target_data: # backward compatibility with current grasp dicts
-                if 'velocity' in target_data:
-                    self.hand_joints[name].target_torque = target_data['velocity']
-                else:
-                    self.hand_joints[name].target_torque = target_data['target_torque']
-            else:
-                self.hand_joints[name].target_torque = None
+
+
+            # fill data based on control type
+            if 'target_angle' in target_data:
+                available_control |= 0b1
+                self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
+            if 'target_velocity' in target_data:
+                available_control |= 0b10
+                self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
+            if 'target_torque' in target_data:
+                available_control |= 0b100
+                self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
+
         self._check_joint_limits(self.hand_joints)
+
+        return available_control
 
 
     def _check_joint_limits(self, joint_angles):
@@ -179,6 +205,8 @@ class ArtusTalos:
                         joint_data.feedback_torque = feedback_package[joint_data.index]
                     elif modbus_key == 'feedback_temperature_start_reg':
                         joint_data.feedback_temperature = feedback_package[joint_data.index]
+                    elif modbus_key == 'feedback_velocity_start_reg':
+                        joint_data.feedback_velocity = feedback_package[joint_data.index]
 
             # return feedback package no matter what -- ability to read control registers too
             return feedback_package

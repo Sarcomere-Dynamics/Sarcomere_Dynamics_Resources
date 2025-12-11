@@ -12,11 +12,15 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is float
             'target_torque_start_reg': 50, # input target torque registers
             # size is 16b
+            'target_velocity_start_reg': 150, # input target velocity registers
+            # size is 16b
             'feedback_register' : 200, # input feedback registers
             # size is byte
             'feedback_position_start_reg': 201, # input feedback position registers
             # size is float
             'feedback_torque_start_reg': 250, # input feedback torque registers
+            # size is 16b
+            'feedback_velocity_start_reg': 350, # input feedback velocity registers
             # size is byte
             'feedback_temperature_start_reg': 400, # input feedback temperature registers
             # size is byte
@@ -24,7 +28,7 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is byte
             'feedback_atuator_motor_mode_reg' : 600, # feedback motor mode
             # size is float
-            'feedback_force_sensor_start_reg': 650 # input feedback fingertip force sensors
+            'feedback_force_sensor_start_reg': 650 # input feedback fingertip force sensors 
         }
 
         self.data_type_multiplier_map = {
@@ -35,11 +39,15 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is float
             'target_torque_start_reg': 2, # input target torque registers
             # size is 16b
+            'feedback_velocity_start_reg': 1, # input feedback velocity registers
+            # size is 16b
             'feedback_register' : 1, # input feedback registers
             # size is byte
             'feedback_position_start_reg': 0.5, # input feedback position registers
             # size is float
             'feedback_torque_start_reg': 2, # input feedback torque registers
+            # size is 16b
+            'feedback_velocity_start_reg': 1, # input feedback velocity registers
             # size is byte
             'feedback_temperature_start_reg': 0.5, # input feedback temperature registers
             # size is byte

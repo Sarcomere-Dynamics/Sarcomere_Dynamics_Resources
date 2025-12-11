@@ -23,15 +23,16 @@ from .artus_talos.artus_talos_right import ArtusTalos_Right
 class Robot:
     def __init__(self,
                  robot_type='artus_lite',
-                hand_type='left'):
+                hand_type='left',logger=None):
         
         # initialize robot
         self.robot_type = robot_type
         self.hand_type = hand_type
+        self.logger = logger
         # setup robot
         self.robot = None
         self._setup_robot()
-
+        
     def _setup_robot(self):
         """
         Initialize robot based on the robot type and hand type
@@ -81,7 +82,7 @@ class Robot:
         """
         return self.robot.set_home_position()
     
-    def get_joint_angles(self, joint_angles,feedback_type=0):
+    def get_joint_angles(self, joint_angles,feedback_type=None):
         """
         Get the joint angles of the hand
         """

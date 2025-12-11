@@ -19,7 +19,6 @@ import math
 
 from .commands import Commands
 from ..common.ModbusMap import ModbusMap
-from ..common.FeedbackTypes import FeedbackTypes
 """
 New Commands Class based on Modbus RTU for RS485 Communication
 """
@@ -33,8 +32,12 @@ class NewCommands(Commands,ModbusMap):
         else:
             self.logger = logger
 
-    def get_robot_start_command(self, stream:bool=False, freq:int=50) -> list:
-        return [self.commands['start_command']]
+    def get_robot_start_command(self, control_type:int=3) -> list:
+        """
+        Get the robot start command
+        :param control_type: 3 for position control, 2 for velocity control, 1 for torque control -- maximum 3 bits
+        """
+        return [self.commands['start_command'],control_type]
 
     def get_target_position_command(self,hand_joints:dict) -> list:
         """
@@ -43,66 +46,76 @@ class NewCommands(Commands,ModbusMap):
                 first element is the starting register
                 next elements are the data to be sent
         """
-        command_list = []
-        starting_reg = 0
-        attribute = None # target_angle or target_torque
+        tmp_list = []
+        starting_reg = self.modbus_reg_map['target_position_start_reg'] # get starting register
 
-        # Sort joints by their index to ensure proper ordering
-        # sorted_joints = dict(sorted(hand_joints.items(), key=lambda x: x[1].index))
-
-        # check that ALL joints have a target angle
-        all_have_target_angle = True
         for name, joint_data in hand_joints.items():
-            if not hasattr(joint_data, 'target_angle'):
-                all_have_target_angle = False
-                break
-
-        all_have_target_torque = True   
-        for name, joint_data in hand_joints.items():
-            if not hasattr(joint_data, 'target_torque') or joint_data.target_torque is None:
-                all_have_target_torque = False
-                break
-
-        # fill command list with data
+            if joint_data.target_angle is not None:
+                # constrain target_angle to be size int8_t
+                int8_angle = int(joint_data.target_angle)
+                if int8_angle < -128 or int8_angle > 127:
+                    self.logger.warning(f"target_angle {int8_angle} out of int8_t range, will be truncated.")
+                    # Clamp the value to int8_t range
+                    int8_angle = max(-128, min(127, int8_angle))
+            else:
+                int8_angle = 0
+            tmp_list.append(int8_angle)
         
-        if all_have_target_angle:
-            self.logger.info(f"Setting target angles")
-            for name, joint_data in hand_joints.items():
-                # command_list.append(int(joint_data.target_angle))
-                tmp = int(joint_data.target_angle)
-                if tmp > 127 or tmp < -128:
-                    self.logger.warning(f"Target angle {tmp} exceeds 8-bit range (-128 to 127), clamping value")
-                    tmp = max(-128, min(127, tmp))
-                self.logger.info(f"Target angle: {tmp}")
-                if joint_data.index%2 == 0:
-                    command_list.append(tmp)
-                else:
-                    command_list[-1] = command_list[-1] << 8 | tmp # this is assuming it is in order which is an OK assumption due to parameter requirement
-            starting_reg = list(hand_joints.values())[0].index # get first joint index
-            
-            attribute = 'target_angle'
-            command_list.insert(0, self.modbus_reg_map['target_position_start_reg'] + int(starting_reg/2))
-            # self.logger.info(f"Starting register: {self.modbus_reg_map['target_position_start_reg'] + int(starting_reg/2)}")
+        command_list = []
+        command_list.append(starting_reg)
+        
+        for i in range(0, len(tmp_list), 2):
+            command_list.append(tmp_list[i] << 8 | tmp_list[i+1])
 
-        if all_have_target_torque:
-            self.logger.info(f"Setting target angles")
-            for name, joint_data in hand_joints.items():
-                tmp = round(float(joint_data.target_torque), 2)
-                self.logger.info(f"Target torque: {tmp}")
-                # Convert float to 4 bytes (IEEE 754 format) and then to two 16-bit integers
+        return command_list
+
+    def get_target_velocity_command(self,hand_joints:dict) -> list:
+        """
+        @param hand_joints: a sorted dictionary of hand joints by index
+        @return command_list: a list of commands to send to the hand
+                first element is the starting register
+                next elements are the data to be sent
+        """
+        tmp_list = []
+        starting_reg = self.modbus_reg_map['target_velocity_start_reg'] # get starting register
+        tmp_list.append(starting_reg)
+        for name,joint_data in hand_joints.items():
+            if joint_data.target_velocity is not None:
+                # constrain target_velocity to be size int16_t
+                int16_velocity = int(joint_data.target_velocity)
+                if int16_velocity < -32768 or int16_velocity > 32767:
+                    self.logger.warning(f"target_velocity {int16_velocity} out of int16_t range, will be truncated.")
+                    # Clamp the value to int16_t range
+                    int16_velocity = max(-32768, min(32767, int16_velocity))
+            else:
+                int16_velocity = 0
+            tmp_list.append(int16_velocity)
+
+        return tmp_list
+
+    def get_target_torque_command(self,hand_joints:dict) -> list:
+        """
+        @param hand_joints: a sorted dictionary of hand joints by index
+        @return command_list: a list of commands to send to the hand
+                first element is the starting register
+                next elements are the data to be sent
+        """
+        tmp_list = []
+        starting_reg = self.modbus_reg_map['target_torque_start_reg'] # get starting register
+        tmp_list.append(starting_reg)
+        for name,joint_data in hand_joints.items():
+            if joint_data.target_torque is not None:
+                # round target torque to 2 decimal places
+                tmp = round(joint_data.target_torque, 2)
                 byte_representation = struct.pack('<f', tmp)  # Little-endian float to bytes
                 int_low = struct.unpack('<H', byte_representation[:2])[0]  # First 2 bytes as uint16
                 int_high = struct.unpack('<H', byte_representation[2:])[0]  # Last 2 bytes as uint16
-                command_list.append(int_high) # high byte is first (even register index)
-                command_list.append(int_low) # low byte is second (odd register index)
-            
-            
-            if attribute is None: # only if target_angle is not actively being set/used
-                starting_reg = list(hand_joints.values())[0].index # get first joint index
-                command_list.insert(0, self.modbus_reg_map['target_torque_start_reg'] + int(starting_reg*2))
-                # self.logger.info(f"Starting register: {self.modbus_reg_map['target_torque_start_reg'] + int(starting_reg*2)}")
-
-        return command_list
+                tmp_list.append(int_high) # high byte is first (even register index)
+                tmp_list.append(int_low) # low byte is second (odd register index)
+            else:
+                tmp_list.append(0)
+                tmp_list.append(0)
+        return tmp_list
 
     def get_decoded_feedback_data(self,feedback_data:list,modbus_key:str='feedback_register') -> list:
         """

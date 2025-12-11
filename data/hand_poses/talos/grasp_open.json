@@ -2,37 +2,37 @@
     "thumb_spread":
     {
         "target_angle": 0,
-        "force": 40, 
+        "target_torque": 0.2, 
         "index": 0
     },
     "thumb_flex":
     {
         "target_angle": 0,
-        "force": 40,
+        "target_torque": 0.2,
         "index": 1
     },
     "index_flex":
     {
         "target_angle": 0,
-        "force": 40,
+        "target_torque": 0.2,
         "index": 2
     },
     "middle_flex":
     {
         "target_angle": 0,
-        "force": 40,
+        "target_torque": 0.20,
         "index": 3
     },
     "ring_flex":
     {
         "target_angle": 0,
-        "force": 40,
+        "target_torque": 0.20,
         "index": 4
-    },
+    },  
     "pinky_flex":
     {
         "target_angle": 0,
-        "force": 40,
+        "target_torque": 20,
         "index": 5
     }
 }
