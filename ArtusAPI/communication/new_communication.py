@@ -37,7 +37,7 @@ class NewCommunication:
     
     def _setup_communication(self):
         if self.communication_method == "RS485_RTU":
-            self.communicator = RS485_RTU(port=self.port, baudrate=self.baudrate, timeout=0.018, logger=self.logger, slave_address=self.slave_address)
+            self.communicator = RS485_RTU(port=self.port, baudrate=self.baudrate, timeout=0.2, logger=self.logger, slave_address=self.slave_address)
         else:
             raise ValueError("Unknown communication method")
 

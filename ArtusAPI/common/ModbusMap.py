@@ -69,7 +69,7 @@ class ActuatorState(Enum):
     ACTUATOR_READY = 7  # ready to receive commmands, setup control modes, etc.
     ACTUATOR_BUSY = 8  # wait for ack from actuator
     ACTUATOR_ERROR = 9
-    ACTUATOR_FLASHING_ACK = 10
+    ACTUATOR_FLASHING_ACK = 11
 
 class CommandType(Enum):
     SETUP_COMMANDS = 6

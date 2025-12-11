@@ -335,8 +335,8 @@ class ArtusAPI_New:
         self._firmware_updater.update_firmware_piecewise(fw_size)
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=False):
-            self.logger.error("Hand timed out waiting for ready")
-        else:
-            self.logger.info("Hand ready")
+        # if not self._communication_handler.wait_for_ready(vis=False):
+        #     self.logger.error("Hand timed out waiting for ready")
+        # else:
+        #     self.logger.info("Hand ready")
             
