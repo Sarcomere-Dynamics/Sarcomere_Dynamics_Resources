@@ -52,7 +52,7 @@ class FirmwareUpdaterNew:
             elif ret == ActuatorState.ACTUATOR_ERROR.value:
                 return False
             else:
-                time.sleep(1)
+                time.sleep(0.1)
     
     def update_firmware_piecewise(self,file_size):
         """
@@ -99,19 +99,19 @@ class FirmwareUpdaterNew:
                     self._communication_handler.send_data(concat_chunk,CommandType.FIRMWARE_COMMAND.value)
                     page_byte_counter += 128
 
-                time.sleep(0.1)
+                time.sleep(0.01)
 
                 self.logger.info(f"Sent page {page_counter} of {pages_required}")
 
                 # a full page has been uploaded
-                # if not self.flashing_ack_checker():
-                #     return False
-                while not self.flashing_ack_checker():
-                    time.sleep(0.1)
+                if not self.flashing_ack_checker():
+                    return False
+                # while not self.flashing_ack_checker():
+                #     time.sleep(0.1)
 
                 self.logger.info(f"Page {page_counter} of {pages_required} uploaded - ACK received")
 
-                time.sleep(0.1)
+                time.sleep(0.01)
 
                 # reset page_byte_counter
                 page_byte_counter = 0
