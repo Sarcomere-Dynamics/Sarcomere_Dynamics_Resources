@@ -26,3 +26,35 @@ __A note about Joint Limits__
 <div align=center>
 <img src='data/images/hand_joint_map.png' width=800>
 </div>
+
+# Artus Lite — Motor Resetting & Joint–Motor Mapping
+
+This section explains how **joint indices** map to motors for **left** and **right** hands, and how to reset a specific motor or an entire actuator using `ArtusAPI`.
+
+---
+
+## Resetting a Motor
+
+If a motor enters a stalled or faulted state, it can be reset using:
+
+```python
+ArtusAPI.reset(j=joint_index, m=motor)
+```
+
+    j (int) — Joint index (see tables above)
+
+    m (int) — Motor selector:
+
+        0 → reset all motors associated with the joint (recommended)
+
+        1 → reset motor 1 only
+
+        2 → reset motor 2 only
+
+### Reset Example
+
+#### Reset all motors on Index Flexion (safe default)
+```python
+ArtusAPI.reset(j=5, m=0)
+```
+
