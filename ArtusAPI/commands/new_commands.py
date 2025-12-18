@@ -63,10 +63,16 @@ class NewCommands(Commands,ModbusMap):
         
         command_list = []
         command_list.append(starting_reg)
+
+        # if number of joints is 1, just fill with 0
+        if len(tmp_list) == 1:
+            tmp_list.append(0)
         
         for i in range(0, len(tmp_list), 2):
             command_list.append(tmp_list[i] << 8 | tmp_list[i+1])
 
+        # cast all elements to uint16_t
+        command_list = [int(x) & 0xFFFF for x in command_list]
         return command_list
 
     def get_target_velocity_command(self,hand_joints:dict) -> list:
@@ -164,7 +170,11 @@ class NewCommands(Commands,ModbusMap):
         # feedback type
         estimated_feedback_type = None
         # get size of feedback data
-        size_of_feedback_data = len(feedback_data)
+        if isinstance(feedback_data, int):
+            size_of_feedback_data = 1
+            feedback_data = [feedback_data]
+        else:
+            size_of_feedback_data = len(feedback_data)
         self.logger.info(f"Size of feedback data: {size_of_feedback_data} & num joints: {self.num_joints}")
 
         # only 1 data type is allowed to be sent back at a time

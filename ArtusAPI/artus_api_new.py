@@ -85,10 +85,10 @@ class ArtusAPI_New:
         time.sleep(1)
         # self.wake_up()
     
-    def wake_up(self,control_type:int=0):
+    def wake_up(self,control_type:int=3):
         """
         Wake up the hand and set the control type
-        :param control_type: 0 for position control, 1 for velocity control, 2 for torque control
+         3 for position control, 2 for velocity control, 1 for torque control -- maximum 3 bits
         """
         wake_command = self._command_handler.get_robot_start_command(control_type=control_type)
 
@@ -110,8 +110,11 @@ class ArtusAPI_New:
         self.last_time = time.perf_counter()
     
     def get_actuator_status(self):
-        return self._communication_handler._check_robot_state()
-
+        try:
+            return ActuatorState(self._communication_handler._check_robot_state()).name
+        except ValueError:
+            self.logger.error(f"Invalid actuator state: {self._communication_handler._check_robot_state()}")
+            return None
 
     def calibrate(self,joint=0):
         if not self._check_awake():
@@ -142,6 +145,7 @@ class ArtusAPI_New:
             return
 
         available_control = self._robot_handler.set_joint_angles(joint_angles,name=True)
+        self.logger.info(f"Available control: {available_control}")
 
         if available_control == 0:
             self.logger.warning("No valid data in joint dictionary to send")
@@ -152,16 +156,16 @@ class ArtusAPI_New:
             self.wait_for_com_freq()
             self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
             self.last_time = time.perf_counter()
-        # if (available_control & 0b10) != 0:
-        #     set_joint_angles_cmd = self._command_handler.get_target_velocity_command(self._robot_handler.robot.hand_joints)
-        #     self.wait_for_com_freq()
-        #     self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
-        #     self.last_time = time.perf_counter()
-        # if (available_control & 0b100) != 0:
-        #     set_joint_angles_cmd = self._command_handler.get_target_torque_command(self._robot_handler.robot.hand_joints)
-        #     self.wait_for_com_freq()
-        #     self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
-        #     self.last_time = time.perf_counter()
+        if (available_control & 0b10) != 0:
+            set_joint_angles_cmd = self._command_handler.get_target_velocity_command(self._robot_handler.robot.hand_joints)
+            self.wait_for_com_freq()
+            self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
+            self.last_time = time.perf_counter()
+        if (available_control & 0b100) != 0:
+            set_joint_angles_cmd = self._command_handler.get_target_torque_command(self._robot_handler.robot.hand_joints)
+            self.wait_for_com_freq()
+            self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
+            self.last_time = time.perf_counter()
         return True
 
     def _check_communication_frequency(self,last_time:float):
@@ -210,13 +214,13 @@ class ArtusAPI_New:
             return
         # check starting reg
         start_reg_confirmed = False
-        for key,value in ModbusMap().modbus_reg_map:
+        for key,value in ModbusMap().modbus_reg_map.items():
             if value == start_reg:
                 start_reg_confirmed = key
                 break
 
         if start_reg_confirmed is not None:
-            amount_data = ModbusMap().data_type_multiplier_map[start_reg_confirmed] * self._robot_handler.robot.number_of_joints
+            amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_confirmed] * self._robot_handler.robot.number_of_joints)
         else:
             raise ValueError('Start Register is not recognized -- see ModbusMap.pdf in robot/$robot$/data')
 
@@ -236,7 +240,7 @@ class ArtusAPI_New:
         start_reg = ModbusMap().modbus_reg_map['feedback_torque_start_reg']
         start_reg_key = 'feedback_torque_start_reg'
 
-        amount_data = ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints
+        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints)
 
         feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
@@ -254,7 +258,7 @@ class ArtusAPI_New:
         start_reg = ModbusMap().modbus_reg_map['feedback_velocity_start_reg']
         start_reg_key = 'feedback_velocity_start_reg'
 
-        amount_data = ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints
+        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints)
 
         feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
@@ -275,7 +279,7 @@ class ArtusAPI_New:
         start_reg = ModbusMap().modbus_reg_map['feedback_temperature_start_reg']
         start_reg_key = 'feedback_temperature_start_reg'
 
-        amount_data = ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints
+        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints) 
 
         feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
@@ -334,12 +338,12 @@ class ArtusAPI_New:
         # send firmware data
         # self._firmware_updater.update_firmware_piecewise(fw_size)
 
+        time.sleep(0.5)
+
         # send firmware data 
         self._firmware_updater.update_firmware(fw_size)
 
         # wait for hand state ready
-        # if not self._communication_handler.wait_for_ready(vis=False):
-        #     self.logger.error("Hand timed out waiting for ready")
-        # else:
-        #     self.logger.info("Hand ready")
-            
+        while self.get_actuator_status() == ActuatorState.ACTUATOR_FLASHING.name:
+            self.logger.info(f"Waiting for firmware update to complete")
+            time.sleep(2)

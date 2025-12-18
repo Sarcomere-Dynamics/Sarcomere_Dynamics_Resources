@@ -10,21 +10,17 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from curses import has_key
-from ...sensors import ForceSensor
 from ..bldc_robot.bldcrobot import BLDCRobot
-import logging
 
-class ArtusTalos(BLDCRobot):
+class ArtusScorpion(BLDCRobot):
     def __init__(self,
-                joint_max_angles=[55,90,90,90,90,90],
-                joint_min_angles=[-55,0,0,0,0,0],
+                joint_max_angles=[21], # stroke mm
+                joint_min_angles=[0],
                 joint_default_angles=[],
-                joint_rotation_directions=[1,1,1,1,1,1],
+                joint_rotation_directions=[1],
                 joint_torques=[],
-                joint_names=['thumb_spread','thumb_flex','index_flex',
-                            'middle_flex','ring_flex','pinky_flex'],
-                number_of_joints=6,
+                joint_names=['gripper_joint'],
+                number_of_joints=1,
                 logger=None):
         super().__init__(joint_max_angles=joint_max_angles,
                          joint_min_angles=joint_min_angles,

@@ -45,14 +45,20 @@ class FirmwareUpdaterNew:
     
     def flashing_ack_checker(self):
         while True:
-            ret = self._communication_handler._check_robot_state()
+            try:
+                ret = self._communication_handler._check_robot_state()
 
-            if ret == ActuatorState.ACTUATOR_FLASHING_ACK.value:
-                return True
-            elif ret == ActuatorState.ACTUATOR_ERROR.value:
-                return False
-            else:
-                time.sleep(0.1)
+                if ret == ActuatorState.ACTUATOR_FLASHING_ACK.value:
+                    return True
+                elif ret == ActuatorState.ACTUATOR_ERROR.value:
+                    self.logger.error(f"Error: {ret}")
+                    return False
+                elif ret == ActuatorState.ACTUATOR_FLASHING.value:
+                    self.logger.info(f'Erasing Flash..')
+            except Exception as e:
+                self.logger.error(f"Error checking robot state: {e}")
+                continue
+            time.sleep(5)
     
     def update_firmware_piecewise(self,file_size):
         """

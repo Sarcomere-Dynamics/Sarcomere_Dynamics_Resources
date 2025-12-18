@@ -20,6 +20,9 @@ from .artus_lite.artus_lite_plus_left import ArtusLite_Plus_LeftHand
 from .artus_talos.artus_talos_left import ArtusTalos_Left
 from .artus_talos.artus_talos_right import ArtusTalos_Right
 
+# Artus Scorpion
+from .artus_scorpion.artus_scorpion import ArtusScorpion
+
 class Robot:
     def __init__(self,
                  robot_type='artus_lite',
@@ -62,6 +65,8 @@ class Robot:
                 self.robot = ArtusTalos_Left()
             else:
                 raise ValueError("Unknown hand")
+        elif self.robot_type == 'artus_scorpion':
+            self.robot = ArtusScorpion()
         else:
             raise ValueError("Unknown robot type")
         
@@ -70,7 +75,7 @@ class Robot:
         """
         Set the joint angles of the hand
         """
-        if name:
+        if name and self.robot_type != 'artus_scorpion': # scorpion has no name for joints because just 1 joint
             return self.robot.set_joint_angles_by_name(joint_angles)
         else:
             return self.robot.set_joint_angles(joint_angles)

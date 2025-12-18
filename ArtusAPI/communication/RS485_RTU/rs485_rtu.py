@@ -72,12 +72,16 @@ class RS485_RTU:
             try:
                 if command == CommandType.SETUP_COMMANDS.value:
                     if len(data) != 1:
-                        if not (0 <= data[0] <= 255 and 0 <= data[1] <= 255):
+                        # Cast each data value into uint8_t before concat
+                        d0 = int(data[0]) & 0xFF
+                        d1 = int(data[1]) & 0xFF
+                        if not (0 <= d0 <= 255 and 0 <= d1 <= 255):
                             self.logger.error(f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}")
                             return False
-                        value = (data[1] << 8) | data[0]
+                        value = (d1 << 8) | d0
                     else:
                         value = data[0]
+                    
                     self.instrument.write_register(registeraddress=0, functioncode=0x06, value=value)
                 elif command == CommandType.TARGET_COMMAND.value:
                     self.instrument.write_registers(registeraddress=data[0], values=data[1:])
