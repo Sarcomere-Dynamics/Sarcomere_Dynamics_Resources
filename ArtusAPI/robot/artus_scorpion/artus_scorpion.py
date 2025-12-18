@@ -30,3 +30,6 @@ class ArtusScorpion(BLDCRobot):
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
                          logger=logger)
+
+        # set sensors
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_torque_start_reg', 'feedback_velocity_start_reg']

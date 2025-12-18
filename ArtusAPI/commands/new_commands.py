@@ -10,6 +10,7 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
+from typing import Any
 import minimalmodbus
 import logging
 import struct
@@ -167,6 +168,21 @@ class NewCommands(Commands,ModbusMap):
                     decoded_data.append(float_value)
             return decoded_data
 
+        def helper_decode_feedback_signed_16b(data:Any) -> Any:
+            """
+            Helper function to decode signed 16-bit feedback data
+            :param data: list of uint16 values that need to be decoded into properly formatted values (bytes,floats,etc. ) based on value type
+            :return decoded_data: list of decoded data in the correct format based on the value type
+            """
+            # each value is an item in list
+            if isinstance(data, list):
+                return [((v + 2**15) % 2**16 - 2**15) for v in data]
+            else:
+                return ((data + 2**15) % 2**16 - 2**15)
+
+
+            
+
         # feedback type
         estimated_feedback_type = None
         # get size of feedback data
@@ -188,7 +204,8 @@ class NewCommands(Commands,ModbusMap):
             case 2:
                 decoded_data = helper_decode_feedback_16b_float(feedback_data)
             case 1:
-                decoded_data = [(feedback_data[0] >> 8) & 0xFF, feedback_data[0] & 0xFF] 
+                # Ensure feedback_data is interpreted as int16_t (signed 16-bit integers)
+                decoded_data = [((v + 2**15) % 2**16 - 2**15) for v in feedback_data]
 
         return decoded_data
 

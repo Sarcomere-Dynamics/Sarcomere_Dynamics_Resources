@@ -264,7 +264,7 @@ class ArtusAPI_New:
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
 
         # populate hand joint dict based on robot
-        self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key)
+        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
 
 
     ### NOT IMPLEMENTED YET ###
