@@ -112,7 +112,7 @@ class NewCommands(Commands,ModbusMap):
         tmp_list.append(starting_reg)
         for name,joint_data in hand_joints.items():
             if joint_data.target_force is not None:
-                # round target torque to 2 decimal places
+                # round target force to 2 decimal places
                 tmp = round(joint_data.target_force, 2)
                 byte_representation = struct.pack('<f', tmp)  # Little-endian float to bytes
                 int_low = struct.unpack('<H', byte_representation[:2])[0]  # First 2 bytes as uint16
@@ -338,12 +338,12 @@ class TestNewCommands(unittest.TestCase):
             result = self.new_commands.get_target_position_command(hand_joints)
         
         # Verify the conversion process
-        rounded_torque = round(3.14159, 2)  # Should be 3.14
-        byte_representation = struct.pack('<f', rounded_torque)
+        rounded_force = round(3.14159, 2)  # Should be 3.14
+        byte_representation = struct.pack('<f', rounded_force)
         int_low = struct.unpack('<H', byte_representation[:2])[0]
         int_high = struct.unpack('<H', byte_representation[2:])[0]
         
-        # For torque command, starting register is target_force_start_reg + index/2
+        # For force command, starting register is target_force_start_reg + index/2
         expected = [self.new_commands.modbus_reg_map['target_force_start_reg'] + int(mock_joint.index/2), int_high, int_low]
         self.assertEqual(result, expected)
 
@@ -380,7 +380,7 @@ class TestNewCommands(unittest.TestCase):
     
     def test_get_decoded_feedback_data_torque_only(self):
         """Test get_decoded_feedback_data with torque data only"""
-        # For 5 joints: num_joints*2 = 10 values (5 torque floats, 2 registers each)
+        # For 5 joints: num_joints*2 = 10 values (5 force floats, 2 registers each)
         feedback_data = [0x0000, 0x3F80,  # 1.0
                         0x0000, 0x4000,   # 2.0
                         0x0000, 0x4040,   # 3.0
@@ -468,11 +468,11 @@ class TestNewCommands(unittest.TestCase):
             result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_position_start_reg')
             self.assertIsNotNone(result, f"Position failed for {num_joints} joints")
             
-            # Torque data - multiplier 2 (float data)
+            # Force data - multiplier 2 (float data)
             size_torque = num_joints * 2
             mock_data = [0] * size_torque  
             result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_force_start_reg')
-            self.assertIsNotNone(result, f"Torque failed for {num_joints} joints")
+            self.assertIsNotNone(result, f"Force failed for {num_joints} joints")
             
             # Temperature data - multiplier 0.5 (byte data)
             size_temperature = int(num_joints/2) if num_joints % 2 == 0 else int(num_joints/2) + 1
@@ -507,7 +507,7 @@ class TestNewCommands(unittest.TestCase):
     
     def test_get_decoded_feedback_data_force_sensor(self):
         """Test get_decoded_feedback_data with force sensor data"""
-        # Force sensor data (multiplier = 2, same as torque)
+        # Force sensor data (multiplier = 2, same as force)
         feedback_data = [0x0000, 0x3F80,  # 1.0 N
                         0x0000, 0x4000,   # 2.0 N
                         0x0000, 0x4040,   # 3.0 N
