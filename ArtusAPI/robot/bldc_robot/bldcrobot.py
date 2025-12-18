@@ -19,7 +19,7 @@ class BLDCRobot:
                 joint_min_angles=[-55,0,0,0,0,0],
                 joint_default_angles=[],
                 joint_rotation_directions=[1,1,1,1,1,1],
-                joint_torques=[],
+                joint_forces=[],
                 joint_names=['thumb_spread','thumb_flex','index_flex',
                             'middle_flex','ring_flex','pinky_flex'],
                 number_of_joints=6,
@@ -35,7 +35,7 @@ class BLDCRobot:
         fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
         indices = [[0,1],[2],[3],[4],[5]]
 
-        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_torque_start_reg', 'feedback_velocity_start_reg','feedback_force_sensor_start_reg']
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg','feedback_force_sensor_start_reg']
         
         for i in range(len(fingers)):
             self.force_sensors[fingers[i]] = {
@@ -47,18 +47,18 @@ class BLDCRobot:
         self.joint_min_angles = joint_min_angles
         self.joint_default_angles = joint_default_angles
         self.joint_rotation_directions = joint_rotation_directions
-        self.joint_torques = joint_torques
+        self.joint_forces = joint_forces
         self.joint_names = joint_names
         self.number_of_joints = number_of_joints
 
         class Joint:
-            def __init__(self, index, min_angle, max_angle, default_angle, target_angle, target_torque, temperature, joint_rotation_direction):
+            def __init__(self, index, min_angle, max_angle, default_angle, target_angle, target_force, temperature, joint_rotation_direction):
                 self.index = index
                 self.min_angle = min_angle
                 self.max_angle = max_angle
                 self.default_angle = default_angle
                 self.target_angle = target_angle
-                self.target_torque = target_torque
+                self.target_force = target_force
                 self.feedback_angle = 0
                 self.feedback_current = 0
                 self.feedback_force = 0.0
@@ -80,12 +80,12 @@ class BLDCRobot:
                                                       max_angle=self.joint_max_angles[joint_index],
                                                       default_angle=0,
                                                       target_angle=0,
-                                                      target_torque=0,
+                                                      target_force=0,
                                                       temperature=0,
                                                       joint_rotation_direction=self.joint_rotation_directions[joint_index])
 
         # free up mem
-        del self.joint_max_angles, self.joint_min_angles, self.joint_default_angles, self.joint_rotation_directions, self.joint_torques
+        del self.joint_max_angles, self.joint_min_angles, self.joint_default_angles, self.joint_rotation_directions, self.joint_forces
         
 
 
@@ -100,21 +100,6 @@ class BLDCRobot:
                 self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints ({self.number_of_joints})")
                 continue
 
-
-            # fill data based on control type
-            # if hasattr(ordered_joint_angles[name], 'target_angle'):
-            #     available_control |= 0b1
-            #     self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
-            #     self.logger.info(f"Setting target angle for {self.joint_names[target_data['index']]} to {target_data['target_angle']}")
-            # elif hasattr(ordered_joint_angles[name], 'target_velocity'):
-            #     available_control |= 0b10
-            #     self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
-            #     self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['velocity']}")
-            # elif hasattr(ordered_joint_angles[name], 'target_torque'):
-            #     available_control |= 0b100
-            #     self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
-            #     self.logger.info(f"Setting target torque for {self.joint_names[target_data['index']]} to {target_data['target_torque']}")
-
             # fill data based on control type
             if 'target_angle' in target_data:
                 available_control |= 0b1
@@ -124,10 +109,10 @@ class BLDCRobot:
                 available_control |= 0b10
                 self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
                 self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['velocity']}")
-            if 'target_torque' in target_data:
+            if 'target_force' in target_data:
                 available_control |= 0b100
-                self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
-                self.logger.info(f"Setting target torque for {self.joint_names[target_data['index']]} to {target_data['target_torque']}")
+                self.hand_joints[self.joint_names[target_data['index']]].target_force = target_data['target_force']
+                self.logger.info(f"Setting target force for {self.joint_names[target_data['index']]} to {target_data['target_force']}")
         self._check_joint_limits(self.hand_joints)
 
         return available_control
@@ -153,10 +138,10 @@ class BLDCRobot:
                 available_control |= 0b10
                 self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
                 self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['velocity']}")
-            if 'target_torque' in target_data:
+            if 'target_force' in target_data:
                 available_control |= 0b100
-                self.hand_joints[self.joint_names[target_data['index']]].target_torque = target_data['target_torque']
-                self.logger.info(f"Setting target torque for {self.joint_names[target_data['index']]} to {target_data['target_torque']}")
+                self.hand_joints[self.joint_names[target_data['index']]].target_force = target_data['target_force']
+                self.logger.info(f"Setting target force for {self.joint_names[target_data['index']]} to {target_data['target_force']}")
 
         self._check_joint_limits(self.hand_joints)
 
@@ -176,16 +161,16 @@ class BLDCRobot:
                 # TODO logging
         return joint_angles
 
-    def _check_joint_torques(self, joint_angles):
+    def _check_joint_forces(self, joint_angles):
         """
         Check if the joint velocities are within limits
         """
         for joint in self.hand_joints:
-            if joint_angles[joint.index] > joint.max_torque:
-                joint_angles[joint.index] = joint.max_torque
+            if joint_angles[joint.index] > joint.max_force:
+                joint_angles[joint.index] = joint.max_force
                 # TODO logging
-            if joint_angles[joint.index] < joint.min_torque:
-                joint_angles[joint.index] = joint.min_torque
+            if joint_angles[joint.index] < joint.min_force:
+                joint_angles[joint.index] = joint.min_force
                 # TODO logging
         return joint_angles
 
@@ -219,8 +204,8 @@ class BLDCRobot:
                 for name,joint_data in self.hand_joints.items():
                     if modbus_key == 'feedback_position_start_reg':
                         joint_data.feedback_angle = feedback_package[joint_data.index]
-                    elif modbus_key == 'feedback_torque_start_reg':
-                        joint_data.feedback_torque = feedback_package[joint_data.index]
+                    elif modbus_key == 'feedback_force_start_reg':
+                        joint_data.feedback_force = feedback_package[joint_data.index]
                     elif modbus_key == 'feedback_temperature_start_reg':
                         joint_data.feedback_temperature = feedback_package[joint_data.index]
                     elif modbus_key == 'feedback_velocity_start_reg':

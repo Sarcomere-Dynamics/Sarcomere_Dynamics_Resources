@@ -18,7 +18,7 @@ class ArtusScorpion(BLDCRobot):
                 joint_min_angles=[0],
                 joint_default_angles=[],
                 joint_rotation_directions=[1],
-                joint_torques=[],
+                joint_forces=[],
                 joint_names=['gripper_joint'],
                 number_of_joints=1,
                 logger=None):
@@ -26,10 +26,10 @@ class ArtusScorpion(BLDCRobot):
                          joint_min_angles=joint_min_angles,
                          joint_default_angles=joint_default_angles,
                          joint_rotation_directions=joint_rotation_directions,
-                         joint_torques=joint_torques,
+                         joint_forces=joint_forces,
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
                          logger=logger)
 
         # set sensors
-        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_torque_start_reg', 'feedback_velocity_start_reg']
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg']

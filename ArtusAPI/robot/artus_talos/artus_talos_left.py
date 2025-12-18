@@ -17,5 +17,5 @@ class ArtusTalos_Left(ArtusTalos):
                 joint_min_angles=[-30,0,0,0,0,0],
                 joint_default_angles=[0,0,0,0,0,0],
                 joint_rotation_directions=[-1,1,1,1,1,1],
-                joint_torques=[],
+                joint_forces=[],
                 number_of_joints=6)

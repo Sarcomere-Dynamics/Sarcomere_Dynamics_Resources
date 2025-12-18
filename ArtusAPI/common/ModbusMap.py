@@ -10,7 +10,7 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is byte
             'target_position_start_reg': 1, # input target position registers
             # size is float
-            'target_torque_start_reg': 50, # input target torque registers
+            'target_force_start_reg': 50, # input target force registers
             # size is 16b
             'target_velocity_start_reg': 150, # input target velocity registers
             # size is 16b
@@ -18,7 +18,7 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is byte
             'feedback_position_start_reg': 201, # input feedback position registers
             # size is float
-            'feedback_torque_start_reg': 250, # input feedback torque registers
+            'feedback_force_start_reg': 250, # input feedback force registers
             # size is 16b
             'feedback_velocity_start_reg': 350, # input feedback velocity registers
             # size is byte
@@ -37,7 +37,7 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is byte
             'target_position_start_reg': 0.5, # input target position registers
             # size is float
-            'target_torque_start_reg': 2, # input target torque registers
+            'target_force_start_reg': 2, # input target force registers
             # size is 16b
             'feedback_velocity_start_reg': 1, # input feedback velocity registers
             # size is 16b
@@ -45,7 +45,7 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is byte
             'feedback_position_start_reg': 0.5, # input feedback position registers
             # size is float
-            'feedback_torque_start_reg': 2, # input feedback torque registers
+            'feedback_force_start_reg': 2, # input feedback force registers
             # size is 16b
             'feedback_velocity_start_reg': 1, # input feedback velocity registers
             # size is byte

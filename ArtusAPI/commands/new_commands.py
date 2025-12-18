@@ -100,7 +100,7 @@ class NewCommands(Commands,ModbusMap):
 
         return tmp_list
 
-    def get_target_torque_command(self,hand_joints:dict) -> list:
+    def get_target_force_command(self,hand_joints:dict) -> list:
         """
         @param hand_joints: a sorted dictionary of hand joints by index
         @return command_list: a list of commands to send to the hand
@@ -108,12 +108,12 @@ class NewCommands(Commands,ModbusMap):
                 next elements are the data to be sent
         """
         tmp_list = []
-        starting_reg = self.modbus_reg_map['target_torque_start_reg'] # get starting register
+        starting_reg = self.modbus_reg_map['target_force_start_reg'] # get starting register
         tmp_list.append(starting_reg)
         for name,joint_data in hand_joints.items():
-            if joint_data.target_torque is not None:
+            if joint_data.target_force is not None:
                 # round target torque to 2 decimal places
-                tmp = round(joint_data.target_torque, 2)
+                tmp = round(joint_data.target_force, 2)
                 byte_representation = struct.pack('<f', tmp)  # Little-endian float to bytes
                 int_low = struct.unpack('<H', byte_representation[:2])[0]  # First 2 bytes as uint16
                 int_high = struct.unpack('<H', byte_representation[2:])[0]  # Last 2 bytes as uint16
@@ -251,16 +251,16 @@ class TestNewCommands(unittest.TestCase):
         self.assertEqual(result, expected)
         # self.logger.info.assert_called()
     
-    def test_get_target_position_command_with_target_torque(self):
-        """Test get_target_position_command with target_torque"""
-        # Create mock hand joints with target_torque
+    def test_get_target_position_command_with_target_force(self):
+        """Test get_target_position_command with target_force"""
+        # Create mock hand joints with target_force
         mock_joint = Mock()
-        mock_joint.target_torque = 1.5
+        mock_joint.target_force = 1.5
         mock_joint.index = 2
         hand_joints = {'joint1': mock_joint}
         
-        # Mock hasattr to return False for target_angle, True for target_torque
-        with patch('builtins.hasattr', side_effect=lambda obj, attr: attr == 'target_torque'):
+        # Mock hasattr to return False for target_angle, True for target_force
+        with patch('builtins.hasattr', side_effect=lambda obj, attr: attr == 'target_force'):
             result = self.new_commands.get_target_position_command(hand_joints)
         
         # Convert 1.5 to IEEE 754 format
@@ -268,7 +268,7 @@ class TestNewCommands(unittest.TestCase):
         int_low = struct.unpack('<H', byte_representation[:2])[0]
         int_high = struct.unpack('<H', byte_representation[2:])[0]
         
-        expected = [self.new_commands.modbus_reg_map['target_torque_start_reg'] + int(mock_joint.index*2), int_high, int_low]  # start_reg + index*2, high_byte, low_byte
+        expected = [self.new_commands.modbus_reg_map['target_force_start_reg'] + int(mock_joint.index*2), int_high, int_low]  # start_reg + index*2, high_byte, low_byte
         self.assertEqual(result, expected)
     
     def test_get_target_position_command_multiple_joints(self):
@@ -321,16 +321,16 @@ class TestNewCommands(unittest.TestCase):
     
     def test_torque_conversion_accuracy(self):
         """Test that torque conversion maintains accuracy"""
-        mock_joint = Mock(spec_set=['target_torque','index'])
-        mock_joint.target_torque = 3.14159
+        mock_joint = Mock(spec_set=['target_force','index'])
+        mock_joint.target_force = 3.14159
         mock_joint.index = 0
         hand_joints = {'joint1': mock_joint}
         
-        # Mock hasattr to return False for target_angle and True for target_torque
+        # Mock hasattr to return False for target_angle and True for target_force
         def mock_hasattr(obj, attr):
             if attr == 'target_angle':
                 return False
-            elif attr == 'target_torque':
+            elif attr == 'target_force':
                 return True
             return False
         
@@ -343,8 +343,8 @@ class TestNewCommands(unittest.TestCase):
         int_low = struct.unpack('<H', byte_representation[:2])[0]
         int_high = struct.unpack('<H', byte_representation[2:])[0]
         
-        # For torque command, starting register is target_torque_start_reg + index/2
-        expected = [self.new_commands.modbus_reg_map['target_torque_start_reg'] + int(mock_joint.index/2), int_high, int_low]
+        # For torque command, starting register is target_force_start_reg + index/2
+        expected = [self.new_commands.modbus_reg_map['target_force_start_reg'] + int(mock_joint.index/2), int_high, int_low]
         self.assertEqual(result, expected)
 
     def test_get_decoded_feedback_data_position_only(self):
@@ -387,7 +387,7 @@ class TestNewCommands(unittest.TestCase):
                         0x0000, 0x4080,   # 4.0
                         0x0000, 0x40A0]   # 5.0
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_force_start_reg')
         
         expected = [1.0, 2.0, 3.0, 4.0, 5.0]
         self.assertEqual(result, expected)
@@ -425,7 +425,7 @@ class TestNewCommands(unittest.TestCase):
         self.assertEqual(result, expected)
         
         # For torque data (2 multiplier), empty data should return empty list
-        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_force_start_reg')
         expected = []
         self.assertEqual(result, expected)
     
@@ -451,7 +451,7 @@ class TestNewCommands(unittest.TestCase):
                         0x0000, 0x4080,   # 4.0
                         0x0000, 0x40A0]   # 5.0
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_force_start_reg')
         
         expected = [1.0, 2.0, 3.0, 4.0, 5.0]
         self.assertEqual(result, expected)
@@ -471,7 +471,7 @@ class TestNewCommands(unittest.TestCase):
             # Torque data - multiplier 2 (float data)
             size_torque = num_joints * 2
             mock_data = [0] * size_torque  
-            result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_torque_start_reg')
+            result = test_commands.get_decoded_feedback_data(mock_data, modbus_key='feedback_force_start_reg')
             self.assertIsNotNone(result, f"Torque failed for {num_joints} joints")
             
             # Temperature data - multiplier 0.5 (byte data)
@@ -498,7 +498,7 @@ class TestNewCommands(unittest.TestCase):
             int_low = struct.unpack('<H', byte_representation[2:])[0]
             feedback_data.extend([int_high,int_low])
         
-        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_torque_start_reg')
+        result = self.new_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_force_start_reg')
         
         # Should get back the original float values (with some float precision tolerance)
         self.assertEqual(len(result), len(test_floats))

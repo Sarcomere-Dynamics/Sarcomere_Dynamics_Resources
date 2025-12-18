@@ -138,7 +138,7 @@ class ArtusAPI_New:
     def set_joint_angles(self, joint_angles:dict):
         """
         sends joint commands to the hand - set_joint_angles for consistency with v1 api
-        :param joint_angles: dictionary of joint angles to set - can have any combination of target_angle, target_velocity, or target_torque - will be converted to the correct command based on the control type
+        :param joint_angles: dictionary of joint angles to set - can have any combination of target_angle, target_velocity, or target_force - will be converted to the correct command based on the control type
         :return: True if the command was sent successfully, False otherwise
         """
         if not self._check_awake():
@@ -162,7 +162,7 @@ class ArtusAPI_New:
             self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
             self.last_time = time.perf_counter()
         if (available_control & 0b100) != 0:
-            set_joint_angles_cmd = self._command_handler.get_target_torque_command(self._robot_handler.robot.hand_joints)
+            set_joint_angles_cmd = self._command_handler.get_target_force_command(self._robot_handler.robot.hand_joints)
             self.wait_for_com_freq()
             self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
             self.last_time = time.perf_counter()
@@ -230,15 +230,15 @@ class ArtusAPI_New:
         # populate hand joint dict based on robot
         self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_confirmed))
 
-    def get_joint_torques(self):
+    def get_joint_forces(self):
         """
         Get the joint torques from the hand
         """
         if not self._check_awake():
             return
 
-        start_reg = ModbusMap().modbus_reg_map['feedback_torque_start_reg']
-        start_reg_key = 'feedback_torque_start_reg'
+        start_reg = ModbusMap().modbus_reg_map['feedback_force_start_reg']
+        start_reg_key = 'feedback_force_start_reg'
 
         amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints)
 

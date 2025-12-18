@@ -21,7 +21,7 @@ class ArtusTalos(BLDCRobot):
                 joint_min_angles=[-55,0,0,0,0,0],
                 joint_default_angles=[],
                 joint_rotation_directions=[1,1,1,1,1,1],
-                joint_torques=[],
+                joint_forces=[],
                 joint_names=['thumb_spread','thumb_flex','index_flex',
                             'middle_flex','ring_flex','pinky_flex'],
                 number_of_joints=6,
@@ -30,7 +30,7 @@ class ArtusTalos(BLDCRobot):
                          joint_min_angles=joint_min_angles,
                          joint_default_angles=joint_default_angles,
                          joint_rotation_directions=joint_rotation_directions,
-                         joint_torques=joint_torques,
+                         joint_forces=joint_forces,
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
                          logger=logger)
