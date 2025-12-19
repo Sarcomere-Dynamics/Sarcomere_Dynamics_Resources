@@ -1,0 +1,27 @@
+robots:
+  left_hand_robot:
+    robot_connected: false
+    robot_type: 'artus_talos'
+    communication_method: 'RS485_RTU'
+    communication_channel_identifier: '/dev/ttyUSB0'
+    hand_type: 'left'
+    start_robot: true
+    reset_on_start: 0
+    streaming_frequency: 20  # data/seconds
+    calibrate: false
+
+
+  right_hand_robot:
+    robot_connected: true
+    robot_type: 'artus_talos'
+    communication_method: 'RS485_RTU'
+    communication_channel_identifier: '/dev/ttyUSB0'
+    hand_type: 'right'
+    start_robot: true
+    reset_on_start: 0
+    streaming_frequency: 30  # data/seconds
+    calibrate: false
+
+logging:
+  level: 'INFO'
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

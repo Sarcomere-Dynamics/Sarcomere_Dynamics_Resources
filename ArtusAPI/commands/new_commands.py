@@ -165,7 +165,7 @@ class NewCommands(Commands,ModbusMap):
                     # Device sends data in big-endian format (high word first)
                     packed_bytes = struct.pack('<HH', data[i], data[i + 1])
                     float_value = struct.unpack('<f', packed_bytes)[0]
-                    decoded_data.append(float_value)
+                    decoded_data.append(round(float_value, 2))
             return decoded_data
 
         def helper_decode_feedback_signed_16b(data:Any) -> Any:

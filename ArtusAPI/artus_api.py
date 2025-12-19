@@ -152,6 +152,22 @@ class ArtusAPI:
         else:
             self.logger.warning(f'Error in calibration')
     
+    # set joint angles by list
+    def set_joint_angles_by_list(self, joint_angles_list:list):
+        """
+        Set joint angles by list
+        """
+        if not self.awake:
+            self.logger.warning(f'Hand not ready, send `wake_up` command')
+            return
+        joint_angles = {f'{i}':{'target_angle':joint_angles_list[i]} for i in range(len(joint_angles_list))}
+        self._robot_handler.set_joint_angles(joint_angles=joint_angles)
+        robot_set_joint_angles_command = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
+
+        # check communication frequency
+        if not self._check_communication_frequency(0):
+            return False
+        return self._communication_handler.send_data(robot_set_joint_angles_command)
 
     # robot control
     def set_joint_angles(self, joint_angles:dict,name=False):
@@ -514,6 +530,41 @@ class ArtusAPI:
         while not feedback:
             ack,feedback = self._communication_handler.receive_data()
 
+
+    # --------------------------------- FORWARD COMPATIBILITY BUT NO EFFECT ---------------------------------
+    def get_robot_status(self):
+        """
+        Get the robot status
+        """
+        self.logger.error(f"get_robot_status is not implemented in ArtusAPIv1")
+        return None
+    
+    def get_joint_forces(self):
+        """
+        Get the joint forces
+        """
+        self.logger.error(f"get_joint_forces is not implemented in ArtusAPIv1")
+        return None
+    
+    def get_joint_speeds(self):
+        """
+        Get the joint speeds
+        """
+        self.logger.error(f"get_joint_speeds is not implemented in ArtusAPIv1")
+        return None
+    
+    def get_joint_temperatures(self):
+        """
+        Get the joint temperatures
+        """
+        self.logger.error(f"get_joint_temperatures is not implemented in ArtusAPIv1")
+        return None
+    
+    def get_hand_feedback_data(self):
+        """
+        Get the hand feedback data
+        """
+        self.logger.error(f"get_hand_feedback_data is not implemented in ArtusAPIv1")
 
 def test_artus_api():
     artus_api = ArtusAPI()

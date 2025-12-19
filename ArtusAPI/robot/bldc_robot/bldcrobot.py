@@ -29,20 +29,8 @@ class BLDCRobot:
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
-
-        # force sensor init
-        self.force_sensors = {}
-        fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-        indices = [[0,1],[2],[3],[4],[5]]
-
-        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg','feedback_force_sensor_start_reg']
-        
-        for i in range(len(fingers)):
-            self.force_sensors[fingers[i]] = {
-                'data' : ForceSensor(),
-                'indices' : indices[i]
-            }
-        
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg']
+                
         self.joint_max_angles = joint_max_angles
         self.joint_min_angles = joint_min_angles
         self.joint_default_angles = joint_default_angles
@@ -61,6 +49,7 @@ class BLDCRobot:
                 self.target_force = target_force
                 self.feedback_angle = 0
                 self.feedback_current = 0
+                self.feedback_velocity = 0
                 self.feedback_force = 0.0
                 self.feedback_temperature = temperature
                 self.joint_rotation_direction = joint_rotation_direction
@@ -102,7 +91,7 @@ class BLDCRobot:
 
             # fill data based on control type
             if 'target_angle' in target_data:
-                available_control |= 0b1
+                available_control |= 0b100
                 self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
                 self.logger.info(f"Setting target angle for {self.joint_names[target_data['index']]} to {target_data['target_angle']}")
             if 'target_velocity' in target_data:
@@ -110,7 +99,7 @@ class BLDCRobot:
                 self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
                 self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['velocity']}")
             if 'target_force' in target_data:
-                available_control |= 0b100
+                available_control |= 0b1
                 self.hand_joints[self.joint_names[target_data['index']]].target_force = target_data['target_force']
                 self.logger.info(f"Setting target force for {self.joint_names[target_data['index']]} to {target_data['target_force']}")
         self._check_joint_limits(self.hand_joints)
@@ -131,7 +120,7 @@ class BLDCRobot:
 
             # fill data based on control type
             if 'target_angle' in target_data:
-                available_control |= 0b1
+                available_control |= 0b100
                 self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
                 self.logger.info(f"Setting target angle for {self.joint_names[target_data['index']]} to {target_data['target_angle']}")
             if 'target_velocity' in target_data:
@@ -139,7 +128,7 @@ class BLDCRobot:
                 self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
                 self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['velocity']}")
             if 'target_force' in target_data:
-                available_control |= 0b100
+                available_control |= 0b1
                 self.hand_joints[self.joint_names[target_data['index']]].target_force = target_data['target_force']
                 self.logger.info(f"Setting target force for {self.joint_names[target_data['index']]} to {target_data['target_force']}")
 

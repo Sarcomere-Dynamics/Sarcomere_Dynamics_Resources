@@ -1,0 +1,131 @@
+"""
+Sarcomere Dynamics Software License Notice
+------------------------------------------
+This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
+including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
+
+Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+
+Licensed under the Sarcomere Dynamics Software License.
+See the LICENSE file in the repository for full details.
+"""
+
+import os
+import json
+import sys
+from PySide6 import QtCore, QtGui, QtWidgets
+import pyqtgraph as pg
+import numpy as np
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+print("PROJECT_ROOT: ", PROJECT_ROOT)
+sys.path.append(PROJECT_ROOT)
+
+# dependencies
+from examples.Tracking.zmq_class.zmq_class import ZMQSubscriber
+from examples.config.configuration import ArtusConfig
+from ArtusAPI.robot.robot import Robot
+
+class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
+    def __init__(self, win=None, zmq_feedback_subPort="tcp://127.0.0.1:5555"):
+        QtWidgets.QWidget.__init__(self)
+        ZMQSubscriber.__init__(self, address=zmq_feedback_subPort, topics=["Feedback"])
+        robot = None
+        if ArtusConfig().config.robots.left_hand_robot.robot_connected:
+            robot = ArtusConfig().config.robots.left_hand_robot.robot_type
+        elif ArtusConfig().config.robots.right_hand_robot.robot_connected:
+            robot = ArtusConfig().config.robots.right_hand_robot.robot_type
+        else:
+            raise ValueError("No robot connected")
+
+        self.win = win
+        self.feedback_type = "angle"  # Default feedback type
+        self.feedback_types = ["angle", "velocity", "force"]
+
+        self.joint_names = list(Robot(robot_type=robot).robot.hand_joints.keys())
+        self.plots = []
+        self.curves = []
+        self.data = []
+        self.ptr = []
+        self.history_length = 500  # Number of data points to display
+
+        self._init_ui()
+
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_plots)
+        self.timer.start(50)  # Update every 50 ms
+
+    def _init_ui(self):
+        self.layout = QtWidgets.QVBoxLayout()
+
+        # Feedback type dropdown
+        feedback_type_layout = QtWidgets.QHBoxLayout()
+        feedback_type_label = QtWidgets.QLabel("Feedback Type:")
+        self.feedback_type_selector = QtWidgets.QComboBox(self)
+        self.feedback_type_selector.addItems(["angle", "velocity", "force"])
+        self.feedback_type_selector.setCurrentText(self.feedback_type)
+        self.feedback_type_selector.currentIndexChanged.connect(self._on_feedback_type_changed)
+        feedback_type_layout.addWidget(feedback_type_label)
+        feedback_type_layout.addWidget(self.feedback_type_selector)
+        self.layout.addLayout(feedback_type_layout)
+
+        self.plot_widget = pg.GraphicsLayoutWidget(show=True)
+        self.plot_widget.setWindowTitle('Artus Lite Feedback Visualization')
+        self.layout.addWidget(self.plot_widget)
+
+        self.create_joint_plots()
+        self.setLayout(self.layout)
+
+    def create_joint_plots(self):
+        num_cols = 4  # Number of plots per row
+        self.plot_widget.nextRow()
+        for i, name in enumerate(self.joint_names):
+            plot_item = self.plot_widget.addPlot(title=name)
+            plot_item.setYRange(-90, 90)  # Adjust range as needed
+            curve = plot_item.plot(pen='y')
+
+            self.plots.append(plot_item)
+            self.curves.append(curve)
+            self.data.append(np.zeros(self.history_length))
+            self.ptr.append(0)
+
+            if (i + 1) % num_cols == 0:
+                self.plot_widget.nextRow()
+
+    def update_plots(self):
+        raw_data = self.receive()
+        if raw_data is None:
+            print(f"No feedback data received from ZMQ Subscriber")
+            return
+
+        print(f"Feedback data received from ZMQ")
+
+        try:
+            feedback_data = json.loads(raw_data)
+            # Assuming feedback_data is a dictionary where keys are joint names
+            # and values are the feedback values
+            for i, name in enumerate(self.joint_names):
+                if name in feedback_data:
+                    value = feedback_data[name][f'feedback_{self.feedback_type}']
+                    self.data[i][:-1] = self.data[i][1:]
+                    self.data[i][-1] = value
+                    self.curves[i].setData(self.data[i])
+                    self.curves[i].setPos(self.ptr[i], 0)
+                    self.ptr[i] += 1
+        except json.JSONDecodeError:
+            print("Error decoding JSON feedback data.")
+
+    def _on_feedback_type_changed(self):
+        self.feedback_type = self.feedback_type_selector.currentText()
+        print(f"Feedback type changed to: {self.feedback_type}")
+
+
+def main():
+    app = QtWidgets.QApplication(sys.argv)
+    ui_feedback_window = UIFeedback()
+    ui_feedback_window.show()
+    sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()

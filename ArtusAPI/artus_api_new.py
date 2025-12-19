@@ -20,7 +20,7 @@ from .communication.new_communication import NewCommunication,ActuatorState,Comm
 from .robot import Robot
 from .firmware_update import FirmwareUpdaterNew
 
-class ArtusAPI_New:
+class ArtusAPI_V2:
     """
     This is a newer version of the ArtusAPI that has been redesigned to accomodate a more robust communication process
     as well as accomodate our newer series of hands, whereas the legacy ArtusAPI is mainly for the Artus Lite
@@ -75,15 +75,18 @@ class ArtusAPI_New:
         return True
 
     def _check_awake(self):
-        # if not self.awake:
-        #     self.logger.warning(f'Hand not ready, send `wake_up` command')
-        #     return False
+        if not self.awake:
+            self.logger.warning(f'Hand not ready, send `wake_up` command')
+            return False
         return True
 
     def connect(self):
         self._communication_handler.open_connection()
         time.sleep(1)
         # self.wake_up()
+
+    def disconnect(self):
+        self._communication_handler.close_connection()
     
     def wake_up(self,control_type:int=3):
         """
@@ -97,12 +100,12 @@ class ArtusAPI_New:
         self.last_time = time.perf_counter()
 
         # wait for hand state ready
-        # if not self._communication_handler.wait_for_ready(vis=False):
-        #     self.logger.error("Hand timed out waiting for ready")
-        # else:
-        #     self.logger.info("Hand ready")
-        #     self.state = ActuatorState.ACTUATOR_IDLE
-        #     self.awake = True
+        if not self._communication_handler.wait_for_ready(vis=False):
+            self.logger.error("Hand timed out waiting for ready")
+        else:
+            self.logger.info("Hand ready")
+            self.state = ActuatorState.ACTUATOR_IDLE
+            self.awake = True
 
     def sleep(self):
         sleep_command = self._command_handler.get_sleep_command()
@@ -129,13 +132,28 @@ class ArtusAPI_New:
         self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value
 
         # wait for hand state ready
-        # if not self._communication_handler.wait_for_ready(vis=True):
-        #     self.logger.error("Hand timed out waiting for ready")
-        # else:
-        #     self.logger.info("Hand ready")
-        #     self.state = ActuatorState.ACTUATOR_IDLE
+        if not self._communication_handler.wait_for_ready(vis=True):
+            self.logger.error("Hand timed out waiting for ready")
+        else:
+            self.logger.info("Hand ready")
+            self.state = ActuatorState.ACTUATOR_IDLE
 
-    def set_joint_angles(self, joint_angles:dict):
+    def set_joint_angles_by_list(self, joint_angles:list, control_type:int=3):
+        """
+        sends joint commands to the hand - set_joint_angles for consistency with v1 api
+        :param joint_angles: list of joint angles to set - MUST ALL BE OF SAME TYPE based on injected_control_type
+        :param injected_control_type: control type to use for the joint angles - 3 for position control, 2 for velocity control, 1 for torque control
+        JOINT LIST MUST BE IN ORDER OF JOINT INDEX
+        :return: True if the command was sent successfully, False otherwise
+        """
+        if not self._check_awake():
+            return
+
+        # create dict of joint angles
+        joint_angles_dict = {f'{i}':{'target_angle':joint_angles[i]} for i in range(len(joint_angles))}
+        return self.set_joint_angles(joint_angles_dict, injected_control_type=control_type)
+
+    def set_joint_angles(self, joint_angles:dict, injected_control_type:int=None):
         """
         sends joint commands to the hand - set_joint_angles for consistency with v1 api
         :param joint_angles: dictionary of joint angles to set - can have any combination of target_angle, target_velocity, or target_force - will be converted to the correct command based on the control type
@@ -151,17 +169,20 @@ class ArtusAPI_New:
             self.logger.warning("No valid data in joint dictionary to send")
             return False
 
-        if (available_control & 0b1) != 0:
+        if injected_control_type is not None:
+            available_control = (1 << injected_control_type)
+
+        if (available_control & 0b100) != 0 and self.control_type == self.control_types['position']:
             set_joint_angles_cmd = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
             self.wait_for_com_freq()
             self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
             self.last_time = time.perf_counter()
-        if (available_control & 0b10) != 0:
+        if (available_control & 0b10) != 0 and self.control_type >= self.control_types['velocity']:
             set_joint_angles_cmd = self._command_handler.get_target_velocity_command(self._robot_handler.robot.hand_joints)
             self.wait_for_com_freq()
             self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
             self.last_time = time.perf_counter()
-        if (available_control & 0b100) != 0:
+        if (available_control & 0b1) != 0 and self.control_type >= self.control_types['torque']:
             set_joint_angles_cmd = self._command_handler.get_target_force_command(self._robot_handler.robot.hand_joints)
             self.wait_for_com_freq()
             self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
@@ -299,7 +320,7 @@ class ArtusAPI_New:
 
     # for compatibility
     def get_streamed_joint_angles(self,dat_type=0):
-        self.logger.error(f"get_streamed_joint_angles is not implemented for the {self._robot_handler.robot.robot_type}")
+        self.logger.error(f"get_streamed_joint_angles is not implemented in ArtusAPIv2")
         return None
     
     def get_robot_status(self):

@@ -34,3 +34,14 @@ class ArtusTalos(BLDCRobot):
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
                          logger=logger)
+
+        # force sensor init
+        self.force_sensors = {}
+        fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
+        indices = [[0,1],[2],[3],[4],[5]]
+
+        for i in range(len(fingers)):
+            self.force_sensors[fingers[i]] = {
+                'data' : ForceSensor(),
+                'indices' : indices[i]
+            }

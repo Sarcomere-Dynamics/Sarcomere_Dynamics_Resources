@@ -11,7 +11,7 @@ See the LICENSE file in the repository for full details.
 """
 
 from ..bldc_robot.bldcrobot import BLDCRobot
-
+from ...sensors import ForceSensor
 class ArtusScorpion(BLDCRobot):
     def __init__(self,
                 joint_max_angles=[21], # stroke mm
@@ -33,3 +33,10 @@ class ArtusScorpion(BLDCRobot):
 
         # set sensors
         self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg']
+
+        # force sensor init
+        self.force_sensors = {}
+        self.force_sensors['gripper_joint'] = {
+            'data' : ForceSensor(),
+            'indices' : [0]
+        }

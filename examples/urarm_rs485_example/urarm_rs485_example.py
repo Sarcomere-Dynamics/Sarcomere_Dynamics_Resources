@@ -29,6 +29,9 @@ from ArtusAPI.artus_api_new import ArtusAPI_V2
 # old ArtusAPI
 from ArtusAPI.artus_api import ArtusAPI
 
+# import ArtusAPIPortForwarder
+from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForwarder
+
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------
 # ------------------------------------------------------------------------------
@@ -91,12 +94,37 @@ def example():
     # Load the configuration file
     config = ArtusConfig()
 
+    # Artus API Port Forwarder
+    ROBOT_IP = "192.168.194.129"
+    artusAPIPortForwarder = ArtusAPIPortForwarder(robot_ip=ROBOT_IP)
+    local_device_name = artusAPIPortForwarder.get_local_device_name()
+
     artusapi = None
-    hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
+    hand_poses_path = None
     logger = setup_logger(level=config.config.logging.level,format=config.config.logging.format)
-    # new api
-    artusapi = config.get_api(logger=logger)
     
+    # find robot type from robot config
+    robot_type = config.find_single_robot_type()
+    # v1 api
+    if "lite" in robot_type.lower():
+        logger.info("Detected a 'lite' robot type.")
+        artusapi = ArtusAPI(communication_method='UART',
+                            communication_channel_identifier=local_device_name,
+                            robot_type=robot_type,
+                            hand_type=config.config.robots.left_hand_robot.hand_type,
+                            reset_on_start=config.config.robots.left_hand_robot.reset_on_start,
+                            awake=config.config.robots.left_hand_robot.awake,
+                            baudrate=115200)
+    # v2 api
+    else:
+        logger.info("Detected a 'bldc' robot type.")
+        artusapi = ArtusAPI_V2(communication_method='RS485_RTU',
+                            communication_channel_identifier=local_device_name,
+                            robot_type=robot_type,
+                            hand_type=config.config.robots.left_hand_robot.hand_type,
+                            baudrate=115200)
+
+    hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
     
     # Main loop (example)
     while True:
