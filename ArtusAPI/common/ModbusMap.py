@@ -59,16 +59,17 @@ class ModbusMap: # Artus Generic Modbus Map
         }
 
 class ActuatorState(Enum):
-    ACTUATOR_INITIALIZING = 0
-    ACTUATOR_IDLE = 1
+    ACTUATOR_INITIALIZING = 0    # at Boot
+    ACTUATOR_IDLE = 1            # idle state, set control type and mode
     ACTUATOR_CALIBRATING_LL = 2  # calibrating the rotor position for foc
-    ACTUATOR_CALIBRATED_LL = 3
-    ACTUATOR_CALIBRATING_HL = 4  # calibrating the endstop position finding for homing
-    ACTUATOR_CALIBRATING_STROKE = 5  # calibrating the stroke of the finger
-    ACTUATOR_CALIBRATION_FAILED = 6
-    ACTUATOR_READY = 7  # ready to receive commmands, setup control modes, etc.
-    ACTUATOR_BUSY = 8  # wait for ack from actuator
+    ACTUATOR_CALIBRATING_STROKE = 3  # calibrating the stroke of the finger
+    ACTUATOR_SLEEP = 4
+    ACTUATOR_WAIT_ACK = 5
+    ACTUATOR_READY = 6           # ready to receive commands, setup control modes, etc.
+    ACTUATOR_ACTIVE = 7          # active mode, receiving commands in control mode
+    ACTUATOR_BUSY = 8            # busy state, waiting for actuator to be ready
     ACTUATOR_ERROR = 9
+    ACTUATOR_ALL_CALIBRATE = 10
     ACTUATOR_FLASHING = 11
     ACTUATOR_FLASHING_ACK = 12
 

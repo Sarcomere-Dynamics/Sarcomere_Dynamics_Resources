@@ -56,7 +56,12 @@ class NewCommunication:
         self.communicator.close()
 
     def _check_robot_state(self):
-        """Helper function to check robot state and return status"""
+        """
+        Helper function to check robot state and return status
+        Returns:
+        :int: ActuatorState enum value
+        :int: trajectory enum status -- only applicable to actuator active state
+        """
         ret = self.receive_data()
         if isinstance(ret, int) and ret <= 0xFFFF:  # Check if ret is a 16-bit value
             high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits

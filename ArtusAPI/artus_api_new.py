@@ -13,12 +13,19 @@ See the LICENSE file in the repository for full details.
 import time
 import logging
 import math
+from enum import Enum
 from tracemalloc import start
 from .common.ModbusMap import ModbusMap
 from .commands import NewCommands
 from .communication.new_communication import NewCommunication,ActuatorState,CommandType
 from .robot import Robot
 from .firmware_update import FirmwareUpdaterNew
+
+# trajectory returns are the return values for the trajectory enum
+class TrajectoryReturn(Enum):
+    TRAJECTORY_RUNNING = 0
+    TRAJECTORY_STOPPED = 1
+    TRAJECTORY_COMPLETE = 2
 
 class ArtusAPI_V2:
     """
@@ -75,9 +82,9 @@ class ArtusAPI_V2:
         return True
 
     def _check_awake(self):
-        if not self.awake:
-            self.logger.warning(f'Hand not ready, send `wake_up` command')
-            return False
+        # if not self.awake:
+        #     self.logger.warning(f'Hand not ready, send `wake_up` command')
+        #     return False
         return True
 
     def connect(self):
@@ -112,11 +119,16 @@ class ArtusAPI_V2:
         self._communication_handler.send_data(sleep_command)
         self.last_time = time.perf_counter()
     
-    def get_actuator_status(self):
+    def get_robot_status(self):
         try:
-            return ActuatorState(self._communication_handler._check_robot_state()).name
+            robot_state = self._communication_handler._check_robot_state()
+            
+            actuator_state = ActuatorState((robot_state & 0b00001111)).name
+            trajectory_return = TrajectoryReturn((robot_state & 0b11110000) >> 4).name
+            self.logger.info(f"Actuator state: {actuator_state}, Trajectory return: {trajectory_return}")
+            return actuator_state, trajectory_return
         except ValueError:
-            self.logger.error(f"Invalid actuator state: {self._communication_handler._check_robot_state()}")
+            self.logger.error(f"Invalid actuator state: {robot_state}")
             return None
 
     def calibrate(self,joint=0):
@@ -156,7 +168,7 @@ class ArtusAPI_V2:
     def set_joint_angles(self, joint_angles:dict, injected_control_type:int=None):
         """
         sends joint commands to the hand - set_joint_angles for consistency with v1 api
-        :param joint_angles: dictionary of joint angles to set - can have any combination of target_angle, target_velocity, or target_force - will be converted to the correct command based on the control type
+        :param joint_angles: dictionary of joint angles to set - can havInvalie any combination of target_angle, target_velocity, or target_force - will be converted to the correct command based on the control type
         :return: True if the command was sent successfully, False otherwise
         """
         if not self._check_awake():
@@ -323,11 +335,6 @@ class ArtusAPI_V2:
         self.logger.error(f"get_streamed_joint_angles is not implemented in ArtusAPIv2")
         return None
     
-    def get_robot_status(self):
-        if not self._check_awake():
-            return
-        feedback_data = self._communication_handler.receive_data()
-
     def update_firmware(self,file_location=None,drivers_to_flash=None):
         
         if file_location is None or (isinstance(file_location, str) and not file_location.endswith('.bin')):
@@ -365,6 +372,6 @@ class ArtusAPI_V2:
         self._firmware_updater.update_firmware(fw_size)
 
         # wait for hand state ready
-        while self.get_actuator_status() == ActuatorState.ACTUATOR_FLASHING.name:
+        while self.get_robot_status() == ActuatorState.ACTUATOR_FLASHING.name:
             self.logger.info(f"Waiting for firmware update to complete")
             time.sleep(2)

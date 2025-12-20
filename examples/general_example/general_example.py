@@ -119,7 +119,7 @@ def example():
                         grasp_example_dict = json.load(file)
                     artusapi.set_joint_angles(grasp_example_dict)
                 case '7':
-                    artusapi.get_joint_angles()
+                    logger.info(artusapi.get_robot_status())
                 case '8':
                     with open(os.path.join(hand_poses_path ,'grasp_open.json'),'r') as file:
                         grasp_dict = json.load(file)

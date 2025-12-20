@@ -536,8 +536,8 @@ class ArtusAPI:
         """
         Get the robot status
         """
-        self.logger.error(f"get_robot_status is not implemented in ArtusAPIv1")
-        return None
+        self.logger.error(f"get_robot_status is not implemented in ArtusAPIv1 - default to get_joint_angles")
+        return self.get_joint_angles()
     
     def get_joint_forces(self):
         """
