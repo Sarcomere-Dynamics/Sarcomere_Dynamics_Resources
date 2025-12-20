@@ -57,6 +57,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.timer.timeout.connect(self.stream_data)
 
         self._init_ui()
+        self.populate_load_dropdown()
 
     def _init_ui(self):
         self.layout = QtWidgets.QVBoxLayout()
@@ -106,11 +107,27 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         button_layout.addWidget(self.stream_button)
 
         self.layout.addLayout(button_layout)
+
+        # Load control group
+        load_control_group = QtWidgets.QGroupBox("Load Joint Angles")
+        load_control_layout = QtWidgets.QHBoxLayout()
+
+        self.load_dropdown = QtWidgets.QComboBox()
+        load_control_layout.addWidget(self.load_dropdown)
+
+        self.load_button = QtWidgets.QPushButton("Load Angles")
+        self.load_button.clicked.connect(self.load_data)
+        load_control_layout.addWidget(self.load_button)
+
+        load_control_group.setLayout(load_control_layout)
+        self.layout.addWidget(load_control_group)
+
         self.setLayout(self.layout)
 
     def update_joint_angle(self, name, value):
         self.joint_values[name] = float(value)
         self.line_edit[name].setText(str(float(value)))
+        self.sliders[name].setValue(int(value))
 
     def update_joint_angle_from_text(self, name, text):
         try:
@@ -126,12 +143,30 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.send(topic="Target", message=json.dumps(self.joint_values))
 
     def save_data(self):
-        # Placeholder for saving joint angles to a file
-        print(f"Saving data: {self.joint_values}")
-        # Here you would implement the file saving logic, similar to control_panel.py
-        # For example:
-        # with open("joint_angles.json", "w") as f:
-        #     json.dump(self.joint_values, f)
+        # Get filename from user using a QInputDialog
+        filename, ok = QtWidgets.QInputDialog.getText(self, "Save Joint Angles", "Enter filename (e.g., my_pose.json):")
+        if ok and filename:
+            # Ensure the filename has a .json extension
+            if not filename.endswith(".json"):
+                filename += ".json"
+            
+            # Define the directory to save the poses
+            save_directory = os.path.join(PROJECT_ROOT, "data", "hand_poses")
+            # os.makedirs(save_directory, exist_ok=True) # Create directory if it doesn't exist
+
+            # convert the joint values to the loaded values format which is key: {'target_angle': int(value)}
+            loaded_values = {key: {'target_angle': int(value)} for key,value in self.joint_values.items()}
+
+            filepath = os.path.join(save_directory, filename)
+            try:
+                with open(filepath, "w") as f:
+                    json.dump(loaded_values, f, indent=4)
+                print(f"Joint angles saved to {filepath}")
+                self.populate_load_dropdown()
+            except Exception as e:
+                print(f"Error saving data: {e}")
+        else:
+            print("Save operation cancelled or no filename entered.")
 
     def toggle_stream(self):
         if self.streaming:
@@ -147,6 +182,34 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
 
     def stream_data(self):
         self.send_data()
+
+
+    def populate_load_dropdown(self):
+        save_directory = os.path.join(PROJECT_ROOT, "data", "hand_poses")
+        os.makedirs(save_directory, exist_ok=True) # Ensure the directory exists
+        self.load_dropdown.clear()
+        files = [f for f in os.listdir(save_directory) if f.endswith(".json")]
+        self.load_dropdown.addItems(sorted(files))
+
+    def load_data(self):
+        selected_file = self.load_dropdown.currentText()
+        if selected_file:
+            filepath = os.path.join(PROJECT_ROOT, "data", "hand_poses", selected_file)
+            try:
+                with open(filepath, "r") as f:
+                    loaded_values = json.load(f)
+
+                # I want to convert the loaded values to the joint values format which is key: float value
+                loaded_values = {key: value['target_angle'] for key,value in loaded_values.items()}
+                
+                for name, value in loaded_values.items():
+                    if name in self.joint_names:
+                        self.update_joint_angle(name, value)
+                print(f"Loaded joint angles from {filepath}")
+            except Exception as e:
+                print(f"Error loading data: {e}")
+        else:
+            print("No file selected to load.")
 
 
 def main():
