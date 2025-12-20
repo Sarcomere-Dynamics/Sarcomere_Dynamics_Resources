@@ -70,7 +70,7 @@ class ArtusAPI:
         self._communication_frequency = communication_frequency
         self._communication_period = 1 / self._communication_frequency
         self._communication_period_ms = self._communication_period * 1000
-        self.stream = stream
+        self.stream = False
         self.awake = awake
 
         # only used during streaming
