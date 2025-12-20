@@ -99,6 +99,7 @@ class NewCommunication:
                 if result in acceptable_states:
                     return result
                 # time.sleep(0.1)
+                time.sleep(0.3)
                 if time.perf_counter() - start_time > timeout:
                     self.logger.error("Timeout waiting for robot ready")
                     break
