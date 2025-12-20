@@ -82,7 +82,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         for i, name in enumerate(self.joint_names):
             plot_item = self.plot_widget.addPlot(title=name)
             plot_item.setYRange(-90, 90)  # Adjust range as needed
-            curve = plot_item.plot(pen='y')
+            curve = plot_item.plot(pen='g') # Default to green for angle
 
             self.plots.append(plot_item)
             self.curves.append(curve)
@@ -95,10 +95,10 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
     def update_plots(self):
         raw_data = self.receive()
         if raw_data is None:
-            print(f"No feedback data received from ZMQ Subscriber")
+            # print(f"No feedback data received from ZMQ Subscriber")
             return
 
-        print(f"Feedback data received from ZMQ")
+        # print(f"Feedback data received from ZMQ")
 
         try:
             feedback_data = json.loads(raw_data)
@@ -115,9 +115,31 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         except json.JSONDecodeError:
             print("Error decoding JSON feedback data.")
 
+        print(f"Updated Plots")
+
     def _on_feedback_type_changed(self):
         self.feedback_type = self.feedback_type_selector.currentText()
         print(f"Feedback type changed to: {self.feedback_type}")
+        self.reset_plots()
+
+    def reset_plots(self):
+        for i, plot_item in enumerate(self.plots):
+            # Clear existing data
+            self.data[i] = np.zeros(self.history_length)
+            self.ptr[i] = 0
+            self.curves[i].setData(self.data[i])
+            self.curves[i].setPos(self.ptr[i], 0)
+
+            # Set y-range and color based on feedback type
+            if self.feedback_type == "force":
+                plot_item.setYRange(-20, 20)
+                self.curves[i].setPen('r')
+            elif self.feedback_type == "velocity":
+                plot_item.setYRange(-90, 90)  # Keep current range
+                self.curves[i].setPen('y')
+            elif self.feedback_type == "angle":
+                plot_item.setYRange(-90, 90)  # Keep current range
+                self.curves[i].setPen('g')
 
 
 def main():

@@ -12,6 +12,7 @@ See the LICENSE file in the repository for full details.
 
 import time
 import logging
+import signal
 import math
 from enum import Enum
 from tracemalloc import start
@@ -70,6 +71,16 @@ class ArtusAPI_V2:
 
         self.awake = False
 
+        # set up sigint handler
+        self.original_sigint_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, self._sigint_handler)
+
+    def _sigint_handler(self, signum, frame):
+        self.logger.info("Ctrl+C detected. Calling sleep and disconnecting.")
+        self.sleep()
+        self.disconnect()
+        self.original_sigint_handler(signum, frame)
+
     def set_control_type(self,control_type:int):
         """
         Set the control type of the hand
@@ -94,6 +105,7 @@ class ArtusAPI_V2:
 
     def disconnect(self):
         self._communication_handler.close_connection()
+        signal.signal(signal.SIGINT, self.original_sigint_handler)
     
     def wake_up(self,control_type:int=3):
         """
@@ -372,6 +384,6 @@ class ArtusAPI_V2:
         self._firmware_updater.update_firmware(fw_size)
 
         # wait for hand state ready
-        while self.get_robot_status() == ActuatorState.ACTUATOR_FLASHING.name:
+        while self.get_robot_status()[0] == ActuatorState.ACTUATOR_FLASHING.name:
             self.logger.info(f"Waiting for firmware update to complete")
             time.sleep(2)

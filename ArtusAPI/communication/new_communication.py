@@ -70,30 +70,33 @@ class NewCommunication:
         else:
             raise ValueError("Received data is not a 16-bit value")
         return None  # Continue waiting
-    def wait_for_ready(self,timeout=5,vis=False):
+    def wait_for_ready(self,timeout=15,vis=False):
         start_time = time.perf_counter()
 
         if vis:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:
-                    result = self._check_robot_state()
+                    result = self._check_robot_state() & 0xF
+                    self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
                     time_diff = time.perf_counter() - start_time
                     self.ntrips += 1
-                    if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value]:
+                    if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]:
                         return result
                     # time.sleep(0.1)
                     if progresbar.n + time_diff >= timeout:
                         self.logger.error("Timeout waiting for robot ready")
                         break
                     progresbar.update(time_diff)
+                    time.sleep(0.3)
                     start_time = time.perf_counter()
                 # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
                 # print(f"Roundtrip time: {self.ntrips/timeout} trips per second")
         else:
             while 1:
-                result = self._check_robot_state()
+                result = self._check_robot_state() & 0xF
+                self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
                 self.ntrips += 1
-                if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value]:
+                if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]:
                     return result
                 # time.sleep(0.1)
                 if time.perf_counter() - start_time > timeout:

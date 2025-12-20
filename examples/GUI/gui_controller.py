@@ -132,8 +132,8 @@ class ArtusGUIController:
         joint_angles = self.zmq_subscriber.receive()
         if joint_angles is not None:
             joint_angles = json.loads(joint_angles)
-            for key,value in joint_angles.items():
-                setattr(self.artus_api._robot_handler.robot.hand_joints[key], 'target_angle', int(value))
+            # joint angles with key and float value but I want key: {'target_angle': int(value)}
+            joint_angles = {key: {'target_angle': int(value)} for key,value in joint_angles.items()}
             return joint_angles
         else:
             self.logger.error("No joint angles received")
@@ -145,17 +145,17 @@ class ArtusGUIController:
         """
         while True:
             try:
-                if self._receive_joint_anglesZMQ() is not None:
-                    None
-                    # self._send_joint_angles(joint_angles=self.artus_api._robot_handler.robot.hand_joints)
+                joint_angles = self._receive_joint_anglesZMQ()
+                if joint_angles is not None:
+                    self._send_joint_angles(joint_angles=joint_angles)
 
-                time.sleep(0.01)
+                time.sleep(0.02)
 
                 self._receive_feedback()
                 self._publish_feedback(feedback=self.artus_api._robot_handler.robot.hand_joints)
                 
 
-                time.sleep(0.01)
+                # time.sleep(0.02)
             except Exception as e:
                 self.logger.error(f"Error in start_streaming: {e}")
                 continue

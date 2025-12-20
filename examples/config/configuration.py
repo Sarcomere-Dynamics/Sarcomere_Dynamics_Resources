@@ -143,15 +143,15 @@ class ArtusConfig:
         """
         if hand_type is None:
             if self.config.robots.left_hand_robot.robot_connected:
-                return self.config.robots.left_hand_robot.wake_up
+                return self.config.robots.left_hand_robot.start_robot
             elif self.config.robots.right_hand_robot.robot_connected:
-                return self.config.robots.right_hand_robot.wake_up
+                return self.config.robots.right_hand_robot.start_robot
             else:
                 return False
         elif hand_type == 'left':
-            return self.config.robots.left_hand_robot.wake_up
+            return self.config.robots.left_hand_robot.start_robot
         elif hand_type == 'right':
-            return self.config.robots.right_hand_robot.wake_up
+            return self.config.robots.right_hand_robot.start_robot
         else:
             raise ValueError("Invalid hand type. Choose 'left' or 'right'.")
 

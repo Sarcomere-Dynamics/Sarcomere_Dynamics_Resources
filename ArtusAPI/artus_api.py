@@ -11,6 +11,7 @@ See the LICENSE file in the repository for full details.
 """
 import sys
 import logging
+import signal
 from pathlib import Path
 # Current file's directory
 current_file_path = Path(__file__).resolve()
@@ -82,7 +83,17 @@ class ArtusAPI:
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
-    
+
+        # set up sigint handler
+        self.original_sigint_handler = signal.getsignal(signal.SIGINT)
+        signal.signal(signal.SIGINT, self._sigint_handler)
+
+    def _sigint_handler(self, signum, frame):
+        self.logger.info("Ctrl+C detected. Calling sleep and disconnecting.")
+        self.sleep()
+        self.disconnect()
+        self.original_sigint_handler(signum, frame)
+
     # communication setup
     def connect(self):
         """
@@ -635,12 +646,6 @@ def main():
             else:
                 print(f'Invalid command: {input_command}')
             time.sleep(1)
-    except KeyboardInterrupt:
-        print('Keyboard interrupt')
-        myrobot.sleep()
-        time.sleep(1)
-        myrobot.disconnect()
-        quit()
     except Exception as e:
         print(f"An error occurred: {str(e)}")
 
