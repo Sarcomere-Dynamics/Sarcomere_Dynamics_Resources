@@ -72,7 +72,7 @@ class NewCommunication:
         return None  # Continue waiting
     def wait_for_ready(self,timeout=15,vis=False):
         start_time = time.perf_counter()
-
+        acceptable_states = [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]
         if vis:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:
@@ -80,7 +80,7 @@ class NewCommunication:
                     self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
                     time_diff = time.perf_counter() - start_time
                     self.ntrips += 1
-                    if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]:
+                    if result in acceptable_states:
                         return result
                     # time.sleep(0.1)
                     if progresbar.n + time_diff >= timeout:
@@ -96,7 +96,7 @@ class NewCommunication:
                 result = self._check_robot_state() & 0xF
                 self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
                 self.ntrips += 1
-                if result in [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]:
+                if result in acceptable_states:
                     return result
                 # time.sleep(0.1)
                 if time.perf_counter() - start_time > timeout:
