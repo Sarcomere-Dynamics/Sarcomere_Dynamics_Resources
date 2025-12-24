@@ -81,7 +81,12 @@ class BLDCRobot:
     def set_joint_angles(self, joint_angles:dict):
         # verify that items are in order of index 
         available_control = 0
-        sorted_items = sorted(joint_angles.items(), key=lambda x:x[1]['index'])
+        # INSERT_YOUR_CODE
+        if len(joint_angles) == 1:
+            sorted_items = joint_angles.items()
+        else:
+            sorted_items = sorted(joint_angles.items(), key=lambda x: x[1]['index'])
+        # sorted_items = sorted(joint_angles.items(), key=lambda x:x[1]['index'])
         ordered_joint_angles = {key:value for key,value in sorted_items}
         # set values based on index
         for name,target_data in ordered_joint_angles.items():

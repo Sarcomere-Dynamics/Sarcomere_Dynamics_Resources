@@ -14,7 +14,7 @@ from ..bldc_robot.bldcrobot import BLDCRobot
 from ...sensors import ForceSensor
 class ArtusScorpion(BLDCRobot):
     def __init__(self,
-                joint_max_angles=[21], # stroke mm
+                joint_max_angles=[42], # stroke mm
                 joint_min_angles=[0],
                 joint_default_angles=[],
                 joint_rotation_directions=[1],
@@ -40,3 +40,30 @@ class ArtusScorpion(BLDCRobot):
             'data' : ForceSensor(),
             'indices' : [0]
         }
+
+    def set_joint_angles_by_name(self, joint_angles:dict):
+        # verify that items are in order of index 
+        available_control = 0
+        # INSERT_YOUR_CODE
+        target_data = joint_angles['gripper_joint']
+        name = 'gripper_joint'
+        # fill data based on control type
+        if 'target_angle' in target_data:
+            available_control |= 0b100
+            self.hand_joints[name].target_angle = target_data['target_angle'] * self.hand_joints[name].joint_rotation_direction
+            self.logger.info(f"Setting target angle for {name} to {target_data['target_angle']}")
+        if 'target_velocity' in target_data:
+            available_control |= 0b10
+            self.hand_joints[name].target_velocity = target_data['velocity']
+            self.logger.info(f"Setting target velocity for {name} to {target_data['velocity']}")
+        if 'target_force' in target_data:
+            available_control |= 0b1
+            self.hand_joints[name].target_force = target_data['target_force']
+            self.logger.info(f"Setting target force for {name} to {target_data['target_force']}")
+    
+        self._check_joint_limits(self.hand_joints)
+
+        return available_control
+
+    def set_joint_angles(self, joint_angles:dict):
+        return self.set_joint_angles_by_name(joint_angles)

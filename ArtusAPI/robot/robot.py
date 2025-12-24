@@ -75,7 +75,7 @@ class Robot:
         """
         Set the joint angles of the hand
         """
-        if name and self.robot_type != 'artus_scorpion': # scorpion has no name for joints because just 1 joint
+        if name: # scorpion has no name for joints because just 1 joint
             return self.robot.set_joint_angles_by_name(joint_angles)
         else:
             return self.robot.set_joint_angles(joint_angles)
