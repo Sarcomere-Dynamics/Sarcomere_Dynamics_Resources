@@ -130,6 +130,8 @@ def example():
                     artusapi.get_joint_speeds()
                 case '11':
                     artusapi.get_joint_forces()
+                case 'r':
+                    artusapi.reset()
         except Exception as e:
             logger.error(f"Error: {e}")
             pass

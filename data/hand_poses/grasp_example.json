@@ -36,7 +36,7 @@
     },
     "index_flex":
     {
-        "target_angle": 60,
+        "target_angle": 40,
         "target_force": 40,
         "velocity": 40,
         "index": 5

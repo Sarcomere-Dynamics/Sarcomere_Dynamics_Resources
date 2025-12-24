@@ -76,6 +76,15 @@ class NewCommands(Commands,ModbusMap):
         command_list = [int(x) & 0xFFFF for x in command_list]
         return command_list
 
+    def get_reset_command(self,joints=0):
+        """
+        @param joints: number of joints to reset
+        @return command_list: a list of commands to send to the hand
+                first element is the starting register
+                next elements are the data to be sent
+        """
+        return [self.commands['reset_command'],joints]
+
     def get_target_velocity_command(self,hand_joints:dict) -> list:
         """
         @param hand_joints: a sorted dictionary of hand joints by index

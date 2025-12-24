@@ -64,9 +64,16 @@ def main():
 
     artus_api = config.get_api(logger=logger)
 
+    artus_api.connect()
+
+    if config.get_robot_wake_up(hand_type=artus_api._robot_handler.hand_type):
+        artus_api.wake_up()
+    if config.get_robot_calibrate(hand_type=artus_api._robot_handler.hand_type):
+        artus_api.calibrate()
+
     # hand joints dict holder
     # @todo : future proof for Artus Dex 
-    hand_joints = {i: '0' for i in range(16)}
+    hand_joints = {artus_media_pipe.ARTUS_JOINT_NAMES[i]: {'target_angle': 0} for i in range(16)}
 
     # Auto-detect camera
     cam_index = artus_media_pipe.find_working_camera()
@@ -79,8 +86,8 @@ def main():
 
     # === CALIBRATION STEP (FINGER LINK LENGTHS) ===
     finger_link_lengths = artus_media_pipe.calibrate_finger_lengths(cap, target_samples=50)
-    # finger_link_lengths:
-    # { "thumb": np.array([l1,l2,l3]), "index": ..., ... } in normalized 3D units
+
+    # @todo : add calibration for thumb cmc joint
 
     # Kalman filters per joint name
     kalman_filters = {
@@ -183,6 +190,8 @@ def main():
                 for joint_name in artus_media_pipe.JOINT_ORDER
             ]
 
+            # print(f"smoothed_angles: {smoothed_angles}")
+
             # angles_mapped is now a list of 16 ints, one per joint index
             joint_angles = angles_mapped
 
@@ -192,10 +201,13 @@ def main():
                 joint = {
                     'index': i,
                     'target_angle': angle,
-                    'target_force': 20, # forward compatible for Artus BLDC
+                    'target_force': 10, # forward compatible for Artus BLDC
                     'velocity': 60 # backward compatible for Artus Lite
                 }
-                hand_joints[i] = joint
+                hand_joints[artus_media_pipe.ARTUS_JOINT_NAMES[i]] = joint
+
+            # @todo : thumb spread offset
+            hand_joints['thumb_spread']['target_angle'] = 0
 
             # Send angles to Artus Lite
             artus_api.set_joint_angles(joint_angles=hand_joints)
@@ -203,13 +215,13 @@ def main():
             # Console print (smoothed + mapped)
             if now - last_print > print_interval:
                 label = handedness.classification[0].label
-                print(f"\n{label} Hand Joint Flex Angles (IK + Kalman):")
-                for name, val in smoothed_angles.items():
-                    print(f"  {name:10s}: {val:5.1f}")
+                # print(f"\n{label} Hand Joint Flex Angles (IK + Kalman):")
+                # for name, val in smoothed_angles.items():
+                    # print(f"  {name:10s}: {val:.1f}")
 
-                print("Mapped joint angles (Artus order):")
-                print("JOINT_ORDER:", artus_media_pipe.JOINT_ORDER)
-                print("angles_mapped:", joint_angles)
+                # print("Mapped joint angles (Artus order):")
+                # print("JOINT_ORDER:", artus_media_pipe.JOINT_ORDER)
+                # print("angles_mapped:", joint_angles)
 
                 last_print = now
 

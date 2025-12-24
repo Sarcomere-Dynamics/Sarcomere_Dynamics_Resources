@@ -72,6 +72,7 @@ class ActuatorState(Enum):
     ACTUATOR_ALL_CALIBRATE = 10
     ACTUATOR_FLASHING = 11
     ACTUATOR_FLASHING_ACK = 12
+    ACTUATOR_RESET = 13
 
 class CommandType(Enum):
     SETUP_COMMANDS = 6

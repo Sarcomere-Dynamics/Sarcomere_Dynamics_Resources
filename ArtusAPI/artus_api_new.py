@@ -75,6 +75,8 @@ class ArtusAPI_V2:
         self.original_sigint_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, self._sigint_handler)
 
+        self.connect()
+
     def _sigint_handler(self, signum, frame):
         self.logger.info("Ctrl+C detected. Calling sleep and disconnecting.")
         self.sleep()
@@ -346,6 +348,20 @@ class ArtusAPI_V2:
     def get_streamed_joint_angles(self,dat_type=0):
         self.logger.error(f"get_streamed_joint_angles is not implemented in ArtusAPIv2")
         return None
+
+    def reset(self,joints=None):
+        if joints is None:
+            joints = int(input(f"Enter number of joints to reset (0-{self._robot_handler.robot.number_of_joints}): "))
+        reset_command = self._command_handler.get_reset_command(joints)
+        self.wait_for_com_freq()
+        self._communication_handler.send_data(reset_command)
+        self.last_time = time.perf_counter()
+        
+        # wait for hand state ready
+        if not self._communication_handler.wait_for_ready(vis=False):
+            self.logger.error("Hand timed out waiting for ready")
+        else:
+            self.logger.info("Hand ready")
     
     def update_firmware(self,file_location=None,drivers_to_flash=None):
         

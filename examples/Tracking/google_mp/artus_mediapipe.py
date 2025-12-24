@@ -73,6 +73,25 @@ class ArtusMediaPipe:
             "pinky_mcp", "pinky_pip", "pinky_dip",
         ]
 
+        self.ARTUS_JOINT_NAMES = [
+            "thumb_spread",
+            "thumb_flex",
+            "thumb_d1",
+            "thumb_d2",
+            "index_spread",
+            "index_flex",
+            "index_d2",
+            "middle_spread",
+            "middle_flex",
+            "middle_d2",
+            "ring_spread",
+            "ring_flex",
+            "ring_d2",
+            "pinky_spread",
+            "pinky_flex",
+            "pinky_d2",
+        ]
+
         # Finger chains for link-length calibration (landmark indices)
         self.FINGER_CHAINS = {
             "thumb":  [1, 2, 3, 4],     # CMC -> MCP -> IP -> TIP
@@ -85,19 +104,39 @@ class ArtusMediaPipe:
     def find_working_camera(self, max_tested=10):
         """
         Scans camera indices from 0 up to max_tested-1.
-        Returns the first index that opens successfully and produces frames.
+        If multiple working cameras are found, lists them and prompts user to select.
+        Returns the chosen camera index.
         """
-        self.logger.info("Scanning for available camera...")
+        self.logger.info("Scanning for available cameras...")
+        working_cams = []
         for i in range(max_tested):
             cap = cv2.VideoCapture(i)
             if cap.isOpened():
                 ret, frame = cap.read()
                 if ret:
-                    cap.release()
-                    self.logger.info(f"✓ Found working camera at index {i}")
-                    return i
+                    working_cams.append(i)
             cap.release()
-        raise RuntimeError("✗ No working camera found.")
+        if not working_cams:
+            raise RuntimeError("✗ No working camera found.")
+        if len(working_cams) == 1:
+            self.logger.info(f"✓ Found working camera at index {working_cams[0]}")
+            return working_cams[0]
+        else:
+            print("Multiple working cameras found:")
+            for idx, cam_idx in enumerate(working_cams):
+                print(f"  [{idx}] Camera index {cam_idx}")
+            while True:
+                try:
+                    selection = input(f"Select camera by number (0-{len(working_cams)-1}): ")
+                    selection = int(selection)
+                    if 0 <= selection < len(working_cams):
+                        chosen_index = working_cams[selection]
+                        self.logger.info(f"✓ Using camera at index {chosen_index}")
+                        return chosen_index
+                    else:
+                        print("Invalid selection. Try again.")
+                except (ValueError, IndexError):
+                    print("Please enter a valid integer option.")
 
     def map_range(self, value, in_min, in_max, out_min, out_max, clamp=True):
         """
@@ -139,7 +178,7 @@ class ArtusMediaPipe:
         flex = max(0.0, min(180.0, float(flex_deg)))
 
         if joint_name == "thumb_cmc":
-            cmd = self.map_range(flex, 120, 140, -45, 45, True)
+            cmd = self.map_range(flex, 120, 140, -30, 30, True)
         elif joint_name in {"index_mcp", "middle_mcp", "ring_mcp", "pinky_mcp"}:
             cmd = self.map_range(flex, 9, 20, -17, 17, True)
         else:
@@ -235,6 +274,8 @@ class ArtusMediaPipe:
         collecting = False
         samples = {finger: [] for finger in self.FINGER_CHAINS.keys()}
 
+        calibration_aborted = False
+
         while True:
             ret, frame = cap.read()
             if not ret:
@@ -291,7 +332,13 @@ class ArtusMediaPipe:
 
             if key == ord('q') or key == 27:
                 self.logger.info("Calibration aborted by user.")
-                return None
+                calibration_aborted = True
+                break
+
+        cv2.destroyWindow("Calibration - Hold Hand Flat")
+        
+        if calibration_aborted:
+            return None
 
         avg_lengths = {}
         for finger, seg_list in samples.items():
