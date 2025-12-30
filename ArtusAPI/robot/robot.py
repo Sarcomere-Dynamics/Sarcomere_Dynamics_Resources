@@ -60,13 +60,13 @@ class Robot:
                 raise ValueError("Unknown hand")
         elif self.robot_type == 'artus_talos':
             if self.hand_type == 'right':
-                self.robot = ArtusTalos_Right()
+                self.robot = ArtusTalos_Right(logger=self.logger)
             elif self.hand_type == 'left':
-                self.robot = ArtusTalos_Left()
+                self.robot = ArtusTalos_Left(logger=self.logger)
             else:
                 raise ValueError("Unknown hand")
         elif self.robot_type == 'artus_scorpion':
-            self.robot = ArtusScorpion()
+            self.robot = ArtusScorpion(logger=self.logger)
         else:
             raise ValueError("Unknown robot type")
         

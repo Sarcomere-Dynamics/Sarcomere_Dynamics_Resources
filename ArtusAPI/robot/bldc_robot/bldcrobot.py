@@ -149,9 +149,11 @@ class BLDCRobot:
         for name,joint in self.hand_joints.items():
             if joint_angles[name].target_angle > joint.max_angle:
                 joint_angles[name].target_angle = joint.max_angle
+                self.logger.warning(f"Joint {name} target angle is greater than the max angle, setting to {joint.max_angle}")
                 # TODO logging
             if joint_angles[name].target_angle < joint.min_angle:
                 joint_angles[name].target_angle = joint.min_angle
+                self.logger.warning(f"Joint {name} target angle is less than the min angle, setting to {joint.min_angle}")
                 # TODO logging
         return joint_angles
 

@@ -14,7 +14,7 @@ from ..bldc_robot.bldcrobot import BLDCRobot
 from ...sensors import ForceSensor
 class ArtusScorpion(BLDCRobot):
     def __init__(self,
-                joint_max_angles=[42], # stroke mm
+                joint_max_angles=[50], # stroke mm
                 joint_min_angles=[0],
                 joint_default_angles=[],
                 joint_rotation_directions=[1],
@@ -41,11 +41,20 @@ class ArtusScorpion(BLDCRobot):
             'indices' : [0]
         }
 
+        self.logger = logger
+
     def set_joint_angles_by_name(self, joint_angles:dict):
         # verify that items are in order of index 
         available_control = 0
+
         # INSERT_YOUR_CODE
-        target_data = joint_angles['gripper_joint']
+        target_data = None
+        # look for gripper_joint in joint_angles
+        if 'gripper_joint' not in joint_angles:
+            self.logger.warning("Gripper joint not found in joint angles, defaulting to thumb_spread")
+            target_data = joint_angles['thumb_spread'] # use the zero index joint as default
+        else:
+            target_data = joint_angles['gripper_joint']
         name = 'gripper_joint'
         # fill data based on control type
         if 'target_angle' in target_data:
