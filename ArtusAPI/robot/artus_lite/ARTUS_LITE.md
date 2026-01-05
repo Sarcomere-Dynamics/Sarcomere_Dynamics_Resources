@@ -17,6 +17,13 @@ Hands are shipped at default with USB communication enabled unless otherwise spe
 ## Hand Joint Map
 Below is a Joint index guide mapped to a normal human hand with the naming convention and joint indices of the hand for control purposes.
 
+## Startup Procedure
+On Startup, the user must always run a `wake_up` command.
+
+Afterwards, if all joints are at their starting position, then the system does not need to run a `calibration` before sending target commands. 
+
+The Artus Lite also utilizes the `reset_on_start` which opens the hand when receiving the `wake_up` function, bypassing the need for `calibration`.
+
 __A note about Joint Limits__
 
 * D2, D1 and Flex joints have a range of [0,90]
