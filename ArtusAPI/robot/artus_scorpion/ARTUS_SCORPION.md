@@ -22,6 +22,17 @@ The system utilizes MODBUS RTU communication protocol.
 On Startup, the user must always run a `wake_up` command.
 The robot needs to then run a `calibration` command before sending target commands. 
 
+## LED States
+Here is a detailed table of the LED states during normal operation and a description of the states.
+| LED Colour | Description |
+| --- | --- |
+| Blue | Power on (Ready for Startup Sequence) |
+| Green | Idle |
+| Flashing Green | Active mode | 
+| Red/LED OFF | Error state |
+| Orange/Yellow | Shutdown/Sleep mode, may require power cycle for parameter changes to take effect |
+| Yellow | Flashing Actuators |
+
 
 * See the [ModbusMap PDF](data/ModbusMap_Scorpion.pdf) if you are developing your own communication application.
 

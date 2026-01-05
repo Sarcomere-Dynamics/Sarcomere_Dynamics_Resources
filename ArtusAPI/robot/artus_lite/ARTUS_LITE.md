@@ -24,6 +24,17 @@ Afterwards, if all joints are at their starting position, then the system does n
 
 The Artus Lite also utilizes the `reset_on_start` which opens the hand when receiving the `wake_up` function, bypassing the need for `calibration`.
 
+## LED States
+Here is a detailed table of the LED states during normal operation and a description of the states.
+| LED Colour | Description |
+| --- | --- |
+| Blue | Power on |
+| Green | Idle (Ready to connect, ready for commands) |
+| Red | Error state |
+| Orange/Yellow | Shutdown/Sleep mode, may require power cycle for parameter changes to take effect |
+| Purple | Flashing Actuators |
+
+
 __A note about Joint Limits__
 
 * D2, D1 and Flex joints have a range of [0,90]

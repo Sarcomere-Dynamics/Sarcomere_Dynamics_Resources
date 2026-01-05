@@ -25,6 +25,16 @@ Below is a Joint index guide mapped to a normal human hand with the naming conve
 On Startup, the user must always run a `wake_up` command.
 The robot needs to then run a `calibration` command before sending target commands. 
 
+## LED States
+Here is a detailed table of the LED states during normal operation and a description of the states.
+| LED Colour | Description |
+| --- | --- |
+| Blue | Power on (Ready for Startup Sequence) |
+| Green | Idle |
+| Flashing Green | Active mode | 
+| Red/LED OFF | Error state |
+| Orange/Yellow | Shutdown/Sleep mode, may require power cycle for parameter changes to take effect |
+| Yellow | Flashing Actuators |
 
 __A note about Joint Limits__
 * Thumb spread joint has a range of [-45,45]

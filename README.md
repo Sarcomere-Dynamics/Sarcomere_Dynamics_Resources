@@ -62,7 +62,7 @@ __Sections__
   * [1.2.2 Use Cloned Repository](#122-use-cloned-repository)
   * [1.3 Hardware Requirements](#13-hardware-requirements) 
 
-The first step to working with the Artus Lite is to connect to the hand, and achieve joint control and joint feedback. It is highly recommended that this should be done for the first time via the [example program provided](#23-running-general_examplepy). In preparation for this example, please follow the subsequent sections step by step, outlining all requirements for working with both the initial example program, as well as the API as a whole.
+The first step to working with the Artus Lite is to connect to the hand, and achieve joint control and joint feedback. It is highly recommended that this should be done for the first time via the [example program provided](#24-running-general_examplepy). In preparation for this example, please follow the subsequent sections step by step, outlining all requirements for working with both the initial example program, as well as the API as a whole.
 
 ### 1.1 Requirements
 Below is a list of Requirements for the Artus to be compatible 
@@ -154,15 +154,7 @@ When getting ready to power off the device please do the following:
 >This is different than the mk8 where the SD Card would save periodically. Now, saving to SD Card is more intentional.
 
 ### 2.3 LED States
-Here is a detailed table of the LED states during normal operation and a description of the states.
-| LED Colour | Description |
-| --- | --- |
-| Blue | Power on |
-| Green | Idle (Ready to connect, ready for commands) |
-| Red | Error state |
-| Orange/Yellow | Shutdown/Sleep mode, may require power cycle for parameter changes to take effect |
-| Purple | Flashing Actuators |
-
+See the [specific ReadMEs](#robot-specific-readmes).
 
 ### 2.4 Running _general_example.py_
 See the [General Example README to complete this task](/examples/general_example/README.md)
