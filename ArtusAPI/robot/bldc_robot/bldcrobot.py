@@ -130,8 +130,8 @@ class BLDCRobot:
                 self.logger.info(f"Setting target angle for {name} to {target_data['target_angle']}")
             if 'target_velocity' in target_data:
                 available_control |= 0b10
-                self.hand_joints[name].target_velocity = target_data['velocity']
-                self.logger.info(f"Setting target velocity for {name} to {target_data['velocity']}")
+                self.hand_joints[name].target_velocity = target_data['target_velocity']
+                self.logger.info(f"Setting target velocity for {name} to {target_data['target_velocity']}")
             if 'target_force' in target_data:
                 available_control |= 0b1
                 self.hand_joints[name].target_force = target_data['target_force']

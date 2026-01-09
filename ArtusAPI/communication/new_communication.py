@@ -70,9 +70,12 @@ class NewCommunication:
         else:
             raise ValueError("Received data is not a 16-bit value")
         return None  # Continue waiting
-    def wait_for_ready(self,timeout=15,vis=False):
+    def wait_for_ready(self,timeout=15,vis=False,acceptable_state=None):
         start_time = time.perf_counter()
-        acceptable_states = [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]
+        if not acceptable_state:
+            acceptable_states = [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]
+        else:
+            acceptable_states = [acceptable_state]
         if vis:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:

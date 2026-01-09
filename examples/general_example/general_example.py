@@ -62,7 +62,7 @@ def main_menu():
 # ------------------------------------------------------------------------------
 import logging
 
-def setup_logger(level='INFO',format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):
+def setup_logger(level='ERROR',format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):
     """
     Set up a logger for the ArtusAPI with proper formatting
     """
@@ -132,6 +132,10 @@ def example():
                     artusapi.get_joint_forces()
                 case 'r':
                     artusapi.reset()
+                case 'f':
+                    if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue") == 'e':
+                        driver = int(input("Enter driver to flash (1-6): "))
+                        artusapi.update_firmware(file_location="/home/ryan/Documents/BLDC-H725rgv6/build/Debug/bldc_driver.bin",drivers_to_flash=driver)
         except Exception as e:
             logger.error(f"Error: {e}")
             pass

@@ -129,11 +129,20 @@ class ArtusGUIController:
         """
         Receive joint angles from the GUI Application
         """
-        joint_angles = self.zmq_subscriber.receive()
-        if joint_angles is not None:
-            joint_angles = json.loads(joint_angles)
+        package = self.zmq_subscriber.receive()
+        if package is not None:
+            package = json.loads(package)
+            joint_angles = package['joint_values']
+            force = package['force']
+            speed = package['speed']
+            
             # joint angles with key and float value but I want key: {'target_angle': int(value)}
             joint_angles = {key: {'target_angle': int(value)} for key,value in joint_angles.items()}
+
+            for key,value in joint_angles.items():
+                joint_angles[key]['target_force'] = force
+                joint_angles[key]['target_velocity'] = speed
+
             return joint_angles
         else:
             self.logger.error("No joint angles received")

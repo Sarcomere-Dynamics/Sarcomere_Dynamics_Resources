@@ -158,7 +158,7 @@ class ArtusAPI_V2:
         self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True):
+        if not self._communication_handler.wait_for_ready(vis=True,timeout=10):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")

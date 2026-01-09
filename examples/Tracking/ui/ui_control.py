@@ -50,6 +50,8 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.minimum_angle = {name: Robot(robot_type=robot).robot.hand_joints[name].min_angle for name in self.joint_names}
         self.maximum_angle = {name: Robot(robot_type=robot).robot.hand_joints[name].max_angle for name in self.joint_names}
         self.joint_values = {name: 0.0 for name in self.joint_names}  # Initialize joint values
+        self.force_value = 10.0
+        self.speed_value = 150.0
         self.sliders = {}
         self.line_edit = {}
         self.streaming = False
@@ -91,6 +93,51 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         joint_control_group.setLayout(joint_control_layout)
         self.layout.addWidget(joint_control_group)
 
+        # Force and Speed control group
+        force_speed_control_group = QtWidgets.QGroupBox("Force and Speed Control")
+        force_speed_control_layout = QtWidgets.QGridLayout()
+
+        # Force Slider
+        force_label = QtWidgets.QLabel("Force (N)")
+        self.force_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.force_slider.setRange(-20, 20)
+        self.force_slider.setValue(int(self.force_value))
+        self.force_slider.setTickInterval(5)
+        self.force_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.force_slider.setSingleStep(1)
+        self.force_slider.valueChanged.connect(self.update_force)
+
+        self.force_line_edit = QtWidgets.QLineEdit(str(self.force_value))
+        self.force_line_edit.setValidator(QtGui.QDoubleValidator())
+        self.force_line_edit.setMaximumWidth(60)
+        self.force_line_edit.textChanged.connect(self.update_force_from_text)
+
+        force_speed_control_layout.addWidget(force_label, 0, 0)
+        force_speed_control_layout.addWidget(self.force_slider, 0, 1)
+        force_speed_control_layout.addWidget(self.force_line_edit, 0, 2)
+
+        # Speed Slider
+        speed_label = QtWidgets.QLabel("Speed (deg/s)")
+        self.speed_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.speed_slider.setRange(0, 300)
+        self.speed_slider.setValue(int(self.speed_value))
+        self.speed_slider.setTickInterval(50)
+        self.speed_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
+        self.speed_slider.setSingleStep(1)
+        self.speed_slider.valueChanged.connect(self.update_speed)
+
+        self.speed_line_edit = QtWidgets.QLineEdit(str(self.speed_value))
+        self.speed_line_edit.setValidator(QtGui.QDoubleValidator())
+        self.speed_line_edit.setMaximumWidth(60)
+        self.speed_line_edit.textChanged.connect(self.update_speed_from_text)
+
+        force_speed_control_layout.addWidget(speed_label, 1, 0)
+        force_speed_control_layout.addWidget(self.speed_slider, 1, 1)
+        force_speed_control_layout.addWidget(self.speed_line_edit, 1, 2)
+
+        force_speed_control_group.setLayout(force_speed_control_layout)
+        self.layout.addWidget(force_speed_control_group)
+
         # Buttons
         button_layout = QtWidgets.QHBoxLayout()
 
@@ -129,6 +176,16 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.line_edit[name].setText(str(float(value)))
         self.sliders[name].setValue(int(value))
 
+    def update_force(self, value):
+        self.force_value = float(value)
+        self.force_line_edit.setText(str(float(value)))
+        self.force_slider.setValue(int(value))
+
+    def update_speed(self, value):
+        self.speed_value = float(value)
+        self.speed_line_edit.setText(str(float(value)))
+        self.speed_slider.setValue(int(value))
+
     def update_joint_angle_from_text(self, name, text):
         try:
             value = float(text)
@@ -137,10 +194,31 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         except ValueError:
             pass # Handle invalid text input
 
+    def update_force_from_text(self, text):
+        try:
+            value = float(text)
+            self.force_value = value
+            self.force_slider.setValue(int(value))
+        except ValueError:
+            pass # Handle invalid text input
+    
+    def update_speed_from_text(self, text):
+        try:
+            value = float(text)
+            self.speed_value = value
+            self.speed_slider.setValue(int(value))
+        except ValueError:
+            pass # Handle invalid text input
+
     def send_data(self):
         # This will send the current joint values via ZMQ
         print(f"Sending data to ZMQ")
-        self.send(topic="Target", message=json.dumps(self.joint_values))
+        data_to_send = {
+            "joint_values": self.joint_values,
+            "force": self.force_value,
+            "speed": self.speed_value
+        }
+        self.send(topic="Target", message=json.dumps(data_to_send))
 
     def save_data(self):
         # Get filename from user using a QInputDialog
