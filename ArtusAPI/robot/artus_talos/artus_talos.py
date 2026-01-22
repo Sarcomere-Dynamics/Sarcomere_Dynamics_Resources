@@ -45,3 +45,21 @@ class ArtusTalos(BLDCRobot):
                 'data' : ForceSensor(),
                 'indices' : indices[i]
             }
+
+        # add force sensor feedback type
+        self.available_feedback_types.append('feedback_force_sensor_start_reg')
+
+        # speeds
+        self.max_velocity = 300
+        self.min_velocity = 0
+        self.default_velocity = 200
+
+        # forces
+        self.max_force = 20
+        self.min_force = 2
+        self.default_force = 10
+
+        # pwm (legacy)
+        self.default_pwm = None
+        self.max_pwm = None
+        self.min_pwm = None

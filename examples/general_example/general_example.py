@@ -130,6 +130,11 @@ def example():
                     artusapi.get_joint_speeds()
                 case '11':
                     artusapi.get_joint_forces()
+                case '12':
+                    if artusapi._robot_handler.robot.force_sensors is not None:
+                        artusapi.get_fingertip_forces()
+                    else:
+                        logger.error("Fingertip forces are not supported for this robot")
                 case 'r':
                     artusapi.reset()
                 case 'f':

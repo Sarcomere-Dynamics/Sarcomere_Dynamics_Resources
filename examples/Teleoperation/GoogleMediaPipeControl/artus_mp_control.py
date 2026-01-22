@@ -49,7 +49,7 @@ from ArtusAPI.artus_api_new import ArtusAPI_V2
 # Configure logging only if it hasn't been configured yet
 if not logging.getLogger().handlers:
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.ERROR,
         format='%(asctime)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
@@ -91,7 +91,7 @@ def main():
 
     # Kalman filters per joint name
     kalman_filters = {
-        name: AngleKalmanFilter(process_var=5.0, measurement_var=150.0)
+        name: AngleKalmanFilter(process_var=2.0, measurement_var=100.0)
         for name in artus_media_pipe.JOINTS.keys()
     }
 
@@ -180,17 +180,18 @@ def main():
             # Kalman-smoothed angles
             smoothed_angles = {}
             for name, val in raw_angles.items():
-                smoothed = kalman_filters[name].update(val, dt)
-                smoothed_angles[name] = smoothed
+                # smoothed = kalman_filters[name].update(val, dt)
+                smoothed_angles[name] = val
 
             # === Map smoothed_angles -> Artus joint commands in fixed order ===
+            print(f"smoothed_angles: {smoothed_angles}")
             # Build angles_mapped as a list in JOINT_ORDER
             angles_mapped = [
                 artus_media_pipe.map_angle_for_artus(joint_name, smoothed_angles.get(joint_name, 0.0))
                 for joint_name in artus_media_pipe.JOINT_ORDER
             ]
 
-            # print(f"smoothed_angles: {smoothed_angles}")
+            
 
             # angles_mapped is now a list of 16 ints, one per joint index
             joint_angles = angles_mapped
@@ -201,13 +202,13 @@ def main():
                 joint = {
                     'index': i,
                     'target_angle': angle,
-                    'target_force': 10, # forward compatible for Artus BLDC
-                    'velocity': 60 # backward compatible for Artus Lite
+                    'target_force': 15, # forward compatible for Artus BLDC
+                    'velocity': 250 # backward compatible for Artus Lite
                 }
                 hand_joints[artus_media_pipe.ARTUS_JOINT_NAMES[i]] = joint
 
             # @todo : thumb spread offset
-            hand_joints['thumb_spread']['target_angle'] = 0
+            # hand_joints['thumb_spread']['target_angle'] = 0
 
             # Send angles to Artus Lite
             artus_api.set_joint_angles(joint_angles=hand_joints)

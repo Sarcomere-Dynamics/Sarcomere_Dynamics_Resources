@@ -289,7 +289,7 @@ class ArtusAPI:
         feedback_command = self._receive_feedback(type)
         if not self._check_communication_frequency(1):
             return None
-        joint_angles = self._robot_handler.get_joint_angles(feedback_command,type=type)
+        joint_angles = self._robot_handler.get_joint_angles(feedback_command,feedback_type=type)
         if joint_angles is None:
             return None
         
@@ -576,6 +576,7 @@ class ArtusAPI:
         Get the hand feedback data
         """
         self.logger.error(f"get_hand_feedback_data is not implemented in ArtusAPIv1")
+        return self.get_joint_angles()
 
 def test_artus_api():
     artus_api = ArtusAPI()

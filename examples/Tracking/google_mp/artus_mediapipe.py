@@ -177,10 +177,14 @@ class ArtusMediaPipe:
 
         flex = max(0.0, min(180.0, float(flex_deg)))
 
+        # TODO : make the thumb cmc mapping more accurate 
+        # right now just hard coded 
         if joint_name == "thumb_cmc":
-            cmd = self.map_range(flex, 120, 140, -30, 30, True)
+            cmd = self.map_range(flex, 130, 140, -30, 30, True)
         elif joint_name in {"index_mcp", "middle_mcp", "ring_mcp", "pinky_mcp"}:
             cmd = self.map_range(flex, 9, 20, -17, 17, True)
+        elif joint_name == "thumb_mcp":
+            cmd = self.map_range(flex, 0, 40, 0, 90, True)
         else:
             if flex >= 90.0:
                 flex = 90.0

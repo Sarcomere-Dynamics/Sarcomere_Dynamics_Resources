@@ -11,7 +11,6 @@ See the LICENSE file in the repository for full details.
 """
 
 import logging
-from ...sensors import ForceSensor
 
 class BLDCRobot:
     def __init__(self,
@@ -24,6 +23,8 @@ class BLDCRobot:
                             'middle_flex','ring_flex','pinky_flex'],
                 number_of_joints=6,
                 logger=None):
+
+        self.force_sensors = None
 
         if not logger:
             self.logger = logging.getLogger(__name__)
@@ -191,10 +192,12 @@ class BLDCRobot:
 
             if modbus_key == 'feedback_force_sensor_start_reg':
                 # force sensor data is special, so we need to loop through the force sensors
+                i = 0
                 for key,value in self.force_sensors.items():
-                    value['data'].x = feedback_package[value['indices'][0]]
-                    value['data'].y = feedback_package[value['indices'][1]]
-                    value['data'].z = feedback_package[value['indices'][2]]
+                    value['data'].x = feedback_package[i]
+                    value['data'].y = feedback_package[i+1]
+                    value['data'].z = feedback_package[i+2]
+                    i+=3
             else:
                 # normal loop through joint data and populate feedback fields
                 for name,joint_data in self.hand_joints.items():

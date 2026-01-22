@@ -121,8 +121,12 @@ class ArtusAPI_V2:
         self.last_time = time.perf_counter()
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=False):
+        ready_result = self._communication_handler.wait_for_ready(vis=False)
+        if not ready_result:
             self.logger.error("Hand timed out waiting for ready")
+        elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
+            # try to wake hand again
+            self.wake_up()
         else:
             self.logger.info("Hand ready")
             self.state = ActuatorState.ACTUATOR_IDLE
@@ -158,7 +162,7 @@ class ArtusAPI_V2:
         self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True,timeout=10):
+        if not self._communication_handler.wait_for_ready(vis=True,timeout=10,acceptable_state=ActuatorState.ACTUATOR_READY.value):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")
@@ -295,6 +299,24 @@ class ArtusAPI_V2:
         # populate hand joint dict based on robot
         self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
 
+    def get_fingertip_forces(self):
+        """
+        Get the fingertip forces from the hand
+        """
+        if not self._check_awake():
+            return
+
+        start_reg = ModbusMap().modbus_reg_map['feedback_force_sensor_start_reg']
+        start_reg_key = 'feedback_force_sensor_start_reg'
+
+        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * 5 * 3) # 5 fingers, 3 axes per finger
+
+        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
+        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
+
+        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
+
+    
     def get_joint_speeds(self):
         """
         Get the joint speeds from the hand
@@ -334,7 +356,7 @@ class ArtusAPI_V2:
         # populate hand joint dict based on robot
         self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key)
 
-    def get_hand_feedback_data(self):
+    def get_hand_feedback_data(self) -> bool:
         """
         Get all feedback data from the hand that is available
         """
@@ -342,7 +364,11 @@ class ArtusAPI_V2:
             return
 
         for feedback_type in self._robot_handler.robot.available_feedback_types:
-            self.get_joint_angles(start_reg=ModbusMap().modbus_reg_map[feedback_type])
+            if feedback_type == 'feedback_force_sensor_start_reg':
+                self.get_fingertip_forces()
+            else:
+                self.get_joint_angles(start_reg=ModbusMap().modbus_reg_map[feedback_type])
+        return True
 
     # for compatibility
     def get_streamed_joint_angles(self,dat_type=0):

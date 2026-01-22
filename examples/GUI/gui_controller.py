@@ -71,11 +71,12 @@ class ArtusGUIController:
         # wake if set in config
         if self.robot_config.get_robot_wake_up(hand_type=self.artus_api._robot_handler.hand_type):
             self.artus_api.wake_up()
+            time.sleep(0.5)
 
         # calibrate if set in config
         if self.robot_config.get_robot_calibrate(hand_type=self.artus_api._robot_handler.hand_type):
             self.artus_api.calibrate()
-
+            time.sleep(0.5)
         # test robot
         # self.artus_api = ArtusAPI_V2(robot_type='artus_talos',
         #                         communication_method='RS485_RTU',
@@ -96,17 +97,37 @@ class ArtusGUIController:
 
     def _publish_feedback(self,feedback:dict=None):
         """
-        Get all available feedback data from the robot and publish to the GUI
+        Get all available feedback data from the robot and publish to the GUI.
+        Includes force sensor data when available.
         """
 
         # Only include specific fields from each joint in the feedback
         allowed_fields = ["index", "feedback_angle", "feedback_force", "feedback_velocity", "feedback_current"]
 
+        robot = getattr(self.artus_api._robot_handler, "robot", None)
         hand_joints_serializable = {
             joint_name: {field: getattr(joint, field, None) for field in allowed_fields}
-            for joint_name, joint in self.artus_api._robot_handler.robot.hand_joints.items()
+            for joint_name, joint in robot.hand_joints.items()
         }
-        self.zmq_publisher.send(topic="Feedback",message=json.dumps(hand_joints_serializable))
+
+        # Add force sensor feedback when present on the robot (e.g., Talos)
+        force_sensor_payload = None
+        force_sensors = getattr(robot, "force_sensors", None)
+        if force_sensors:
+            force_sensor_payload = {
+                sensor_name: {
+                    "x": getattr(sensor_info.get("data"), "x", None) if sensor_info else None,
+                    "y": getattr(sensor_info.get("data"), "y", None) if sensor_info else None,
+                    "z": getattr(sensor_info.get("data"), "z", None) if sensor_info else None,
+                }
+                for sensor_name, sensor_info in force_sensors.items()
+            }
+
+        payload = hand_joints_serializable.copy()
+        if force_sensor_payload:
+            payload["force_sensors"] = force_sensor_payload
+
+        self.zmq_publisher.send(topic="Feedback",message=json.dumps(payload))
         self.logger.info(f"Published feedback to ZMQ")
 
 

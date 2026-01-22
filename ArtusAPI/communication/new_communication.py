@@ -72,6 +72,7 @@ class NewCommunication:
         return None  # Continue waiting
     def wait_for_ready(self,timeout=15,vis=False,acceptable_state=None):
         start_time = time.perf_counter()
+        time.sleep(0.2) 
         if not acceptable_state:
             acceptable_states = [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]
         else:

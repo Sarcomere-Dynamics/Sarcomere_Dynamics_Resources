@@ -1,0 +1,5 @@
+minimalmodbus==2.1.1
+psutil==7.2.1
+pyserial==3.5
+PyYAML==6.0.3
+tqdm==4.67.1

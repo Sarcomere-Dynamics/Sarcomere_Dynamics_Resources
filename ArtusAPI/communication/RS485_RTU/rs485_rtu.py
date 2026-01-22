@@ -12,9 +12,9 @@ See the LICENSE file in the repository for full details.
 
 import minimalmodbus
 import serial
-import modbus_tk
-from modbus_tk.modbus_rtu import RtuMaster
-import modbus_tk.defines as cst
+# import modbus_tk
+# from modbus_tk.modbus_rtu import RtuMaster
+# import modbus_tk.defines as cst
 from tqdm import tqdm
 import logging
 import time

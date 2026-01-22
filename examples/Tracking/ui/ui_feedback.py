@@ -38,15 +38,27 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         else:
             raise ValueError("No robot connected")
 
+        # Cache robot description to discover joints and any force sensors
+        robot_description = Robot(robot_type=robot).robot
+
         self.win = win
         self.feedback_type = "angle"  # Default feedback type
         self.feedback_types = ["angle", "velocity", "force"]
 
-        self.joint_names = list(Robot(robot_type=robot).robot.hand_joints.keys())
+        self.joint_names = list(robot_description.hand_joints.keys())
         self.plots = []
         self.curves = []
         self.data = []
         self.ptr = []
+
+        self.force_sensor_info = getattr(robot_description, "force_sensors", None)
+        self.force_sensor_names = list(self.force_sensor_info.keys()) if self.force_sensor_info else []
+        self.force_sensor_axes = ["x", "y", "z"]
+        self.force_plots = {}
+        self.force_curves = {}
+        self.force_data = {}
+        self.force_ptr = {}
+
         self.history_length = 500  # Number of data points to display
 
         self._init_ui()
@@ -74,10 +86,12 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         self.layout.addWidget(self.plot_widget)
 
         self.create_joint_plots()
+        if self.force_sensor_names:
+            self.create_force_sensor_plots()
         self.setLayout(self.layout)
 
     def create_joint_plots(self):
-        num_cols = 4  # Number of plots per row
+        num_cols = int(len(self.joint_names) / 2)  # Number of plots per row
         self.plot_widget.nextRow()
         for i, name in enumerate(self.joint_names):
             plot_item = self.plot_widget.addPlot(title=name)
@@ -88,6 +102,32 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
             self.curves.append(curve)
             self.data.append(np.zeros(self.history_length))
             self.ptr.append(0)
+
+            if (i + 1) % num_cols == 0:
+                self.plot_widget.nextRow()
+
+    def create_force_sensor_plots(self):
+        """
+        Create plots for any available force sensors (Talos).
+        Each force sensor gets a plot with X/Y/Z curves.
+        """
+        if not self.force_sensor_names:
+            return
+
+        axis_colors = {"x": "r", "y": "g", "z": "b"}
+        self.plot_widget.nextRow()
+        num_cols = int(len(self.joint_names) / 2)  # Number of plots per row
+        for i, sensor_name in enumerate(self.force_sensor_names):
+            plot_item = self.plot_widget.addPlot(title=f"{sensor_name} force (N)")
+            plot_item.setYRange(-5, 5)
+            self.force_plots[sensor_name] = plot_item
+            self.force_curves[sensor_name] = {}
+            self.force_data[sensor_name] = {}
+            self.force_ptr[sensor_name] = 0
+
+            for axis in self.force_sensor_axes:
+                self.force_curves[sensor_name][axis] = plot_item.plot(pen=axis_colors[axis])
+                self.force_data[sensor_name][axis] = np.zeros(self.history_length)
 
             if (i + 1) % num_cols == 0:
                 self.plot_widget.nextRow()
@@ -112,6 +152,21 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
                     self.curves[i].setData(self.data[i])
                     self.curves[i].setPos(self.ptr[i], 0)
                     self.ptr[i] += 1
+
+            # Update force sensor plots if available
+            if self.force_sensor_names and 'force_sensors' in feedback_data:
+                sensor_feedback = feedback_data.get('force_sensors', {})
+                for sensor_name in self.force_sensor_names:
+                    axis_data = sensor_feedback.get(sensor_name)
+                    if not axis_data:
+                        continue
+                    for axis in self.force_sensor_axes:
+                        value = axis_data.get(axis, 0)
+                        self.force_data[sensor_name][axis][:-1] = self.force_data[sensor_name][axis][1:]
+                        self.force_data[sensor_name][axis][-1] = value
+                        self.force_curves[sensor_name][axis].setData(self.force_data[sensor_name][axis])
+                        self.force_curves[sensor_name][axis].setPos(self.force_ptr[sensor_name], 0)
+                    self.force_ptr[sensor_name] += 1
         except json.JSONDecodeError:
             print("Error decoding JSON feedback data.")
 
@@ -140,6 +195,14 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
             elif self.feedback_type == "angle":
                 plot_item.setYRange(-90, 90)  # Keep current range
                 self.curves[i].setPen('g')
+
+        # Reset force sensor plot data
+        for sensor_name in self.force_sensor_names:
+            for axis in self.force_sensor_axes:
+                self.force_data[sensor_name][axis] = np.zeros(self.history_length)
+                self.force_curves[sensor_name][axis].setData(self.force_data[sensor_name][axis])
+                self.force_curves[sensor_name][axis].setPos(0, 0)
+            self.force_ptr[sensor_name] = 0
 
 
 def main():

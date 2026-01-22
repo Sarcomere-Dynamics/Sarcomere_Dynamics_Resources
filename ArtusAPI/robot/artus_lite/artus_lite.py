@@ -47,6 +47,11 @@ class ArtusLite:
         self.number_of_joints = number_of_joints
         self.joint_names = joint_names
 
+        # pwm (legacy)
+        self.max_pwm = 100
+        self.min_pwm = 40
+        self.default_pwm = 70
+
         class Joint:
             def __init__(self, index, min_angle, max_angle, default_angle, target_angle, rotation_direction, velocity, temperature):
                 self.index = index
@@ -113,8 +118,8 @@ class ArtusLite:
         for name,target_data in ordered_joint_angles.items():
             self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].rotation_direction
             
-            if 'velocity' in target_data:
-                self.hand_joints[self.joint_names[target_data['index']]].velocity = target_data['velocity']
+            if 'target_velocity' in target_data:
+                self.hand_joints[self.joint_names[target_data['index']]].velocity = target_data['target_velocity']
             else: # fill default velocity
                 self.hand_joints[self.joint_names[target_data['index']]].velocity = self.joint_velocities[target_data['index']]
         self._check_joint_limits(self.hand_joints)
@@ -134,7 +139,7 @@ class ArtusLite:
             self.hand_joints[name].target_angle = target_data['target_angle']*self.hand_joints[name].rotation_direction
             
             if 'velocity' in target_data:
-                self.hand_joints[name].velocity = target_data['velocity']
+                self.hand_joints[name].velocity = target_data['target_velocity']
             else: # fill default velocity
                 self.hand_joints[name].velocity = self.joint_velocities[self.hand_joints[name].index]
         self._check_joint_limits(self.hand_joints)

@@ -43,6 +43,21 @@ class ArtusScorpion(BLDCRobot):
 
         self.logger = logger
 
+        # speeds
+        self.max_velocity = 70 # mm/s
+        self.min_velocity = 0
+        self.default_velocity = 30 # mm/s
+
+        # forces
+        self.max_force = 40 # N
+        self.min_force = 2 # N
+        self.default_force = 20 # N
+
+        # pwm (legacy)
+        self.default_pwm = None
+        self.max_pwm = None
+        self.min_pwm = None
+
     def set_joint_angles_by_name(self, joint_angles:dict):
         # verify that items are in order of index 
         available_control = 0
@@ -63,8 +78,8 @@ class ArtusScorpion(BLDCRobot):
             self.logger.info(f"Setting target angle for {name} to {target_data['target_angle']}")
         if 'target_velocity' in target_data:
             available_control |= 0b10
-            self.hand_joints[name].target_velocity = target_data['velocity']
-            self.logger.info(f"Setting target velocity for {name} to {target_data['velocity']}")
+            self.hand_joints[name].target_velocity = target_data['target_velocity']
+            self.logger.info(f"Setting target velocity for {name} to {target_data['target_velocity']}")
         if 'target_force' in target_data:
             available_control |= 0b1
             self.hand_joints[name].target_force = target_data['target_force']
