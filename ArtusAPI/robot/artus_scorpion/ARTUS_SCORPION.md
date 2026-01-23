@@ -27,6 +27,11 @@ The robot needs to then run a `calibration` command before sending target comman
 * Velocity : mm/s
 * Force : Newtons (N)
 
+## Control Maximas
+* Position : 50 mm 
+    * The starting position is 100mm wide (open position 0). However, it is a single drive gripper, driving it 50mm, means fully closed. (subject to change)
+* velocity : 40 mm/s
+
 
 ## LED States
 Here is a detailed table of the LED states during normal operation and a description of the states.
