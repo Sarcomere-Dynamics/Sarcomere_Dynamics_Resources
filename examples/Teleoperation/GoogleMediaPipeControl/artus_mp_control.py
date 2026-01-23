@@ -17,6 +17,7 @@ import numpy as np
 import time
 import logging
 import cv2
+import multiprocessing as mp
 
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
@@ -58,25 +59,15 @@ if not logging.getLogger().handlers:
 logger = logging.getLogger(__name__)
 logger.propagate = True  # Ensure logs propagate to parent loggers
 
-def main():
+def vision_process(queue, stop_event, cam_index):
+    """
+    Runs camera + MediaPipe + IK. Publishes hand_joints dict to queue.
+    """
     artus_media_pipe = ArtusMediaPipe()
-    config = ArtusConfig()
-
-    artus_api = config.get_api(logger=logger)
-
-    artus_api.connect()
-
-    if config.get_robot_wake_up(hand_type=artus_api._robot_handler.hand_type):
-        artus_api.wake_up()
-    if config.get_robot_calibrate(hand_type=artus_api._robot_handler.hand_type):
-        artus_api.calibrate()
 
     # hand joints dict holder
     # @todo : future proof for Artus Dex 
     hand_joints = {artus_media_pipe.ARTUS_JOINT_NAMES[i]: {'target_angle': 0} for i in range(16)}
-
-    # Auto-detect camera
-    cam_index = artus_media_pipe.find_working_camera()
 
     # Open camera
     cap = cv2.VideoCapture(cam_index)
@@ -105,145 +96,197 @@ def main():
     max_hand_lost_frames = 10
     max_reacquire_distance = 0.30
 
-    # Main While Loop
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Frame read error.")
-            continue
+    try:
+        while not stop_event.is_set():
+            ret, frame = cap.read()
+            if not ret:
+                print("Frame read error.")
+                continue
 
-        # Compute dt for Kalman filters
-        now = time.time()
-        dt = now - prev_time
-        prev_time = now
-        dt = max(1e-3, min(dt, 0.1))
+            # Compute dt for Kalman filters
+            now = time.time()
+            dt = now - prev_time
+            prev_time = now
+            dt = max(1e-3, min(dt, 0.1))
 
-        frame = cv2.flip(frame, 1)
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        result = artus_media_pipe.hands.process(rgb)
+            frame = cv2.flip(frame, 1)
+            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = artus_media_pipe.hands.process(rgb)
 
-        if result.multi_hand_landmarks and result.multi_handedness:
-            num_hands = len(result.multi_hand_landmarks)
+            if result.multi_hand_landmarks and result.multi_handedness:
+                num_hands = len(result.multi_hand_landmarks)
 
-            wrists = []
-            for i in range(num_hands):
-                lm = result.multi_hand_landmarks[i].landmark[0]  # wrist
-                wrists.append(np.array([lm.x, lm.y], dtype=np.float32))
+                wrists = []
+                for i in range(num_hands):
+                    lm = result.multi_hand_landmarks[i].landmark[0]  # wrist
+                    wrists.append(np.array([lm.x, lm.y], dtype=np.float32))
 
-            chosen_index = None
+                chosen_index = None
 
-            if tracked_wrist is None or hand_lost_frames >= max_hand_lost_frames:
-                # First acquisition (or re-acquire) – prefer RIGHT hand
-                right_indices = [
-                    i for i, handedness_info in enumerate(result.multi_handedness)
-                    if handedness_info.classification[0].label == "Right"
-                ]
-                if right_indices:
-                    chosen_index = right_indices[0]
-                else:
-                    chosen_index = 0
+                if tracked_wrist is None or hand_lost_frames >= max_hand_lost_frames:
+                    # First acquisition (or re-acquire) – prefer RIGHT hand
+                    right_indices = [
+                        i for i, handedness_info in enumerate(result.multi_handedness)
+                        if handedness_info.classification[0].label == "Right"
+                    ]
+                    if right_indices:
+                        chosen_index = right_indices[0]
+                    else:
+                        chosen_index = 0
 
-                tracked_wrist = wrists[chosen_index].copy()
-                hand_lost_frames = 0
-            else:
-                # Keep the closest wrist to the tracked one
-                dists = [np.linalg.norm(w - tracked_wrist) for w in wrists]
-                min_i = int(np.argmin(dists))
-                min_dist = dists[min_i]
-
-                if min_dist < max_reacquire_distance:
-                    chosen_index = min_i
-                    tracked_wrist = wrists[min_i].copy()
+                    tracked_wrist = wrists[chosen_index].copy()
                     hand_lost_frames = 0
                 else:
-                    hand_lost_frames += 1
-                    # Skip this frame to avoid switching to a new hand
-                    continue
+                    # Keep the closest wrist to the tracked one
+                    dists = [np.linalg.norm(w - tracked_wrist) for w in wrists]
+                    min_i = int(np.argmin(dists))
+                    min_dist = dists[min_i]
 
-            hand_lms = result.multi_hand_landmarks[chosen_index]
-            handedness = result.multi_handedness[chosen_index]
+                    if min_dist < max_reacquire_distance:
+                        chosen_index = min_i
+                        tracked_wrist = wrists[min_i].copy()
+                        hand_lost_frames = 0
+                    else:
+                        hand_lost_frames += 1
+                        # Skip this frame to avoid switching to a new hand
+                        continue
 
-            # Draw landmarks
-            artus_media_pipe.mp_drawing.draw_landmarks(
-                frame, hand_lms,
-                artus_media_pipe.mp_hands.HAND_CONNECTIONS,
-                artus_media_pipe.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2),
-                artus_media_pipe.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=1)
-            )
+                hand_lms = result.multi_hand_landmarks[chosen_index]
+                handedness = result.multi_handedness[chosen_index]
 
-            # === IK-based joint angles (with calibrated lengths) ===
-            raw_angles = artus_media_pipe.compute_hand_joint_angles_with_ik(
-                hand_lms.landmark,
-                finger_link_lengths
-            )
+                # Draw landmarks
+                artus_media_pipe.mp_drawing.draw_landmarks(
+                    frame, hand_lms,
+                    artus_media_pipe.mp_hands.HAND_CONNECTIONS,
+                    artus_media_pipe.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=2),
+                    artus_media_pipe.mp_drawing.DrawingSpec(color=(0, 255, 0), thickness=1)
+                )
 
-            # Kalman-smoothed angles
-            smoothed_angles = {}
-            for name, val in raw_angles.items():
-                # smoothed = kalman_filters[name].update(val, dt)
-                smoothed_angles[name] = val
+                # === IK-based joint angles (with calibrated lengths) ===
+                raw_angles = artus_media_pipe.compute_hand_joint_angles_with_ik(
+                    hand_lms.landmark,
+                    finger_link_lengths
+                )
 
-            # === Map smoothed_angles -> Artus joint commands in fixed order ===
-            print(f"smoothed_angles: {smoothed_angles}")
-            # Build angles_mapped as a list in JOINT_ORDER
-            angles_mapped = [
-                artus_media_pipe.map_angle_for_artus(joint_name, smoothed_angles.get(joint_name, 0.0))
-                for joint_name in artus_media_pipe.JOINT_ORDER
-            ]
+                # Kalman-smoothed angles
+                smoothed_angles = {}
+                for name, val in raw_angles.items():
+                    # smoothed = kalman_filters[name].update(val, dt)
+                    smoothed_angles[name] = val
 
-            
+                # === Map smoothed_angles -> Artus joint commands in fixed order ===
+                angles_mapped = [
+                    artus_media_pipe.map_angle_for_artus(joint_name, smoothed_angles.get(joint_name, 0.0))
+                    for joint_name in artus_media_pipe.JOINT_ORDER
+                ]
 
-            # angles_mapped is now a list of 16 ints, one per joint index
-            joint_angles = angles_mapped
+                # angles_mapped is now a list of 16 ints, one per joint index
+                joint_angles = angles_mapped
 
-            # Fill hand_joints with these angles
-            # @todo : change if you'd like
-            for i, angle in enumerate(joint_angles):
-                joint = {
-                    'index': i,
-                    'target_angle': angle,
-                    'target_force': 15, # forward compatible for Artus BLDC
-                    'velocity': 250 # backward compatible for Artus Lite
+                # Fill hand_joints with these angles
+                for i, angle in enumerate(joint_angles):
+                    joint = {
+                        'index': i,
+                        'target_angle': angle,
+                        'target_force': 15, # forward compatible for Artus BLDC
+                        'velocity': 250 # backward compatible for Artus Lite
+                    }
+                    hand_joints[artus_media_pipe.ARTUS_JOINT_NAMES[i]] = joint
+
+                # Send the latest hand_joints to the control process (drop old)
+                while not queue.empty():
+                    try:
+                        queue.get_nowait()
+                    except Exception:
+                        break
+                queue.put(hand_joints.copy())
+
+                # Console print (smoothed + mapped)
+                if now - last_print > print_interval:
+                    label = handedness.classification[0].label
+                    print(f"{label} hand detected, sending angles to control process.")
+                    last_print = now
+
+                # Draw **mapped** joint angles on frame
+                mapped_angle_dict = {
+                    joint_name: float(angle)
+                    for joint_name, angle in zip(artus_media_pipe.JOINT_ORDER, joint_angles)
                 }
-                hand_joints[artus_media_pipe.ARTUS_JOINT_NAMES[i]] = joint
+                artus_media_pipe.draw_finger_angles(frame, mapped_angle_dict)
 
-            # @todo : thumb spread offset
-            # hand_joints['thumb_spread']['target_angle'] = 0
+            cv2.imshow("Hand Tracking with IK + Kalman", frame)
+            key = cv2.waitKey(1) & 0xFF
+            if key == 27 or key == ord('q'):
+                break
+    finally:
+        stop_event.set()
+        cap.release()
+        cv2.destroyAllWindows()
 
-            # Send angles to Artus Lite
-            artus_api.set_joint_angles(joint_angles=hand_joints)
 
-            # Console print (smoothed + mapped)
-            if now - last_print > print_interval:
-                label = handedness.classification[0].label
-                # print(f"\n{label} Hand Joint Flex Angles (IK + Kalman):")
-                # for name, val in smoothed_angles.items():
-                    # print(f"  {name:10s}: {val:.1f}")
+def control_process(queue, stop_event):
+    """
+    Consumes hand_joints dicts from queue and commands the robot.
+    """
+    config = ArtusConfig()
+    artus_api = config.get_api(logger=logger)
 
-                # print("Mapped joint angles (Artus order):")
-                # print("JOINT_ORDER:", artus_media_pipe.JOINT_ORDER)
-                # print("angles_mapped:", joint_angles)
+    artus_api.connect()
 
-                last_print = now
+    if config.get_robot_wake_up(hand_type=artus_api._robot_handler.hand_type):
+        artus_api.wake_up()
+        time.sleep(0.5)
+    if config.get_robot_calibrate(hand_type=artus_api._robot_handler.hand_type):
+        artus_api.calibrate()
+        time.sleep(0.5)
+    try:
+        while not stop_event.is_set():
+            latest = None
+            while not queue.empty():
+                try:
+                    latest = queue.get_nowait()
+                except Exception:
+                    break
 
-            # # Draw smoothed angles on frame
-            # draw_finger_angles(frame, smoothed_angles)
-            # Build a dict of mapped angles keyed by joint name for drawing
-            mapped_angle_dict = {
-                joint_name: float(angle)
-                for joint_name, angle in zip(artus_media_pipe.JOINT_ORDER, joint_angles)
-            }
+            if latest is None:
+                # time.sleep(0.01)
+                continue
 
-            # Draw **mapped** joint angles on frame
-            artus_media_pipe.draw_finger_angles(frame, mapped_angle_dict)
+            # print(latest)
+            artus_api.set_joint_angles(joint_angles=latest)
+    finally:
+        try:
+            artus_api.sleep()
+        except Exception:
+            pass
+        try:
+            artus_api.disconnect()
+        except Exception:
+            pass
 
-        cv2.imshow("Hand Tracking with IK + Kalman", frame)
-        key = cv2.waitKey(1) & 0xFF
-        if key == 27 or key == ord('q'):
-            break
 
-    cap.release()
-    cv2.destroyAllWindows()
+def main():
+    ctx = mp.get_context("spawn")
+    queue = ctx.Queue(maxsize=2)
+    stop_event = ctx.Event()
+
+    # Run camera selection in the parent (interactive stdin available here)
+    cam_index = ArtusMediaPipe().find_working_camera()
+
+    vision = ctx.Process(target=vision_process, args=(queue, stop_event, cam_index), name="vision")
+    control = ctx.Process(target=control_process, args=(queue, stop_event), name="control")
+
+    vision.start()
+    control.start()
+
+    try:
+        vision.join()
+    except KeyboardInterrupt:
+        stop_event.set()
+    finally:
+        stop_event.set()
+        control.join(timeout=2)
+        vision.join(timeout=2)
 
 
 if __name__ == "__main__":

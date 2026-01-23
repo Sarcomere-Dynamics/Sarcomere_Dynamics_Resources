@@ -121,7 +121,7 @@ class ArtusAPI_V2:
         self.last_time = time.perf_counter()
 
         # wait for hand state ready
-        ready_result = self._communication_handler.wait_for_ready(vis=False)
+        ready_result = self._communication_handler.wait_for_ready(vis=False,timeout=30)
         if not ready_result:
             self.logger.error("Hand timed out waiting for ready")
         elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:

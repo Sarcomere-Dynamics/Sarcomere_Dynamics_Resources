@@ -127,7 +127,11 @@ class ArtusMediaPipe:
                 print(f"  [{idx}] Camera index {cam_idx}")
             while True:
                 try:
-                    selection = input(f"Select camera by number (0-{len(working_cams)-1}): ")
+                    selection = input(f"Select camera by number (0-{len(working_cams)-1}), or press Enter for the first: ")
+                    if selection.strip() == "":
+                        chosen_index = working_cams[0]
+                        self.logger.info(f"✓ Using first camera at index {chosen_index}")
+                        return chosen_index
                     selection = int(selection)
                     if 0 <= selection < len(working_cams):
                         chosen_index = working_cams[selection]
@@ -135,6 +139,11 @@ class ArtusMediaPipe:
                         return chosen_index
                     else:
                         print("Invalid selection. Try again.")
+                except EOFError:
+                    # Non-interactive environment (e.g., multiprocessing worker). Choose first.
+                    chosen_index = working_cams[0]
+                    self.logger.info(f"✓ Using first camera at index {chosen_index} (auto-selected)")
+                    return chosen_index
                 except (ValueError, IndexError):
                     print("Please enter a valid integer option.")
 
