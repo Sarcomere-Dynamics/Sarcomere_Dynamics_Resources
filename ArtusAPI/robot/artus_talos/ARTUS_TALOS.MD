@@ -25,6 +25,11 @@ Below is a Joint index guide mapped to a normal human hand with the naming conve
 On Startup, the user must always run a `wake_up` command.
 The robot needs to then run a `calibration` command before sending target commands. 
 
+## Control Units
+* Position : degrees
+* Velocity : degrees/s
+* Force : Newtons (N)
+
 ## LED States
 Here is a detailed table of the LED states during normal operation and a description of the states.
 | LED Colour | Description |

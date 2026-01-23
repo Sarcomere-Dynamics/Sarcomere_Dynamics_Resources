@@ -22,6 +22,12 @@ The system utilizes MODBUS RTU communication protocol.
 On Startup, the user must always run a `wake_up` command.
 The robot needs to then run a `calibration` command before sending target commands. 
 
+## Control Units
+* Position : mm 
+* Velocity : mm/s
+* Force : Newtons (N)
+
+
 ## LED States
 Here is a detailed table of the LED states during normal operation and a description of the states.
 | LED Colour | Description |
