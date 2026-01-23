@@ -140,7 +140,8 @@ def example():
                 case 'f':
                     if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue") == 'e':
                         driver = int(input("Enter driver to flash (1-6): "))
-                        artusapi.update_firmware(file_location="/home/ryan/Documents/BLDC-H725rgv6/build/Debug/bldc_driver.bin",drivers_to_flash=driver)
+                        file_location_ = input(f'enter file location of driver: ')
+                        artusapi.update_firmware(file_location=file_location_,drivers_to_flash=driver)
         except Exception as e:
             logger.error(f"Error: {e}")
             pass
