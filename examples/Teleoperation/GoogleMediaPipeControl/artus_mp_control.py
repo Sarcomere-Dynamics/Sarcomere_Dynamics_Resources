@@ -252,7 +252,7 @@ def control_process(queue, stop_event):
                 # time.sleep(0.01)
                 continue
 
-            # print(latest)
+            print(latest)
             artus_api.set_joint_angles(joint_angles=latest)
     finally:
         try:
