@@ -22,4 +22,4 @@ Another indication that the system is ready, is seeing the feedback data start t
 * __Set Joint Angles__: Using the sliders or the input box to set the input target angle. 
 * __Send Joint Angles__: Send one-shot inputs to the robot using the send button.
 * __Stream__: Stream joint angles to the robot without the need to press the send button.
-* __Feedback Graphs__: Feedback graphs can be switched between Position, Velocity, and Force. Feeedback is specific to the Artus robot model and may not be the same across all models. 
+* __Feedback Graphs__: Feedback graphs can be switched between Position, Velocity, and Force. Feeedback is specific to the Artus robot model and may not be the same across all models. If the robot is equipped with fingertip force sensors, the data will also be shown on in their own graphs.  
