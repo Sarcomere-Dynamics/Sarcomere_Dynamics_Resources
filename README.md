@@ -120,11 +120,15 @@ pip install -r requirements.txt
 This section covers very basic usage of the Artus Lite using the Artus API.
 
 __Sections__
+* [2.0.1 Configuration File](#201-configuration-file)
 * [2.1 Normal Startup Procedure](#21-normal-startup-procedure)
 * [2.2 Normal Shutdown Procedure](#22-normal-shutdown-procedure)
 * [2.3 LED States](#23-led-states)
 * [2.4 Running _general_example.py_](#24-running-general_examplepy)
 * [2.4.1 Video Introduction](#241-video-introduction)
+
+### 2.0.1 Configuration File
+Please refer to the [Configuration File README](/examples/config/README.md) for more information on the setting the configuration file.
 
 ### 2.1 Normal Startup Procedure
 There is a standard series of commands that need to be followed before sending target commands or receiving feedback data is possible. 
