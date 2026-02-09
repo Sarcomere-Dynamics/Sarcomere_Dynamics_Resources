@@ -52,6 +52,10 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.joint_values = {name: 0.0 for name in self.joint_names}  # Initialize joint values
         self.force_value = 10.0
         self.speed_value = 150.0
+        self.minimum_force = Robot(robot_type=robot).robot.min_force
+        self.minimum_speed = Robot(robot_type=robot).robot.min_velocity
+        self.maximum_force = Robot(robot_type=robot).robot.max_force
+        self.maximum_speed = Robot(robot_type=robot).robot.max_velocity
         self.sliders = {}
         self.line_edit = {}
         self.streaming = False
@@ -100,7 +104,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         # Force Slider
         force_label = QtWidgets.QLabel("Force (N)")
         self.force_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.force_slider.setRange(-20, 20)
+        self.force_slider.setRange(self.minimum_force, self.maximum_force)
         self.force_slider.setValue(int(self.force_value))
         self.force_slider.setTickInterval(5)
         self.force_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
@@ -119,7 +123,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         # Speed Slider
         speed_label = QtWidgets.QLabel("Speed (deg/s)")
         self.speed_slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-        self.speed_slider.setRange(0, 300)
+        self.speed_slider.setRange(self.minimum_speed, self.maximum_speed)
         self.speed_slider.setValue(int(self.speed_value))
         self.speed_slider.setTickInterval(50)
         self.speed_slider.setTickPosition(QtWidgets.QSlider.TicksBelow)

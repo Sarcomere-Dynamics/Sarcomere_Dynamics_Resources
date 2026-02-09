@@ -39,7 +39,11 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
             raise ValueError("No robot connected")
 
         # Cache robot description to discover joints and any force sensors
-        robot_description = Robot(robot_type=robot).robot
+        self.robot_description = Robot(robot_type=robot).robot
+        # self.minimum_force = Robot(robot_type=robot).robot.min_force
+        # self.minimum_speed = Robot(robot_type=robot).robot.min_velocity
+        # self.maximum_force = Robot(robot_type=robot).robot.max_force
+        # self.maximum_speed = Robot(robot_type=robot).robot.max_velocity
 
         self.win = win
         self.feedback_type = "angle"  # Default feedback type
@@ -91,7 +95,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         self.setLayout(self.layout)
 
     def create_joint_plots(self):
-        num_cols = int(len(self.joint_names) / 2)  # Number of plots per row
+        num_cols = np.ceil(len(self.joint_names) / 2)  # Number of plots per row
         self.plot_widget.nextRow()
         for i, name in enumerate(self.joint_names):
             plot_item = self.plot_widget.addPlot(title=name)
@@ -116,7 +120,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
 
         axis_colors = {"x": "r", "y": "g", "z": "b"}
         self.plot_widget.nextRow()
-        num_cols = int(len(self.joint_names) / 2)  # Number of plots per row
+        num_cols = np.ceil(len(self.joint_names) / 2)  # Number of plots per row
         for i, sensor_name in enumerate(self.force_sensor_names):
             plot_item = self.plot_widget.addPlot(title=f"{sensor_name} force (N)")
             plot_item.setYRange(-5, 5)
@@ -187,10 +191,10 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
 
             # Set y-range and color based on feedback type
             if self.feedback_type == "force":
-                plot_item.setYRange(-20, 20)
+                plot_item.setYRange(-self.robot_description.max_force, self.robot_description.max_force)
                 self.curves[i].setPen('r')
             elif self.feedback_type == "velocity":
-                plot_item.setYRange(-90, 90)  # Keep current range
+                plot_item.setYRange(-self.robot_description.max_velocity, self.robot_description.max_velocity)  # Keep current range
                 self.curves[i].setPen('y')
             elif self.feedback_type == "angle":
                 plot_item.setYRange(-90, 90)  # Keep current range
