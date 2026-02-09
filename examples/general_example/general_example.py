@@ -26,6 +26,7 @@ from examples.config.configuration import ArtusConfig
 
 # new version of ArtusAPI use local version
 from ArtusAPI.artus_api_new import ArtusAPI_V2
+from ArtusAPI.common import ModbusMap
 # old ArtusAPI
 from ArtusAPI.artus_api import ArtusAPI
 
@@ -109,7 +110,14 @@ def example():
                 case '2':
                     artusapi.disconnect()
                 case '3':
-                    artusapi.wake_up()
+                    if isinstance(artusapi, ArtusAPI_V2):
+                        control_type = int(input("Enter control type (1: torque, 2: velocity, 3: position): "))
+                        if control_type not in [1,2,3]:
+                            logger.warning("Invalid control type, defaulting to position control")
+                            control_type = 3
+                        artusapi.wake_up(control_type=control_type)
+                    else:
+                        artusapi.wake_up()
                 case '4':
                     artusapi.sleep()
                 case '5':

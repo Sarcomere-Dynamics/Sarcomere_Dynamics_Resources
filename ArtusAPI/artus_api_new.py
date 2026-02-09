@@ -280,6 +280,23 @@ class ArtusAPI_V2:
 
         # populate hand joint dict based on robot
         self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_confirmed))
+        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+
+    def helper_fill_dict_from_feedback_data(self,feedback_data:list):
+        """
+        Helper function to fill a dictionary from feedback data for getters
+
+        Parameters:
+        :feedback_data: list of feedback data
+
+        Returns:
+        :feedback_data_dict: dictionary of feedback data
+        """
+        # return decoded feedback data in a dict
+        feedback_data_dict = {}
+        for index, value in enumerate(self._robot_handler.robot.joint_names):
+            feedback_data_dict[value] = feedback_data[index]
+        return feedback_data_dict
 
     def get_joint_forces(self):
         """
@@ -298,6 +315,7 @@ class ArtusAPI_V2:
 
         # populate hand joint dict based on robot
         self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
+        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
     def get_fingertip_forces(self):
         """
@@ -315,7 +333,7 @@ class ArtusAPI_V2:
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
 
         self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-
+        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
     
     def get_joint_speeds(self):
         """
@@ -334,7 +352,7 @@ class ArtusAPI_V2:
 
         # populate hand joint dict based on robot
         self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-
+        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
     ### NOT IMPLEMENTED YET ###
     def get_joint_temperatures(self):
@@ -355,7 +373,8 @@ class ArtusAPI_V2:
 
         # populate hand joint dict based on robot
         self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key)
-
+        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+        
     def get_hand_feedback_data(self) -> bool:
         """
         Get all feedback data from the hand that is available
