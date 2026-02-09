@@ -39,7 +39,7 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is float
             'target_force_start_reg': 2, # input target force registers
             # size is 16b
-            'feedback_velocity_start_reg': 1, # input feedback velocity registers
+            'target_velocity_start_reg': 1, # input feedback velocity registers
             # size is 16b
             'feedback_register' : 1, # input feedback registers
             # size is byte
