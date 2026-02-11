@@ -49,13 +49,13 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         self.feedback_type = "angle"  # Default feedback type
         self.feedback_types = ["angle", "velocity", "force"]
 
-        self.joint_names = list(robot_description.hand_joints.keys())
+        self.joint_names = list(self.robot_description.hand_joints.keys())
         self.plots = []
         self.curves = []
         self.data = []
         self.ptr = []
 
-        self.force_sensor_info = getattr(robot_description, "force_sensors", None)
+        self.force_sensor_info = getattr(self.robot_description, "force_sensors", None)
         self.force_sensor_names = list(self.force_sensor_info.keys()) if self.force_sensor_info else []
         self.force_sensor_axes = ["x", "y", "z"]
         self.force_plots = {}
