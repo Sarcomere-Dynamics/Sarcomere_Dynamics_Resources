@@ -252,6 +252,24 @@ class ArtusAPI_V2:
             return False
         self._communication_handler.send_data(robot_set_home_position_cmd,CommandType.TARGET_COMMAND.value)
         self.last_time = time.perf_counter()
+
+    def get_voltage(self):
+        """
+        get voltage feedback from the hand
+        """
+        if not self._check_awake():
+            return
+
+        start_reg = ModbusMap().modbus_reg_map['feedback_voltage_start_reg']
+        start_reg_key = 'feedback_voltage_start_reg'
+
+        amount_data = 2 # 1 float 
+
+        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
+        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
+
+        self.logger.info(f"Voltage: {decoded_feedback_data[0]}")
+        return decoded_feedback_data[0]
     
     def get_joint_angles(self,start_reg=ModbusMap().modbus_reg_map['feedback_position_start_reg']):
         """
@@ -372,8 +390,27 @@ class ArtusAPI_V2:
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
 
         # populate hand joint dict based on robot
-        self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key)
+        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+
+    def get_avg_temperature(self):
+        """
+        Get the average temperature of the hand
+        """
+        if not self._check_awake():
+            return
+
+        start_reg = ModbusMap().modbus_reg_map['feedback_avg_temperature_start_reg']
+        start_reg_key = 'feedback_avg_temperature_start_reg'
+
+        amount_data = 1 # only 1 value
+
+        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
+        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
+
+        self.logger.info(f"Average temperature: {decoded_feedback_data[0]}")
+
+        return decoded_feedback_data[0]
         
     def get_hand_feedback_data(self) -> bool:
         """

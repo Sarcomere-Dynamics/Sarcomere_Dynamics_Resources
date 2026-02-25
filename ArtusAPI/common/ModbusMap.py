@@ -28,7 +28,11 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is byte
             'feedback_atuator_motor_mode_reg' : 600, # feedback motor mode
             # size is float
-            'feedback_force_sensor_start_reg': 650 # input feedback fingertip force sensors 
+            'feedback_force_sensor_start_reg': 650, # input feedback fingertip force sensors
+            # size is float
+            'feedback_voltage_start_reg': 1000, # feedback voltage register (1 value)
+            # size is int16_t
+            'feedback_avg_temperature_start_reg' : 1002,
         }
 
         self.data_type_multiplier_map = {
@@ -55,7 +59,11 @@ class ModbusMap: # Artus Generic Modbus Map
             # size is byte
             'feedback_atuator_motor_mode_reg' : 0.5, # feedback motor mode
             # size is float
-            'feedback_force_sensor_start_reg': 2 # input feedback fingertip force sensors
+            'feedback_force_sensor_start_reg': 2, # input feedback fingertip force sensors
+            # size is float
+            'feedback_voltage_start_reg': 2, # feedback voltage register (1 value)
+            # size is int16_t
+            'feedback_avg_temperature_start_reg' : 1,
         }
 
 class ActuatorState(Enum):
