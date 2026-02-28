@@ -9,8 +9,8 @@ Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 
-Hand tracking uses the MediaPipe Tasks API (HandLandmarker). Requires: pip install mediapipe (>= 0.10.31).
-On first run, hand_landmarker.task is downloaded automatically to this script's directory.
+Uses MediaPipe Tasks API (HandLandmarker). Requires: pip install mediapipe (>= 0.10.31).
+On first run, hand_landmarker.task is downloaded to this script's directory.
 """
 
 import cv2
@@ -26,7 +26,6 @@ import json
 import os
 import sys
 
-# MediaPipe Tasks API (replaces legacy mediapipe.solutions)
 import mediapipe as mp
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision
@@ -76,22 +75,17 @@ def find_working_camera(max_tested=10):
 #  MEDIAPIPE TASKS HAND LANDMARKER (NEW API)
 # ============================================================
 
-# Drawing utilities from Tasks API (replaces mp.solutions.drawing_utils)
 mp_hand_connections = vision.HandLandmarksConnections
 mp_drawing = vision.drawing_utils
 mp_drawing_styles = vision.drawing_styles
 
-# Default model URL (Google-hosted hand_landmarker.task)
 HAND_LANDMARKER_MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 )
 
 
 def get_hand_landmarker_model_path():
-    """
-    Return path to hand_landmarker.task. If not present next to this script,
-    download it from the official MediaPipe model bucket.
-    """
+    """Return path to hand_landmarker.task; download if missing."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(script_dir, "hand_landmarker.task")
     if os.path.isfile(model_path):
@@ -102,14 +96,14 @@ def get_hand_landmarker_model_path():
         print(f"Saved to {model_path}")
     except Exception as e:
         raise RuntimeError(
-            f"Could not download hand_landmarker.model. Download manually from:\n{HAND_LANDMARKER_MODEL_URL}\n"
+            f"Could not download hand_landmarker.model. Download from:\n{HAND_LANDMARKER_MODEL_URL}\n"
             f"and place at {model_path}\nError: {e}"
         ) from e
     return model_path
 
 
 def create_hand_landmarker():
-    """Create HandLandmarker instance in VIDEO mode for webcam processing."""
+    """Create HandLandmarker in VIDEO mode for webcam."""
     model_path = get_hand_landmarker_model_path()
     base_options = mp_tasks.BaseOptions(model_asset_path=model_path)
     options = vision.HandLandmarkerOptions(
@@ -124,13 +118,13 @@ def create_hand_landmarker():
 
 
 def rgb_frame_to_mp_image(rgb):
-    """Convert a numpy RGB frame (H, W, 3) uint8 to MediaPipe Image for Tasks API."""
+    """Convert numpy RGB (H,W,3) uint8 to MediaPipe Image."""
     rgb = np.ascontiguousarray(rgb)
     return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
 
 def draw_hand_landmarks_on_image(rgb_image, hand_landmarks):
-    """Draw Tasks API hand landmarks on an RGB image (mutates in place)."""
+    """Draw hand landmarks on RGB image (mutates in place)."""
     mp_drawing.draw_landmarks(
         rgb_image,
         hand_landmarks,
@@ -438,7 +432,7 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = rgb_frame_to_mp_image(rgb)
         result = detector.detect_for_video(mp_image, frame_timestamp_ms)
-        frame_timestamp_ms += 33  # ~30 fps in ms
+        frame_timestamp_ms += 33
 
         if not collecting:
             cv2.putText(frame, "CALIBRATION: Hold hand flat, press 'c' to start",
@@ -448,11 +442,9 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
                         (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
         if result.hand_landmarks and result.handedness:
-            # Prefer right hand (Tasks API: handedness[i][0].category_name)
             chosen_idx = 0
             for i in range(len(result.handedness)):
-                label = result.handedness[i][0].category_name
-                if label == "Right":
+                if result.handedness[i][0].category_name == "Right":
                     chosen_idx = i
                     break
 
@@ -646,7 +638,7 @@ def main():
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = rgb_frame_to_mp_image(rgb)
         result = detector.detect_for_video(mp_image, frame_timestamp_ms)
-        frame_timestamp_ms += 33  # ~30 fps in ms
+        frame_timestamp_ms += 33
 
         if result.hand_landmarks and result.handedness:
             num_hands = len(result.hand_landmarks)
@@ -659,7 +651,6 @@ def main():
             chosen_index = None
 
             if tracked_wrist is None or hand_lost_frames >= max_hand_lost_frames:
-                # First acquisition (or re-acquire) – prefer RIGHT hand
                 right_indices = [
                     i for i in range(len(result.handedness))
                     if result.handedness[i][0].category_name == "Right"
@@ -672,7 +663,6 @@ def main():
                 tracked_wrist = wrists[chosen_index].copy()
                 hand_lost_frames = 0
             else:
-                # Keep the closest wrist to the tracked one
                 dists = [np.linalg.norm(w - tracked_wrist) for w in wrists]
                 min_i = int(np.argmin(dists))
                 min_dist = dists[min_i]
@@ -683,13 +673,11 @@ def main():
                     hand_lost_frames = 0
                 else:
                     hand_lost_frames += 1
-                    # Skip this frame to avoid switching to a new hand
                     continue
 
             hand_landmarks = result.hand_landmarks[chosen_index]
             handedness_label = result.handedness[chosen_index][0].category_name
 
-            # Draw landmarks (on RGB then convert frame to BGR for display)
             draw_hand_landmarks_on_image(rgb, hand_landmarks)
             frame = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
