@@ -123,6 +123,25 @@ def rgb_frame_to_mp_image(rgb):
     return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
 
+class MonotonicTimestampMS:
+    """
+    Generates strictly monotonically increasing timestamps in milliseconds.
+
+    Uses a monotonic clock (perf_counter_ns) and clamps to +1ms if needed.
+    This prevents MediaPipe Tasks VIDEO/LIVE_STREAM pipelines from throwing:
+        "input timestamp must be monotonically increasing"
+    """
+    def __init__(self):
+        self._last = -1
+
+    def next(self) -> int:
+        ts = time.perf_counter_ns() // 1_000_000  # monotonic ms
+        if ts <= self._last:
+            ts = self._last + 1
+        self._last = ts
+        return int(ts)
+
+
 def draw_hand_landmarks_on_image(rgb_image, hand_landmarks):
     """Draw hand landmarks on RGB image (mutates in place)."""
     mp_drawing.draw_landmarks(
@@ -139,7 +158,7 @@ JOINTS = {
     "thumb_cmc": (5, 0, 1),
     "thumb_mcp": (1, 2, 3),
     "thumb_ip":  (2, 3, 4),
-    "thumb_dip": (2,3,4),
+    "thumb_dip": (2, 3, 4),
 
     "index_mcp": (0, 5, 6),
     "index_pip": (5, 6, 7),
@@ -180,16 +199,12 @@ def map_range(value, in_min, in_max, out_min, out_max, clamp=True):
 
     Returns a float.
     """
-
-    # Avoid division by zero
     if in_max - in_min == 0:
         raise ValueError("Input range cannot be zero.")
 
-    # Linear interpolation
     scaled = (value - in_min) / (in_max - in_min)
     mapped = out_min + scaled * (out_max - out_min)
 
-    # Clamp output
     if clamp:
         if out_min < out_max:
             mapped = max(out_min, min(out_max, mapped))
@@ -197,6 +212,7 @@ def map_range(value, in_min, in_max, out_min, out_max, clamp=True):
             mapped = max(out_max, min(out_min, mapped))
 
     return mapped
+
 
 def map_angle_for_artus(joint_name, flex_deg):
     """
@@ -209,30 +225,15 @@ def map_angle_for_artus(joint_name, flex_deg):
 
     Returns an integer command value.
     """
-
-    # Clamp input to valid flexion range
     flex = max(0.0, min(180.0, float(flex_deg)))
 
-    # =========== SPECIAL CASES ============
     if joint_name == "thumb_cmc":
-        # 0 → -45    |   180 → +45
-        # slope = 90 / 180 = 0.5
-        # intercept = -45
-        #cmd = 0.5 * flex - 45.0
         cmd = map_range(flex, 120, 140, -45, 45, True)
-        #cmd = flex
 
     elif joint_name in {"index_mcp", "middle_mcp", "ring_mcp", "pinky_mcp"}:
-        # 0 → -17    |   180 → +17
-        # slope = 34 / 180
-        #cmd = (34.0 / 180.0) * flex - 17.0
-        #cmd = flex*1.25-10.0
         cmd = map_range(flex, 9, 20, -17, 17, True)
 
-    # ============ DEFAULT CASE ============
     else:
-        # 0 → 0      |   180 → 90
-        # slope = 90 / 180 = 0.5
         if flex >= 90.0:
             flex = 90.0
         cmd = flex
@@ -307,13 +308,10 @@ class AngleKalmanFilter:
     """
 
     def __init__(self, process_var=20.0, measurement_var=50.0):
-        # State vector [angle; velocity]
         self.x = np.array([[0.0],
                            [0.0]], dtype=np.float32)
-        # Covariance
         self.P = np.eye(2, dtype=np.float32) * 1000.0
 
-        # Process and measurement noise
         self.Q_base = np.array([[0.25, 0.5],
                                 [0.5,  1.0]], dtype=np.float32) * process_var
         self.R = np.array([[measurement_var]], dtype=np.float32)
@@ -328,14 +326,8 @@ class AngleKalmanFilter:
         self.P = A @ self.P @ A.T + self.Q_base
 
     def update(self, z, dt):
-        """
-        z: measured angle (deg)
-        dt: time step (s)
-        returns: filtered angle
-        """
         z = float(z)
 
-        # First measurement initializes the filter
         if not self.initialized:
             self.x[0, 0] = z
             self.x[1, 0] = 0.0
@@ -343,20 +335,17 @@ class AngleKalmanFilter:
             self.initialized = True
             return z
 
-        # Predict
         self.predict(dt)
 
         H = np.array([[1.0, 0.0]], dtype=np.float32)
-        y = np.array([[z]], dtype=np.float32) - H @ self.x  # innovation
+        y = np.array([[z]], dtype=np.float32) - H @ self.x
         S = H @ self.P @ H.T + self.R
         K = self.P @ H.T @ np.linalg.inv(S)
 
-        # Update
         self.x = self.x + K @ y
         I = np.eye(2, dtype=np.float32)
         self.P = (I - K @ H) @ self.P
 
-        # Return the filtered angle
         return float(self.x[0, 0])
 
 
@@ -372,10 +361,7 @@ def draw_finger_angles(image, angles, origin=(10, 30)):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
     y += dy
 
-    # Reuse JOINT_ORDER so text matches command ordering
-    show = JOINT_ORDER
-
-    for key in show:
+    for key in JOINT_ORDER:
         if key in angles:
             txt = f"{key}: {angles[key]:5.1f}"
             cv2.putText(image, txt, (x, y),
@@ -388,10 +374,6 @@ def draw_finger_angles(image, angles, origin=(10, 30)):
 # ============================================================
 
 def compute_link_lengths_from_landmarks(landmarks):
-    """
-    Compute per-finger link lengths (3D) given MediaPipe landmarks.
-    Returns dict: { finger_name: [l1, l2, l3] }
-    """
     pts = np.array([[lm.x, lm.y, lm.z] for lm in landmarks])
     finger_lengths = {}
 
@@ -399,20 +381,12 @@ def compute_link_lengths_from_landmarks(landmarks):
         seg_lengths = []
         for a, b in zip(chain[:-1], chain[1:]):
             seg_lengths.append(np.linalg.norm(pts[a] - pts[b]))
-        finger_lengths[finger] = seg_lengths  # 3 segments per finger
+        finger_lengths[finger] = seg_lengths
 
     return finger_lengths
 
 
 def calibrate_finger_lengths(cap, detector, target_samples=50):
-    """
-    Calibration phase:
-    - Shows the camera feed
-    - User holds hand flat and presses 'c' to start capturing
-    - Collects `target_samples` of finger link lengths and averages them
-    Returns:
-        avg_lengths: { finger: np.array([l1,l2,l3]) } in MediaPipe's normalized 3D units
-    """
     print("\n=== CALIBRATION MODE ===")
     print("Hold your RIGHT hand flat, fingers extended, facing the camera.")
     print("Press 'c' to start capturing calibration samples.")
@@ -420,27 +394,23 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
 
     collecting = False
     samples = {finger: [] for finger in FINGER_CHAINS.keys()}
-    frame_timestamp_ms = 0
+
+    ts = MonotonicTimestampMS()
 
     while True:
-        ret, frame = cap.read()
+        ret, frame_bgr = cap.read()
         if not ret:
             print("Calibration: frame read error.")
             continue
 
-        frame = cv2.flip(frame, 1)
-        rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_bgr = cv2.flip(frame_bgr, 1)
+
+        # Run mediapipe on RGB
+        rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         mp_image = rgb_frame_to_mp_image(rgb)
-        result = detector.detect_for_video(mp_image, frame_timestamp_ms)
-        frame_timestamp_ms += 33
+        result = detector.detect_for_video(mp_image, ts.next())
 
-        if not collecting:
-            cv2.putText(frame, "CALIBRATION: Hold hand flat, press 'c' to start",
-                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
-        else:
-            cv2.putText(frame, "CALIBRATION: Capturing lengths...",
-                        (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
+        # Draw landmarks on RGB if available, then convert back to BGR for display
         if result.hand_landmarks and result.handedness:
             chosen_idx = 0
             for i in range(len(result.handedness)):
@@ -450,24 +420,50 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
 
             hand_landmarks = result.hand_landmarks[chosen_idx]
             draw_hand_landmarks_on_image(rgb, hand_landmarks)
-            frame = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
             if collecting:
                 finger_lengths = compute_link_lengths_from_landmarks(hand_landmarks)
                 for finger, segs in finger_lengths.items():
                     samples[finger].append(segs)
 
-                n = len(next(iter(samples.values())))
-                cv2.putText(frame, f"Samples: {n}/{target_samples}",
-                            (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        # Convert annotated RGB -> BGR ONCE (after any landmark drawing)
+        display = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
-                if n >= target_samples:
-                    print("Calibration: enough samples collected.")
-                    break
+        # Compute sample count (safe even before collecting)
+        n = len(next(iter(samples.values()))) if samples else 0
+
+        # ---- UI overlays (draw LAST so nothing overwrites them) ----
+        if not collecting:
+            cv2.putText(
+                display,
+                "CALIBRATION: Hold hand flat, press 'c' to start",
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 255),
+                2
+            )
         else:
-            frame = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            cv2.putText(
+                display,
+                "CALIBRATION: Capturing lengths...",
+                (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2
+            )
+            cv2.putText(
+                display,
+                f"Samples: {n}/{target_samples}",
+                (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.6,
+                (0, 255, 0),
+                2
+            )
 
-        cv2.imshow("Calibration - Hold Hand Flat", frame)
+        cv2.imshow("Calibration - Hold Hand Flat", display)
         key = cv2.waitKey(1) & 0xFF
 
         if key == ord('c') and not collecting:
@@ -477,6 +473,10 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
         if key == ord('q') or key == 27:
             print("Calibration aborted by user.")
             return None
+
+        if collecting and n >= target_samples:
+            print("Calibration: enough samples collected.")
+            break
 
     # Compute averages
     avg_lengths = {}
@@ -492,28 +492,17 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
 
     return avg_lengths
 
-
 # ============================================================
 #  IK-BASED JOINT ANGLES (USING FINGER LINK LENGTHS)
 # ============================================================
 
 def compute_hand_joint_angles_with_ik(landmarks, finger_link_lengths):
-    """
-    Combines:
-      - Geometric joint angles (3-point method) for MCP and thumb joints
-      - Simple 2-link IK for PIP/DIP of index/middle/ring/pinky
-        using calibrated segment lengths and base->tip distance.
-
-    Returns dict {joint_name: flex_deg}
-    """
-    # Start from geometric angles as baseline
     angles = compute_hand_joint_angles_geometric(landmarks)
     if finger_link_lengths is None:
         return angles
 
     pts = np.array([[lm.x, lm.y, lm.z] for lm in landmarks])
 
-    # Fingers we will override PIP/DIP for (keep MCP & thumb as-is)
     for finger in ["index", "middle", "ring", "pinky"]:
         if finger not in finger_link_lengths:
             continue
@@ -526,27 +515,20 @@ def compute_hand_joint_angles_with_ik(landmarks, finger_link_lengths):
         T = pts[tip_idx]
 
         L1, L2, L3 = finger_link_lengths[finger]
-        # Equivalent 2-link: proximal + (middle+distal)
         Lp = max(L1, 1e-6)
         Ld = max(L2 + L3, 1e-6)
 
-        # 3D distance from base to tip
         d = np.linalg.norm(T - B)
-        # Clamp d to valid IK range
         d = float(max(1e-6, min(d, Lp + Ld - 1e-6)))
 
-        # 2-link planar IK (only flex magnitude – we ignore azimuth):
-        # cos(theta2) = (d^2 - L1^2 - L2^2) / (2 L1 L2)
         cos_q2 = (d * d - Lp * Lp - Ld * Ld) / (2.0 * Lp * Ld)
         cos_q2 = max(-1.0, min(1.0, cos_q2))
-        q2 = math.acos(cos_q2)  # rad, 0 = straight, >0 = flex
+        q2 = math.acos(cos_q2)
         q2_deg = math.degrees(q2)
 
-        # Split PIP/DIP flexion from combined "elbow" flex
         pip_flex = q2_deg * 0.6
         dip_flex = q2_deg * 0.4
 
-        # Clamp to 0..180
         pip_flex = max(0.0, min(180.0, pip_flex))
         dip_flex = max(0.0, min(180.0, dip_flex))
 
@@ -571,19 +553,15 @@ def compute_hand_joint_angles_with_ik(landmarks, finger_link_lengths):
 # ============================================================
 
 def main():
-    # hand joints dict holder
     hand_joints = {i: '0' for i in range(16)}
 
-    # Auto-detect camera
     cam_index = find_working_camera()
 
-    # Open camera
     cap = cv2.VideoCapture(cam_index)
     if not cap.isOpened():
         print("✗ Failed to open camera.")
         return
 
-    # ArtusAPI
     artus = ArtusAPI(
         communication_method='UART',
         communication_channel_identifier="/dev/ttyUSB0",  # @TODO EDIT ME
@@ -594,18 +572,13 @@ def main():
         stream=False
     )
 
-    #Need to uncomment to connect the hand
-    #artus.connect()
+    # Need to uncomment to connect the hand
+    # artus.connect()
 
-    # === HAND LANDMARKER (MEDIAPIPE TASKS API) ===
     detector = create_hand_landmarker()
 
-    # === CALIBRATION STEP (FINGER LINK LENGTHS) ===
     finger_link_lengths = calibrate_finger_lengths(cap, detector, target_samples=50)
-    # finger_link_lengths:
-    # { "thumb": np.array([l1,l2,l3]), "index": ..., ... } in normalized 3D units
 
-    # Kalman filters per joint name
     kalman_filters = {
         name: AngleKalmanFilter(process_var=5.0, measurement_var=150.0)
         for name in JOINTS.keys()
@@ -614,9 +587,10 @@ def main():
     last_print = 0.0
     print_interval = 0.5
     prev_time = time.time()
-    frame_timestamp_ms = 0
 
-    # Hand tracking state (to avoid switching when new hands appear)
+    # Strictly monotonic timestamps for MediaPipe Tasks VIDEO mode
+    ts = MonotonicTimestampMS()
+
     tracked_wrist = None
     hand_lost_frames = 0
     max_hand_lost_frames = 10
@@ -628,7 +602,6 @@ def main():
             print("Frame read error.")
             continue
 
-        # Compute dt for Kalman filters
         now = time.time()
         dt = now - prev_time
         prev_time = now
@@ -637,8 +610,8 @@ def main():
         frame = cv2.flip(frame, 1)
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = rgb_frame_to_mp_image(rgb)
-        result = detector.detect_for_video(mp_image, frame_timestamp_ms)
-        frame_timestamp_ms += 33
+
+        result = detector.detect_for_video(mp_image, ts.next())
 
         if result.hand_landmarks and result.handedness:
             num_hands = len(result.hand_landmarks)
@@ -681,29 +654,23 @@ def main():
             draw_hand_landmarks_on_image(rgb, hand_landmarks)
             frame = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
-            # === IK-based joint angles (with calibrated lengths) ===
             raw_angles = compute_hand_joint_angles_with_ik(
                 hand_landmarks,
                 finger_link_lengths
             )
 
-            # Kalman-smoothed angles
             smoothed_angles = {}
             for name, val in raw_angles.items():
                 smoothed = kalman_filters[name].update(val, dt)
                 smoothed_angles[name] = smoothed
 
-            # === Map smoothed_angles -> Artus joint commands in fixed order ===
-            # Build angles_mapped as a list in JOINT_ORDER
             angles_mapped = [
                 map_angle_for_artus(joint_name, smoothed_angles.get(joint_name, 0.0))
                 for joint_name in JOINT_ORDER
             ]
 
-            # angles_mapped is now a list of 16 ints, one per joint index
             joint_angles = angles_mapped
 
-            # Fill hand_joints with these angles
             for i, angle in enumerate(joint_angles):
                 joint = {
                     'index': i,
@@ -712,10 +679,8 @@ def main():
                 }
                 hand_joints[i] = joint
 
-            # Send angles to Artus Lite
             artus.set_joint_angles(hand_joints)
 
-            # Console print (smoothed + mapped)
             if now - last_print > print_interval:
                 print(f"\n{handedness_label} Hand Joint Flex Angles (IK + Kalman):")
                 for name, val in smoothed_angles.items():
@@ -727,15 +692,11 @@ def main():
 
                 last_print = now
 
-            # # Draw smoothed angles on frame
-            # draw_finger_angles(frame, smoothed_angles)
-            # Build a dict of mapped angles keyed by joint name for drawing
             mapped_angle_dict = {
                 joint_name: float(angle)
                 for joint_name, angle in zip(JOINT_ORDER, joint_angles)
             }
 
-            # Draw **mapped** joint angles on frame
             draw_finger_angles(frame, mapped_angle_dict)
 
         cv2.imshow("Hand Tracking with IK + Kalman", frame)
