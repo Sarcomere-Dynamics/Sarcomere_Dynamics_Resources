@@ -43,19 +43,17 @@ class Robot:
         # setup robot based on the hand
         if self.robot_type == 'artus_lite':
             if self.hand_type == 'left':
-                self.robot = ArtusLite_LeftHand()
+                self.robot = ArtusLite_LeftHand(logger=self.logger)
             elif self.hand_type == 'right':
-                self.robot = ArtusLite_RightHand()
+                self.robot = ArtusLite_RightHand(logger=self.logger)
             else:
                 raise ValueError("Unknown hand")
-        
+
         elif self.robot_type == 'artus_lite_plus':
-            # if self.hand_type == 'left':
-            #     self.robot = ArtusLite_LeftHand()
             if self.hand_type == 'right':
-                self.robot = ArtusLite_Plus_RightHand()
+                self.robot = ArtusLite_Plus_RightHand(logger=self.logger)
             elif self.hand_type == 'left':
-                self.robot = ArtusLite_Plus_LeftHand()
+                self.robot = ArtusLite_Plus_LeftHand(logger=self.logger)
             else:
                 raise ValueError("Unknown hand")
         elif self.robot_type == 'artus_talos':
@@ -87,16 +85,14 @@ class Robot:
         """
         return self.robot.set_home_position()
     
-    def get_joint_angles(self, joint_angles,feedback_type=None):
+    def get_joint_angles(self, joint_angles, feedback_type=None):
         """
-        Get the joint angles of the hand
+        Get the joint angles of the hand.
+        joint_angles: decoded feedback data (list).
+        feedback_type: modbus key string (e.g. 'feedback_position_start_reg').
         """
-        if (feedback_type and self.robot_type == 'artus_lite_plus') or self.robot_type == 'artus_lite':
-            return self.robot.get_joint_angles(joint_angles)
-        elif self.robot_type == 'artus_lite_plus':
-            return self.robot.get_joint_angles_force(joint_angles)
-        else:
-            return self.robot.get_joint_angles(joint_angles,feedback_type)
+        modbus_key = feedback_type if feedback_type is not None else 'feedback_position_start_reg'
+        return self.robot.get_joint_angles(joint_angles, modbus_key=modbus_key)
     
 
 def main():

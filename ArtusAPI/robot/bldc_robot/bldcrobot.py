@@ -48,6 +48,7 @@ class BLDCRobot:
                 self.default_angle = default_angle
                 self.target_angle = target_angle
                 self.target_force = target_force
+                self.target_velocity = None
                 self.feedback_angle = 0
                 self.feedback_current = 0
                 self.feedback_velocity = 0
@@ -102,8 +103,8 @@ class BLDCRobot:
                 self.logger.info(f"Setting target angle for {self.joint_names[target_data['index']]} to {target_data['target_angle']}")
             if 'target_velocity' in target_data:
                 available_control |= 0b10
-                self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['velocity']
-                self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['velocity']}")
+                self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['target_velocity']
+                self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['target_velocity']}")
             if 'target_force' in target_data:
                 available_control |= 0b1
                 self.hand_joints[self.joint_names[target_data['index']]].target_force = target_data['target_force']
@@ -175,10 +176,8 @@ class BLDCRobot:
         """
         Set the hand to the home position at default velocity
         """
-        # create new target dictionary with default velocity and default angle
-        
-        joint_angles = {key: {'index': value.index, 'target_angle':value.default_angle,'velocity':self.joint_velocities[value.index]} for key,value in self.hand_joints.items()}
-        # print(self.hand_joints['thumb_spread'])
+        default_velocity = getattr(self, 'default_velocity', 0)
+        joint_angles = {key: {'index': value.index, 'target_angle': value.default_angle, 'target_velocity': default_velocity} for key, value in self.hand_joints.items()}
         return self.set_joint_angles(joint_angles)
     
     def get_joint_angles(self, feedback_package:list,modbus_key:str='feedback_position_start_reg'):

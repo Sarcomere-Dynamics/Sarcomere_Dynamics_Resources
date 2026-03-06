@@ -1,88 +1,39 @@
-from .artus_lite import ArtusLite
+"""
+Sarcomere Dynamics Software License Notice
+------------------------------------------
+This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
+including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
+
+Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+
+Licensed under the Sarcomere Dynamics Software License.
+See the LICENSE file in the repository for full details.
+"""
+
 from ...sensors import ForceSensor
+from .artus_lite import ArtusLite
+
 
 class ArtusLite_Plus(ArtusLite):
     """
-    Artus Lite Plus class
+    Artus Lite Plus: 16 joints with force sensors per finger.
     """
-    def __init__(self,num_fingers_force=5,                
-                 joint_rotation_directions=[1, 1, 1, 1, # thumb
-                                        1, 1, 1, # index
-                                        1, 1, 1, # middle
-                                        1, 1, 1, # ring
-                                        1, 1, 1]):
-        super().__init__(joint_rotation_directions=joint_rotation_directions)
-        self.robot_type = 'artus_lite_plus'
-        self.command_len = 33
-        self.recv_len = 76
 
-        # force sensor init
+    def __init__(self,
+                 joint_rotation_directions=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                 logger=None):
+        super().__init__(joint_rotation_directions=joint_rotation_directions, logger=logger)
+
+        # Force sensor init (one per finger, 3 axes each)
         self.force_sensors = {}
         fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-        indices = [[0,1,2],[3,4,5],[6,7,8],[9,10,11],[12,13,14]]
-        
-        for i in range(num_fingers_force):
+        # Joint indices per finger (thumb 0-3, index 4-6, middle 7-9, ring 10-12, pinky 13-15)
+        indices = [[0, 1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12], [13, 14, 15]]
+
+        for i in range(len(fingers)):
             self.force_sensors[fingers[i]] = {
-                'data' : ForceSensor(),
-                'indices' : indices[i]
+                'data': ForceSensor(),
+                'indices': indices[i]
             }
 
-    def get_joint_angles_force(self, feedback_package:list):
-        """
-        Get the joint angles and feedback list data
-        and populate the feedback fields in the hand_joints dictionary
-        """
-        # print(f'FB PACKAGE = {feedback_package}')
-        try:
-            for name,joint_data in self.hand_joints.items():
-                # get feedback angles
-                joint_data.feedback_angle = feedback_package[1][joint_data.index]
-
-                if joint_data.index in [1,5,8,11,14] and joint_data.feedback_angle < 0:
-                    joint_data.feedback_angle = -joint_data.feedback_angle
-                    feedback_package[1][joint_data.index] = -feedback_package[1][joint_data.index]
-
-            i = 0
-            feedback_slice = feedback_package[1][16:]
-            if all(isinstance(val, float) for val in feedback_slice):
-                feedback_slice = [round(val, 3) for val in feedback_slice]
-                feedback_package[1][16:] = feedback_slice
-            # num_vals = len(feedback_slice)
-            for key, object in self.force_sensors.items():
-                object['data'].x = feedback_slice[i]
-                object['data'].y = feedback_slice[i+1]
-                object['data'].z = feedback_slice[i+2]
-                i += 3
-                    
-            return feedback_package
-        except TypeError:
-            # print(f'feedback_package is None')
-            return None
-        except Exception as e:
-            print(e)
-            return None
-        
-    def get_joint_angles(self, feedback_package:list):
-        """
-        Get the joint angles and feedback list data
-        and populate the feedback fields in the hand_joints dictionary
-        """
-        # print(f'FB PACKAGE = {feedback_package}')
-        try:
-            for name,joint_data in self.hand_joints.items():
-                joint_data.feedback_angle = feedback_package[1][joint_data.index]
-                joint_data.feedback_current = feedback_package[1][joint_data.index+15]
-                joint_data.feedback_force = round(feedback_package[1][joint_data.index+15] * 0.0035904, 2) # take current value and convert to force
-                joint_data.feedback_temperature = feedback_package[1][joint_data.index+31]
-
-                if joint_data.index in [1,5,8,11,14] and joint_data.feedback_angle < 0:
-                    joint_data.feedback_angle = -joint_data.feedback_angle
-                    feedback_package[1][joint_data.index] = -feedback_package[1][joint_data.index]
-
-            return feedback_package
-        except TypeError:
-            # print(f'feedback_package is None')
-            return None
-        except Exception as e:
-            print(e)
-            return None
+        self.available_feedback_types.append('feedback_force_sensor_start_reg')
