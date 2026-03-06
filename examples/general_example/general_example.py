@@ -125,12 +125,20 @@ def example():
                 case '6':
                     with open(os.path.join(hand_poses_path ,'grasp_example.json'),'r') as file:
                         grasp_example_dict = json.load(file)
+                    logger.info(f"Setting joint angles to: {grasp_example_dict} and setting velocity and force to defaults")
+                    for key,value in grasp_example_dict.items():
+                        grasp_example_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
+                        grasp_example_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
                     artusapi.set_joint_angles(grasp_example_dict)
                 case '7':
                     logger.info(artusapi.get_robot_status())
                 case '8':
                     with open(os.path.join(hand_poses_path ,'grasp_open.json'),'r') as file:
                         grasp_dict = json.load(file)
+                    logger.info(f"Setting joint angles to: {grasp_dict} and setting velocity and force to defaults")
+                    for key,value in grasp_dict.items():
+                        grasp_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
+                        grasp_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
                     artusapi.set_joint_angles(grasp_dict)
                 case '9':
                     artusapi.get_joint_angles()
@@ -143,6 +151,12 @@ def example():
                         artusapi.get_fingertip_forces()
                     else:
                         logger.error("Fingertip forces are not supported for this robot")
+                case '13':
+                    artusapi.get_voltage()
+                case '14':
+                    artusapi.get_avg_temperature()
+                case '15':
+                    artusapi.get_joint_temperatures()
                 case 'r':
                     artusapi.reset()
                 case 'f':

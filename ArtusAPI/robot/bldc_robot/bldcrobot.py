@@ -30,7 +30,7 @@ class BLDCRobot:
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
-        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg']
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg','feedback_temperature_start_reg']
                 
         self.joint_max_angles = joint_max_angles
         self.joint_min_angles = joint_min_angles

@@ -57,7 +57,7 @@ class ArtusTalos(BLDCRobot):
         # forces
         self.max_force = 20
         self.min_force = 2
-        self.default_force = 10
+        self.default_force = 8
 
         # pwm (legacy)
         self.default_pwm = None
