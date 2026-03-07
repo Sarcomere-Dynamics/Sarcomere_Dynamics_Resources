@@ -28,7 +28,7 @@ from examples.config.configuration import ArtusConfig
 from ArtusAPI.artus_api_new import ArtusAPI_V2
 from ArtusAPI.common import ModbusMap
 # old ArtusAPI
-from ArtusAPI.artus_api import ArtusAPI
+# from ArtusAPI.artus_api import ArtusAPI
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------
