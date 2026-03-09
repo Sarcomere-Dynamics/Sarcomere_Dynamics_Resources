@@ -49,8 +49,8 @@ class ArtusScorpion(BLDCRobot):
         self.default_velocity = 30 # mm/s
 
         # forces
-        self.max_force = 40 # N
-        self.min_force = 2 # N
+        self.max_force = 100 # N
+        self.min_force = 0 # N
         self.default_force = 20 # N
 
         # pwm (legacy)

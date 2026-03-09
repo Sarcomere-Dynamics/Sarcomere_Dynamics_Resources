@@ -30,7 +30,7 @@ class BLDCRobot:
             self.logger = logging.getLogger(__name__)
         else:
             self.logger = logger
-        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg','feedback_temperature_start_reg']
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg','feedback_temperature_start_reg','feedback_voltage_start_reg']
                 
         self.joint_max_angles = joint_max_angles
         self.joint_min_angles = joint_min_angles
@@ -93,22 +93,22 @@ class BLDCRobot:
         # set values based on index
         for name,target_data in ordered_joint_angles.items():
             if target_data['index'] >= self.number_of_joints: # if trying to give more than the available joints, skip
-                self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints ({self.number_of_joints})")
+                self.logger.debug(f"Trying to set joint {target_data['index']} which is greater than the available joints ({self.number_of_joints})")
                 continue
 
             # fill data based on control type
             if 'target_angle' in target_data:
                 available_control |= 0b100
                 self.hand_joints[self.joint_names[target_data['index']]].target_angle = target_data['target_angle'] * self.hand_joints[self.joint_names[target_data['index']]].joint_rotation_direction
-                self.logger.info(f"Setting target angle for {self.joint_names[target_data['index']]} to {target_data['target_angle']}")
+                self.logger.debug(f"Setting target angle for {self.joint_names[target_data['index']]} to {target_data['target_angle']}")
             if 'target_velocity' in target_data:
                 available_control |= 0b10
                 self.hand_joints[self.joint_names[target_data['index']]].target_velocity = target_data['target_velocity']
-                self.logger.info(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['target_velocity']}")
+                self.logger.debug(f"Setting target velocity for {self.joint_names[target_data['index']]} to {target_data['target_velocity']}")
             if 'target_force' in target_data:
                 available_control |= 0b1
                 self.hand_joints[self.joint_names[target_data['index']]].target_force = target_data['target_force']
-                self.logger.info(f"Setting target force for {self.joint_names[target_data['index']]} to {target_data['target_force']}")
+                self.logger.debug(f"Setting target force for {self.joint_names[target_data['index']]} to {target_data['target_force']}")
         self._check_joint_limits(self.hand_joints)
 
         return available_control
@@ -121,7 +121,7 @@ class BLDCRobot:
         # set values based on names
         for name,target_data in joint_angles.items():
             if name not in self.joint_names: # if trying to give more than the available joints, skip
-                self.logger.warning(f"Trying to set joint {target_data['index']} which is greater than the available joints ({self.number_of_joints})")
+                self.logger.debug(f"Trying to set joint {target_data['index']} which is greater than the available joints ({self.number_of_joints})")
                 continue
 
 
@@ -129,15 +129,15 @@ class BLDCRobot:
             if 'target_angle' in target_data:
                 available_control |= 0b100
                 self.hand_joints[name].target_angle = target_data['target_angle'] * self.hand_joints[name].joint_rotation_direction
-                self.logger.info(f"Setting target angle for {name} to {target_data['target_angle']}")
+                self.logger.debug(f"Setting target angle for {name} to {target_data['target_angle']}")
             if 'target_velocity' in target_data:
                 available_control |= 0b10
                 self.hand_joints[name].target_velocity = target_data['target_velocity']
-                self.logger.info(f"Setting target velocity for {name} to {target_data['target_velocity']}")
+                self.logger.debug(f"Setting target velocity for {name} to {target_data['target_velocity']}")
             if 'target_force' in target_data:
                 available_control |= 0b1
                 self.hand_joints[name].target_force = target_data['target_force']
-                self.logger.info(f"Setting target force for {name} to {target_data['target_force']}")
+                self.logger.debug(f"Setting target force for {name} to {target_data['target_force']}")
 
         self._check_joint_limits(self.hand_joints)
 

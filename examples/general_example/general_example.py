@@ -157,6 +157,8 @@ def example():
                     artusapi.get_avg_temperature()
                 case '15':
                     artusapi.get_joint_temperatures()
+                case '16':
+                    artusapi.get_error_report()
                 case 'r':
                     artusapi.reset()
                 case 'f':
