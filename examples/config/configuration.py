@@ -77,7 +77,7 @@ class ArtusConfig:
         """
         # Lazy import to avoid issues at class definition time
         from ArtusAPI.artus_api import ArtusAPI
-        from ArtusAPI.artus_api_new import ArtusAPI_V2
+        # from ArtusAPI.artus_api_new import ArtusAPI_V2
 
         # Figure out which robot is connected
         if self.config.robots.left_hand_robot.robot_connected and not self.config.robots.right_hand_robot.robot_connected:
@@ -101,24 +101,24 @@ class ArtusConfig:
         """
         if robot_cfg is None:
             return None
-        if hasattr(robot_cfg, 'robot_type') and 'lite' in str(robot_cfg.robot_type).lower():
-            # Use ArtusAPI_V2 for 'artus_talos', otherwise fallback to ArtusAPI
-            return ArtusAPI(logger=logger,
-                robot_type=robot_cfg.robot_type,
-                communication_method=robot_cfg.communication_method,
-                communication_channel_identifier=robot_cfg.communication_channel_identifier,
-                hand_type=robot_cfg.hand_type,
-                reset_on_start=robot_cfg.reset_on_start,
-                communication_frequency=robot_cfg.streaming_frequency if hasattr(robot_cfg, "streaming_frequency") else 20
-            )
-        else:
-            return ArtusAPI_V2(logger=logger,
-                robot_type=robot_cfg.robot_type,
-                communication_method=robot_cfg.communication_method,
-                communication_channel_identifier=robot_cfg.communication_channel_identifier,
-                hand_type=robot_cfg.hand_type,
-                communication_frequency=robot_cfg.streaming_frequency if hasattr(robot_cfg, "streaming_frequency") else 20
-            )
+        # if hasattr(robot_cfg, 'robot_type') and 'lite' in str(robot_cfg.robot_type).lower():
+        #     # Use ArtusAPI_V2 for 'artus_talos', otherwise fallback to ArtusAPI
+        #     return ArtusAPI(logger=logger,
+        #         robot_type=robot_cfg.robot_type,
+        #         communication_method=robot_cfg.communication_method,
+        #         communication_channel_identifier=robot_cfg.communication_channel_identifier,
+        #         hand_type=robot_cfg.hand_type,
+        #         reset_on_start=robot_cfg.reset_on_start,
+        #         communication_frequency=robot_cfg.streaming_frequency if hasattr(robot_cfg, "streaming_frequency") else 20
+        #     )
+        # else:
+        return ArtusAPI_V2(logger=logger,
+            robot_type=robot_cfg.robot_type,
+            communication_method=robot_cfg.communication_method,
+            communication_channel_identifier=robot_cfg.communication_channel_identifier,
+            hand_type=robot_cfg.hand_type,
+            communication_frequency=robot_cfg.streaming_frequency if hasattr(robot_cfg, "streaming_frequency") else 20
+        )
             
 
     def get_robot_calibrate(self, hand_type:str=None) -> bool:
