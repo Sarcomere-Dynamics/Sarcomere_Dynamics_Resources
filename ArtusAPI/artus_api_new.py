@@ -351,7 +351,7 @@ class ArtusAPI_V2:
         start_reg = ModbusMap().modbus_reg_map['feedback_force_sensor_start_reg']
         start_reg_key = 'feedback_force_sensor_start_reg'
 
-        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * 5 * 3) # 5 fingers, 3 axes per finger
+        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * len(self._robot_handler.robot.force_sensors) * 3) # 5 fingers, 3 axes per finger
 
         feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)

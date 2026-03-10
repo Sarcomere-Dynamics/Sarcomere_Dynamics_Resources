@@ -36,10 +36,17 @@ class ArtusScorpion(BLDCRobot):
 
         # force sensor init
         self.force_sensors = {}
-        self.force_sensors['gripper_joint'] = {
-            'data' : ForceSensor(),
-            'indices' : [0]
-        }
+        fingers = ['gripper_join_left', 'gripper_join_right']
+        indices = [[0],[1]]
+
+        for i in range(len(fingers)):
+            self.force_sensors[fingers[i]] = {
+                'data' : ForceSensor(),
+                'indices' : indices[i]
+            }
+
+        # add force sensor feedback type
+        self.available_feedback_types.append('feedback_force_sensor_start_reg')
 
         self.logger = logger
 
