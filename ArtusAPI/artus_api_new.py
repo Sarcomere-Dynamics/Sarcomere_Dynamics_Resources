@@ -322,6 +322,26 @@ class ArtusAPI_V2:
             feedback_data_dict[value] = feedback_data[index]
         return feedback_data_dict
 
+    def helper_fill_dict_from_fingertip_forces(self, feedback_data: list) -> dict:
+        """
+        Map decoded fingertip feedback (5 fingers × 3 axes = 15 floats) to finger names.
+        Order matches Modbus / firmware and ``robot.force_sensors`` iteration order.
+        """
+        fs = self._robot_handler.robot.force_sensors
+        if not fs:
+            return {}
+        out = {}
+        i = 0
+        for finger in fs:
+            if i + 2 < len(feedback_data):
+                out[finger] = {
+                    'x': feedback_data[i],
+                    'y': feedback_data[i + 1],
+                    'z': feedback_data[i + 2],
+                }
+            i += 3
+        return out
+
     def get_joint_forces(self):
         """
         Get the joint torques from the hand
@@ -343,7 +363,11 @@ class ArtusAPI_V2:
 
     def get_fingertip_forces(self):
         """
-        Get the fingertip forces from the hand
+        Get the fingertip forces from the hand.
+
+        Returns a dict keyed by finger name (e.g. thumb, index, …), each value is
+        ``{'x': float, 'y': float, 'z': float}``. This matches the 15 decoded samples
+        from the bus; ``robot.force_sensors`` is updated in parallel for object access.
         """
         if not self._check_awake():
             return
@@ -357,7 +381,7 @@ class ArtusAPI_V2:
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
 
         self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+        return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
     
     def get_joint_speeds(self):
         """

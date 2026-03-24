@@ -20,6 +20,22 @@ This repository contains the following:
 * [ROS2 Node](/ros2/)
 * [Examples](/examples/)
 
+### Documentation map (by folder)
+
+Short guides for navigating the tree—useful if you are new to robotics or to this repo:
+
+| Area | README |
+|------|--------|
+| Python library layout | [ArtusAPI/README.md](ArtusAPI/README.md) |
+| Supported hand models (code + datasheets) | [ArtusAPI/robot/README.md](ArtusAPI/robot/README.md) |
+| Runnable sample programs | [examples/README.md](examples/README.md) |
+| Images and saved pose JSON | [data/README.md](data/README.md) |
+| Experimental / internal scripts | [test_workspace/README.md](test_workspace/README.md) |
+| API notes and CLI / flash docs | [docs/README.md](docs/README.md) |
+| Release-style notes | [changelog/README.md](changelog/README.md) |
+| ROS 2 workspace entry | [ros2/README.md](ros2/README.md) |
+| URDF ↔ real joint mapping | [urdf/README.md](urdf/README.md) |
+
 ## Robot Specific READMEs
 Below is a list of the ARTUS hand-specific READMEs that are compatible with the API. This includes _electrical wiring specifics_, _joint maps_ and more:
 * [ARTUS Lite Information](/ArtusAPI/robot/artus_lite/ARTUS_LITE.md)
@@ -66,7 +82,7 @@ The first step to working with the Artus Lite is to connect to the hand, and ach
 
 ### 1.1 Requirements
 Below is a list of Requirements for the Artus to be compatible 
-1. Python v3.10+ - Requires Python version >= 3.10 installed on the host system. Please visit the [Python website](https://www.python.org/downloads/) to install Python. Within the setup instructions, there will be a prompt that allows you to "disable PATH length limit". Please continue with this option selected.
+1. Python v3.10+ - Requires Python version >= 3.10 & < 3.14 installed on the host system. Please visit the [Python website](https://www.python.org/downloads/) to install Python. Within the setup instructions, there will be a prompt that allows you to "disable PATH length limit". Please continue with this option selected.
 2. FTDI USB Driver (Windows Only) - Necessary for the Artus Lite to be recognized as a USB device once it is connected over USBC, go to [FTDI Driver Download](https://ftdichip.com/drivers/vcp-drivers/) to install the virtual COM port driver. 
 
 
@@ -117,7 +133,7 @@ pip install -r requirements.txt
 </div>
 
 ## 2. Basic Usage
-This section covers very basic usage of the Artus Lite using the Artus API.
+This section covers very basic usage of the Artus Lite using **`ArtusAPI_V2`** (the supported Python API in this repository).
 
 __Sections__
 * [2.0.1 Configuration File](#201-configuration-file)
@@ -135,14 +151,16 @@ There is a standard series of commands that need to be followed before sending t
 
 Before any software, ensure that the power connector is secured and connected to the Artus hand and if using a wired connection (Serial or CANbus), ensure the connection/cable is good. 
 
-First, to create a communication connection between the API and the Artus hand, `ArtusAPI.connect()` must be run to confirm communication is open on the selected communication type.
+The Python library in this repository exposes **`ArtusAPI_V2`** (see [`ArtusAPI/artus_api_new.py`](ArtusAPI/artus_api_new.py)). The legacy module **`artus_api.py` has been removed**; use `ArtusAPI_V2` for all supported hands.
 
-Second, the `ArtusAPI.wake_up()` function must be run to allow the hand to load it's necessary configurations.
+First, open communication with the hand. Creating an `ArtusAPI_V2` instance calls `connect()` internally; if you disconnected, call `connect()` again before continuing.
 
-Once these two steps are complete, optionally, you can run `ArtusAPI.calibrate()` to calibrate the finger joints. Otherwise, the system is now ready to start sending and receiving data!
+Second, run `wake_up()` (with the appropriate control mode for your application) so the hand loads its configuration and enters a ready state.
+
+Once these steps are complete, optionally run `calibrate()` if your robot model requires it. Otherwise, the system is ready to send targets and read feedback.
 
 >[!NOTE]
->If running version v1.0.1+ & less than v2, `wake_up` is called inside the `connect()` function_
+>Exact parameters for `wake_up()` (for example position vs velocity control) depend on your script; see [`examples/general_example/general_example.py`](examples/general_example/general_example.py) and [`docs/API Functionality.md`](docs/API%20Functionality.md).
 
 >[!IMPORTANT]
 >calibration requirement is based on the robot model itself. Artus Talos & Artus Scorpion require calibration to be completed to enter an active targetting state.
@@ -151,7 +169,7 @@ Once these two steps are complete, optionally, you can run `ArtusAPI.calibrate()
 ### 2.2 Normal Shutdown Procedure
 When getting ready to power off the device please do the following:
 * Send a zero position command to all the joints so that the hand is opened
-* Once the hand is in an open position, send the `artus.sleep()` command to save parameters to the SD Card (if applicable)
+* Once the hand is in an open position, call `sleep()` on your API instance to save parameters to the SD Card (if applicable)
 * When ACK is received, the device can be turnedd off. 
 
 >[!NOTE]
@@ -218,5 +236,5 @@ Also, check the video below for a demonstration of the Manus Glove setup.
 | Dec. 31, 2025 | v2.0 | addition of Talos and Scorpion | NA |
 
 ## Appendix
-* [Artus API](ArtusAPI/artus_api.py) - The file containing all functions that interact with the Artus Lite.
+* [Artus API (`ArtusAPI_V2`)](ArtusAPI/artus_api_new.py) — Main Python class that talks to ARTUS hands (Lite, Talos, Scorpion, Dex, and related variants). The older `artus_api.py` entry point has been removed from this repository.
 * [API Docs](docs/API%20Functionality.md) - Contains a little more information on application and reasoning behind the API functions.

@@ -13,14 +13,14 @@ robots:
 
   right_hand_robot:
     robot_connected: true
-    robot_type: 'artus_lite'
+    robot_type: 'artus_talos'
     communication_method: 'RS485_RTU'
-    communication_channel_identifier: 'COM6'
+    communication_channel_identifier: '/dev/ttyACM0'
     hand_type: 'right'
     start_robot: true
     reset_on_start: 0
     streaming_frequency: 30  # data/seconds
-    calibrate: false
+    calibrate: true
 
 logging:
   level: 'INFO'

@@ -33,7 +33,6 @@ sys.path.append(PROJECT_ROOT)
 from examples.config.configuration import ArtusConfig
 from examples.Tracking.zmq_class.zmq_class import ZMQPublisher, ZMQSubscriber
 from ArtusAPI.artus_api_new import ArtusAPI_V2
-from ArtusAPI.artus_api import ArtusAPI
 
 
 class ArtusGUIController:

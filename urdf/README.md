@@ -1,5 +1,7 @@
 # Mapping URDF Joint Positions to Real Robot Joint Positions
 
+> **New here?** URDF is a file format that describes a robot’s **links** and **joints** for simulation and visualization (for example RViz or Gazebo). This folder contains Artus hand URDF packages (left and right, with meshes). The guide below explains how **simulation** joint values map to **real** ARTUS Lite commands—the model and the physical hand do not use the same joint count or the same units everywhere.
+
 This guide explains the process of mapping URDF joint positions to real robot joint positions for Artus Lite hand robot.
 The URDF model contains 20 joints, whereas the real robot has 16 joints.
 URDF joint positions are represented in radians, while real robot joint positions are represented in degrees (as integers).

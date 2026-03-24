@@ -26,8 +26,6 @@ from examples.config.configuration import ArtusConfig
 
 # new version of ArtusAPI use local version
 from ArtusAPI.artus_api_new import ArtusAPI_V2
-# old ArtusAPI
-from ArtusAPI.artus_api import ArtusAPI
 
 # import ArtusAPIPortForwarder
 from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForwarder

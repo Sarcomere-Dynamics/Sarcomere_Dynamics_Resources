@@ -27,8 +27,6 @@ from examples.config.configuration import ArtusConfig
 # new version of ArtusAPI use local version
 from ArtusAPI.artus_api_new import ArtusAPI_V2
 from ArtusAPI.common import ModbusMap
-# old ArtusAPI
-# from ArtusAPI.artus_api import ArtusAPI
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------
@@ -97,6 +95,10 @@ def example():
     logger = setup_logger(level=config.config.logging.level,format=config.config.logging.format)
     # new api
     artusapi = config.get_api(logger=logger)
+
+    # while True:
+    #     artusapi.get_fingertip_forces()
+    #     time.sleep(0.5)
     
     
     # Main loop (example)
@@ -163,9 +165,13 @@ def example():
                     artusapi.reset()
                 case 'f':
                     if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue") == 'e':
-                        driver = int(input("Enter driver to flash (1-6): "))
-                        file_location_ = input(f'enter file location of driver: ')
-                        artusapi.update_firmware(file_location=file_location_,drivers_to_flash=driver)
+                        driver = int(input("Enter driver to flash: "))
+                        if (driver > artusapi._robot_handler.robot.number_of_controllers or driver < 0):
+                            logger.error(f"Invalid driver number, please try again")
+                        else:
+                            file_location_ = input(f'enter file location of driver: ')
+                            artusapi.update_firmware(file_location=file_location_,drivers_to_flash=driver)
+                            logger.info(f"Firmware flashed successfully")
         except Exception as e:
             logger.error(f"Error: {e}")
             pass

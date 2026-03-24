@@ -2,7 +2,7 @@
 
 # General Example for Artus API
 
-The general example is a command-line tool introduction to the Artus API to control the Artus robot hands, including start-up sequence commands and the ability to retrieve feedback states.
+The general example is a command-line introduction to **`ArtusAPI_V2`** for ARTUS robot hands: connect / disconnect, wake and sleep, calibration, joint targets, and feedback. The legacy `ArtusAPI` class in `artus_api.py` is not used in this repository anymore.
 
 ## Requirements
 Make sure you have read through and installed the requirements for the Artus API. Refer back to the [Repository Readme](../../README.md).

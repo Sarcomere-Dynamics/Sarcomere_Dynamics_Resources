@@ -2,7 +2,6 @@ import rclpy
 from rclpy.node import Node
 from std_srvs.srv import Trigger
 from sensor_msgs.msg import JointState
-from ArtusAPI.artus_api import ArtusAPI  # Import the API
 
 import ast
 

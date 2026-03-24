@@ -4,6 +4,8 @@
 
 The `artuslite_ros_api` is a ROS2 package designed to provide an API for interacting with the ArtusLite hand.
 
+> **Python API change:** This repository’s `ArtusAPI` package now exposes **`ArtusAPI_V2`** from [`artus_api_new.py`](../../ArtusAPI/artus_api_new.py); **`artus_api.py` has been removed.** The node implementation under `artuslite_ros_api/artuslite_ros_api.py` still reflects the older `ArtusAPI` constructor and is **not aligned** with current sources until it is ported to `ArtusAPI_V2`. Use [`examples/general_example/`](../../examples/general_example/) as the reference for supported startup and command patterns.
+
 ## Directory Structure
 
 ```sh
