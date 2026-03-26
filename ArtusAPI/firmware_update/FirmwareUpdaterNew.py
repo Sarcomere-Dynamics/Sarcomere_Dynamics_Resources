@@ -45,9 +45,10 @@ class FirmwareUpdaterNew:
     
     def flashing_ack_checker(self):
         while True:
+            self.logger.info(f"entered flashing_ack_checker")
             try:
                 ret = self._communication_handler._check_robot_state()
-
+                self.logger.info(f"return from check_robot_state is: {ret}")
                 if ret == ActuatorState.ACTUATOR_FLASHING_ACK.value:
                     return True
                 elif ret == ActuatorState.ACTUATOR_ERROR.value:
@@ -141,14 +142,17 @@ class FirmwareUpdaterNew:
 
         file = open(self.file_location,'rb')
         file_data = file.read()
+        self.logger.info(f"file read complete")
         file.close()
 
         time.sleep(1)
 
         # wait for the initial communication/erase function
         if not self.flashing_ack_checker():
+            self.logger.info(f"if NOT self.flashing_ack_checker()")
             return False
 
+        self.logger.info(f"if self.flashing_ack_checker()")
         pages_required = math.ceil(file_size/256)
         self.logger.info(f"Upload requires {pages_required} page writes")
 

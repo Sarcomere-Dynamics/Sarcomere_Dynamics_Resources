@@ -20,7 +20,7 @@ from .UART.uart import UART
 from .WiFi.wifi_server import WiFiServer
 from .UDP.udp_client import UDPCLient
 
-STARTUP_ACK = 0xAA
+STARTUP_ACK = 1
 NORMAL_ACK = 0x2
 
 
