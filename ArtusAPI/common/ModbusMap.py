@@ -33,6 +33,8 @@ class ModbusMap: # Artus Generic Modbus Map
             'feedback_voltage_start_reg': 1000, # feedback voltage register (1 value)
             # size is int16_t
             'feedback_avg_temperature_start_reg' : 1002,
+            # size is uint8_t (low byte of one holding register)
+            'slave_id_reg': 1003,
         }
 
         self.data_type_multiplier_map = {
@@ -64,6 +66,8 @@ class ModbusMap: # Artus Generic Modbus Map
             'feedback_voltage_start_reg': 2, # feedback voltage register (1 value)
             # size is int16_t
             'feedback_avg_temperature_start_reg' : 1,
+            # decoded as single uint8 from low byte (see NewCommands.get_decoded_feedback_data)
+            'slave_id_reg': 1,
         }
 
 class ActuatorState(Enum):

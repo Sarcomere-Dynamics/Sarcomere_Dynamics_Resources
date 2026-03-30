@@ -17,6 +17,7 @@ import math
 from enum import Enum
 from tracemalloc import start
 from .common.ModbusMap import ModbusMap
+from .common.SlaveIDMap import expected_slave_id
 from .commands import NewCommands
 from .communication.new_communication import NewCommunication,ActuatorState,CommandType
 from .robot import Robot
@@ -44,6 +45,9 @@ class ArtusAPI_V2:
                 logger = None,
                 baudrate = 115200):
 
+        self.robot_type = robot_type
+        self.hand_type = hand_type
+
         self.control_types = {
             'position': 3,
             'velocity': 2,
@@ -55,7 +59,7 @@ class ArtusAPI_V2:
 
         self._communication_handler = NewCommunication(communication_method=communication_method,
                                                     logger=logger, port=communication_channel_identifier,
-                                                    baudrate=baudrate)
+                                                    baudrate=baudrate, slave_address=expected_slave_id(robot_type, hand_type))
         self._robot_handler = Robot(robot_type=robot_type,hand_type=hand_type,logger=logger)
         self._command_handler = NewCommands(num_joints=len(self._robot_handler.robot.hand_joints),logger=logger)
 
@@ -292,6 +296,8 @@ class ArtusAPI_V2:
             amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_confirmed] * self._robot_handler.robot.number_of_joints)
             if start_reg_confirmed == 'feedback_voltage_start_reg':
                 amount_data = 2 # 1 float for voltage
+            elif start_reg_confirmed == 'slave_id_reg':
+                amount_data = 1
             elif start_reg_confirmed == 'feedback_force_sensor_start_reg':
                 amount_data = 5 * 3 * 2 # 5 fingers, 3 axes per finger, 2 registers per float
         else:
@@ -299,6 +305,10 @@ class ArtusAPI_V2:
 
         feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
         decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_confirmed)
+
+        if start_reg_confirmed == 'slave_id_reg':
+            self.logger.info('slave_id_reg: %s', decoded_feedback_data[0])
+            return decoded_feedback_data[0]
 
         # populate hand joint dict based on robot
         self.logger.info(f'{start_reg_confirmed}:{self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_confirmed)}')

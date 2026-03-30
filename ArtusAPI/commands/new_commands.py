@@ -207,6 +207,13 @@ class NewCommands(Commands,ModbusMap):
         # do the actual decoding
         # todo update with more feedbacks
         decoded_data = []
+        if modbus_key == "slave_id_reg":
+            if isinstance(feedback_data, int):
+                feedback_data = [feedback_data]
+            if not feedback_data:
+                return []
+            return [int(feedback_data[0]) & 0xFF]
+
         match ModbusMap().data_type_multiplier_map[modbus_key]:
             case 0.5:
                 decoded_data = helper_decode_feedback_16b_8b(feedback_data)
