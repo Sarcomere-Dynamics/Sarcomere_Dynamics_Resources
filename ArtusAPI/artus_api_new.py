@@ -507,6 +507,51 @@ class ArtusAPI_V2:
         
         fw_size = self._firmware_updater.get_bin_file_info()
 
+        end_effector = input("Enter l for lite or t for talos: ")
+
+        while end_effector not "l" or not "t":
+            end_effector = input("Invalid, enter l for lite or t for talos: ")
+
+        if end_effector is 'l':
+            self.flash_lite(drivers_to_flash, fw_size)
+        
+        else:
+            self.flash_talos(drivers_to_flash, fw_size)
+
+    def flash_lite(self, drivers_to_flash, fw_size = None):
+        if drivers_to_flash == None:
+            drivers_to_flash = int(input(f'Which drivers would you like to flash? \n0: All Actuators \n1-8 Specific Actuator \n9: Peripheral Controller \nEnter: '))
+
+        if drivers_to_flash == 0:
+            
+            for i in range(1,9):
+                print(f'Flashing driver {i}')
+                time.sleep(1)
+                self.update_firmware_single_driver(i,fw_size,upload)
+                if upload:
+                    self._firmware_updater.update_firmware(fw_size)
+                    upload = False
+
+                if not self._communication_handler.wait_for_ack(25,True):
+                    print(f'Error flashing driver {i}')
+                    return
+        else:
+            self.update_firmware_single_driver(drivers_to_flash,fw_size,upload)
+            if upload:
+                self._firmware_updater.update_firmware(fw_size)
+       
+            print(f'Flashing driver {drivers_to_flash}')
+            self._communication_handler.wait_for_ack(25,True)
+        
+        print(f'Power Cycle the device to take effect')
+    
+    def flash_talos(self, drivers_to_flash=None, fw_size=None):
+        """
+        Flash firmware to TALOS actuators.
+        
+        :param drivers_to_flash: Driver index (0-5) or 6 for all actuators. If None, prompts user.
+        :param fw_size: Firmware size from binary file info.
+        """
         # get driver to flash
         if drivers_to_flash == None:
             while drivers_to_flash is None or drivers_to_flash not in range(0, 7):
