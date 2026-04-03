@@ -509,7 +509,7 @@ class ArtusAPI_V2:
 
         end_effector = input("Enter l for lite or t for talos: ")
 
-        while end_effector not "l" or not "t":
+        while end_effector not in ["l", "t"]:
             end_effector = input("Invalid, enter l for lite or t for talos: ")
 
         if end_effector is 'l':
