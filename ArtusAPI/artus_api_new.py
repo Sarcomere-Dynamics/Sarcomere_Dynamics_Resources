@@ -42,7 +42,7 @@ class ArtusAPI_V2:
                 communication_channel_identifier='COM9',
                 # robot 
                 robot_type='artus_talos',
-                hand_type='left',
+                hand_type='right',
                 communication_frequency = 50, # hz
                 logger = None,
                 baudrate = 115200):
@@ -59,9 +59,15 @@ class ArtusAPI_V2:
 
         self.control_type = self.control_types['position']
 
+        # initialize to 1 in order to cycle through it
+        default_firmware_slave_id = 1
+
         self._communication_handler = NewCommunication(communication_method=communication_method,
                                                     logger=logger, port=communication_channel_identifier,
                                                     baudrate=baudrate, slave_address=slave_ID_map.expected_slave_id(robot_type, hand_type))
+        # self._communication_handler = NewCommunication(communication_method=communication_method,
+        #                                             logger=logger, port=communication_channel_identifier,
+        #                                             baudrate=baudrate, slave_address=default_firmware_slave_id)
         self._robot_handler = Robot(robot_type=robot_type,hand_type=hand_type,logger=logger)
         self._command_handler = NewCommands(num_joints=len(self._robot_handler.robot.hand_joints),logger=logger)
 
@@ -115,7 +121,7 @@ class ArtusAPI_V2:
     def disconnect(self):
         self._communication_handler.close_connection()
         signal.signal(signal.SIGINT, self.original_sigint_handler)
-    
+
     def wake_up(self,control_type:int=3):
         # """
         # Wake up the hand and set the control type
@@ -136,8 +142,8 @@ class ArtusAPI_V2:
         #     # TODO try another slave ID if the hand times out 
         #     self.logger.info(f"Current configuration {self.robot_type} and {self.hand_type}, attemping wakeup")
         #     if not ready_result:
-        #         self.iterate_slave_id()
-        #         # self.logger.error("Hand timed out waiting for ready")
+        #         # self.iterate_slave_id()
+        #         self.logger.error("Hand timed out waiting for ready")
         #     elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
         #         # try to wake hand again
         #         self.wake_up()
@@ -146,75 +152,180 @@ class ArtusAPI_V2:
         #         self.state = ActuatorState.ACTUATOR_IDLE
         #         self.awake = True
         """
-        Wake up the hand and set the control type.
-        Cycles through all known slave IDs until a hand responds.
-        3 for position control, 2 for velocity control, 1 for torque control
+        Wake up the hand by scanning all known slave addresses using raw
+        serial I/O (bypasses minimalmodbus address validation).
+        Once a hand responds, reads slave_id_reg to auto-detect robot type,
+        then reconfigures for normal minimalmodbus operation.
         """
         self.control_type = control_type
-        self.counter = 0
         self.awake = False
 
-        # Build ordered list of slave_ids to try, starting with the current config
-        current_id = slave_ID_map.expected_slave_id(self.robot_type, self.hand_type)
+        start_cmd = self._command_handler.commands['start_command']
+        value = (control_type << 8) | start_cmd
+
+        # Build scan order: configured address first, then all others
+        configured_addr = slave_ID_map.expected_slave_id(self.robot_type, self.hand_type)
         all_ids = list(slave_ID_map.SLAVE_ID_TO_ROBOT_HAND.keys())
-        
-        # Put current_id first, then the rest
-        try_order = [current_id] + [sid for sid in all_ids if sid != current_id]
+        scan_order = [configured_addr] + [sid for sid in all_ids if sid != configured_addr]
 
-        for slave_id in try_order:
-            if self.awake: # connection made!
-                break
+        # find which address the hand listens on
+        responding_addr = None
+        for addr in scan_order:
+            rtype, htype = slave_ID_map.robot_hand_from_slave_id(addr)
+            self.logger.info(f"Probing slave_id={addr} ({rtype}, {htype})...")
 
-            robot_type, hand_type = slave_ID_map.robot_hand_from_slave_id(slave_id)
-            self.logger.info(f"Trying slave_id={slave_id} ({robot_type}, {hand_type})")
-
-            # Update the rs485 with the ID
-            self._communication_handler.update_slave_address(slave_id)
-
-            # Rebuild robot handler and command handler for this configuration
-            self._robot_handler = Robot(
-                robot_type=robot_type, hand_type=hand_type, logger=self.logger
+            resp_slave = self._communication_handler.raw_write_register(
+                register=0, value=value, slave_override=addr
             )
-            self._command_handler = NewCommands(num_joints=len(self._robot_handler.robot.hand_joints), logger=self.logger,)
+            if resp_slave is not None:
+                self.logger.info(
+                    f"Hand responded on addr={addr} (response byte={resp_slave})"
+                )
+                responding_addr = addr
+                break
+            # Small delay before trying next address
+            time.sleep(0.1)
 
-            # Build the wake command for THIS robot's joint count
-            wake_command = self._command_handler.get_robot_start_command(control_type=control_type)
-            self._communication_handler.send_data(wake_command)
-            self.last_time = time.perf_counter()
+        if responding_addr is None:
+            self.logger.error("No hand responded on any known slave address")
+            return
 
-            # Wait for hand state ready (shorter timeout when scanning)
-            ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=5)
+        # poll feedback register (raw) until ready 
+        feedback_reg = ModbusMap().modbus_reg_map['feedback_register']
+        acceptable = {
+            ActuatorState.ACTUATOR_IDLE.value,
+            ActuatorState.ACTUATOR_READY.value,
+            ActuatorState.ACTUATOR_ACTIVE.value,
+            ActuatorState.ACTUATOR_ERROR.value,
+        }
+        timeout = 30
+        start_time = time.perf_counter()
+        ready = False
 
-            if not ready_result:
-                self.logger.info(f"No response from slave_id={slave_id}, moving on")
-                continue
-            elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
-                # Hand acknowledged but is asleep — retry this same config
-                self.logger.info("Retrying wakeup on same config")
-                self._communication_handler.send_data(wake_command)
-                ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=10)
-                if ready_result and ready_result != ActuatorState.ACTUATOR_SLEEP.value:
-                    self.logger.info("Hand ready after retry")
-                    self._apply_discovered_config(robot_type, hand_type)
+        while time.perf_counter() - start_time < timeout:
+            _, vals = self._communication_handler.raw_read_registers(
+                start_register=feedback_reg, count=1,
+                slave_override=responding_addr
+            )
+            if vals is not None:
+                state = vals[0] & 0x0F
+                self.logger.info(f"Robot state: {ActuatorState(state).name}")
+                if state in acceptable:
+                    ready = True
                     break
-            else:
-                self.logger.info(f"Hand ready on slave_id={slave_id}")
-                self._apply_discovered_config(robot_type, hand_type)
-                break
+                elif state == ActuatorState.ACTUATOR_SLEEP.value:
+                    self.logger.info("Hand sleeping, resending wake command")
+                    self._communication_handler.raw_write_register(
+                        register=0, value=value, slave_override=responding_addr
+                    )
+            time.sleep(0.3)
 
-        if not self.awake:
-            self.logger.error(
-                "Failed to wake any hand after trying all known slave IDs"
-            )
+        if not ready:
+            self.logger.error("Hand timed out waiting for ready")
+            return
 
-    def _apply_discovered_config(self, robot_type: str, hand_type: str):
-        """Commit the correct robot configuration. Used after connecting with wake_up"""
-        self.robot_type = robot_type
-        self.hand_type = hand_type
+        # identify robot type 
+        # First try slave_id_reg
+        self.logger.info("Hand awake. Reading slave_id_reg...")
+        slave_id_reg = ModbusMap().modbus_reg_map['slave_id_reg']
+        _, id_vals = self._communication_handler.raw_read_registers(
+            start_register=slave_id_reg, count=1,
+            slave_override=responding_addr
+        )
+
+        detected_id = None
+        if id_vals is not None:
+            detected_id = id_vals[0] & 0xFF
+            result = slave_ID_map.robot_hand_from_slave_id(detected_id)
+            if result is not None:
+                robot_type, hand_type = result
+                self.logger.info(f"Identified via slave_id_reg={detected_id} -> {robot_type}, {hand_type}")
+                self._reconfigure(robot_type, hand_type, detected_id)
+                self.state = ActuatorState.ACTUATOR_IDLE
+                self.awake = True
+                self.logger.info(f"Hand ready — {self.robot_type} ({self.hand_type})")
+                return
+
+        # Fallback: the hand only responds on its correct slave address,
+        # so responding_addr IS the slave_id
+        self.logger.info(
+            f"slave_id_reg returned {detected_id}, falling back to scan address {responding_addr}"
+        )
+        result = slave_ID_map.robot_hand_from_slave_id(responding_addr)
+        if result is not None:
+            robot_type, hand_type = result
+            self.logger.info(f"Identified via scan address={responding_addr} -> {robot_type}, {hand_type}")
+            self._reconfigure(robot_type, hand_type, responding_addr)
+        else:
+            self.logger.warning(f"Address {responding_addr} not in SlaveIDMap, keeping current config")
+            self._reconfigure_addr_only(responding_addr)
+
         self.state = ActuatorState.ACTUATOR_IDLE
         self.awake = True
-        self.logger.info(f"Connected to {self.robot_type} ({self.hand_type})")
+        self.logger.info(f"Hand ready — {self.robot_type} ({self.hand_type})")
 
+    def _read_and_identify_robot(self):
+        """
+        Read the slave_id_reg from the (already awake) hand and resolve it
+        to a (robot_type, hand_type, slave_id) tuple.
+        
+        Returns (robot_type, hand_type, slave_id) on success, or
+        (self.robot_type, self.hand_type, None) on failure.
+        """
+        try:
+            slave_id_reg = ModbusMap().modbus_reg_map['slave_id_reg']
+            raw = self._communication_handler.receive_data(amount_dat=1, start=slave_id_reg)
+            if raw is None:
+                self.logger.warning("No response when reading slave_id_reg")
+                return (self.robot_type, self.hand_type, None)
+
+            # decode slave_id_reg is uint8 in the low byte
+            decoded = self._command_handler.get_decoded_feedback_data(raw, modbus_key='slave_id_reg')
+            detected_id = decoded[0] if decoded else None
+
+            if detected_id is None or detected_id == 0:
+                self.logger.warning(f"slave_id_reg returned invalid value: {detected_id}")
+                return (self.robot_type, self.hand_type, None)
+
+            result = slave_ID_map.robot_hand_from_slave_id(detected_id)
+            if result is None:
+                self.logger.warning(f"slave_id={detected_id} not found in SlaveIDMap")
+                return (self.robot_type, self.hand_type, None)
+
+            robot_type, hand_type = result
+            self.logger.info(f"Detected slave_id={detected_id} -> {robot_type}, {hand_type}")
+            return (robot_type, hand_type, detected_id)
+
+        except Exception as e:
+            self.logger.error(f"Error reading slave_id_reg: {e}")
+            return (self.robot_type, self.hand_type, None)
+
+    def _reconfigure(self, robot_type: str, hand_type: str, slave_id: int):
+        """
+        Reconfigure the API to use the detected robot type / hand type.
+        Updates the communication slave address, robot handler, and command handler.
+        """
+        self.robot_type = robot_type
+        self.hand_type = hand_type
+
+        # Update Modbus slave address all the way down to the instrument
+        self._communication_handler.update_slave_address(slave_id)
+
+        # Rebuild robot and command handlers for the new joint configuration
+        self._robot_handler = Robot(
+            robot_type=robot_type, hand_type=hand_type, logger=self.logger
+        )
+        self._command_handler = NewCommands(
+            num_joints=len(self._robot_handler.robot.hand_joints),
+            logger=self.logger,
+        )
+        self.logger.info(
+            f"Reconfigured to {robot_type} ({hand_type}), slave_id={slave_id}")
+        
+    def _reconfigure_addr_only(self, slave_addr: int):
+        """Fallback: set the communication address without changing robot/command handlers."""
+        self._communication_handler.update_slave_address(slave_addr)
+        self.logger.info(f"Set communication address to {slave_addr} (robot type unchanged)")
 
     def sleep(self):
         sleep_command = self._command_handler.get_sleep_command()

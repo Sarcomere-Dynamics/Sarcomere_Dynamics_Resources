@@ -45,8 +45,21 @@ class NewCommunication:
         self.communicator.open()
 
     def update_slave_address(self, new_slave_address):
+        """ Updates the slave address. Used for auto slave_id """
         self.slave_address = new_slave_address
         self.communicator.update_slave_address(new_slave_address)
+
+    def probe_slave_address(self):
+        """Probe the bus and return the actual slave address that responds, or None. Used for auto slave_id"""
+        return self.communicator.probe_slave_address()
+    
+    def raw_write_register(self, register: int, value: int, slave_override: int = None):
+        """Raw write bypassing address validation. Returns responding slave addr or None. Used for auto slave_id"""
+        return self.communicator.raw_write_register(register, value, slave_override)
+
+    def raw_read_registers(self, start_register: int, count: int, slave_override: int = None):
+        """Raw read bypassing address validation. Returns (slave_addr, [values]) or (None, None). Used for auto slave_id"""
+        return self.communicator.raw_read_registers(start_register, count, slave_override)
 
     def send_data(self, data:list,command_type:int=CommandType.SETUP_COMMANDS.value):
         # if len(data) > 1 and len(data)%2 != 0:
