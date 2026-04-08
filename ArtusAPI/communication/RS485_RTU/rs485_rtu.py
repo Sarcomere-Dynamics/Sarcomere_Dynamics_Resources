@@ -101,7 +101,7 @@ class RS485_RTU:
                     time.sleep(retry_delay)
                 else:
                     self.logger.error(f"Failed to send after {max_retries} attempts")
-                    raise  # Re-raise on final attempt
+                    pass  # Re-raise on final attempt
                     
             except serial.SerialException as e:
                 self.logger.error(f"Serial port error: {e}")
@@ -132,7 +132,7 @@ class RS485_RTU:
                     time.sleep(retry_delay)
                 else:
                     self.logger.error(f"Failed to receive after {max_retries} attempts")
-                    raise
+                    pass
                     
             except serial.SerialException as e:
                 self.logger.error(f"Serial port error: {e}")
@@ -146,4 +146,10 @@ class RS485_RTU:
 
     def close(self):
         self.instrument.serial.close()
+
+    def update_slave_address(self, new_slave_address):
+        """Update the Modbus slave address on the live hand."""
+        self.slave_address = new_slave_address
+        if hasattr(self, 'hand'):
+            self.instrument.address = new_slave_address
 

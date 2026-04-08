@@ -44,6 +44,10 @@ class NewCommunication:
     def open_connection(self):
         self.communicator.open()
 
+    def update_slave_address(self, new_slave_address):
+        self.slave_address = new_slave_address
+        self.communicator.update_slave_address(new_slave_address)
+
     def send_data(self, data:list,command_type:int=CommandType.SETUP_COMMANDS.value):
         # if len(data) > 1 and len(data)%2 != 0:
         #     self.logger.error(f"Data length should be even")

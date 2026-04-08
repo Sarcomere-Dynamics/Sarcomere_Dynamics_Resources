@@ -14,10 +14,12 @@ import time
 import logging
 import signal
 import math
+import ArtusAPI.common.SlaveIDMap as slave_ID_map
+
 from enum import Enum
 from tracemalloc import start
 from .common.ModbusMap import ModbusMap
-from .common.SlaveIDMap import expected_slave_id
+# from .common.SlaveIDMap import expected_slave_id
 from .commands import NewCommands
 from .communication.new_communication import NewCommunication,ActuatorState,CommandType
 from .robot import Robot
@@ -59,7 +61,7 @@ class ArtusAPI_V2:
 
         self._communication_handler = NewCommunication(communication_method=communication_method,
                                                     logger=logger, port=communication_channel_identifier,
-                                                    baudrate=baudrate, slave_address=expected_slave_id(robot_type, hand_type))
+                                                    baudrate=baudrate, slave_address=slave_ID_map.expected_slave_id(robot_type, hand_type))
         self._robot_handler = Robot(robot_type=robot_type,hand_type=hand_type,logger=logger)
         self._command_handler = NewCommands(num_joints=len(self._robot_handler.robot.hand_joints),logger=logger)
 
@@ -74,6 +76,7 @@ class ArtusAPI_V2:
         self.last_time = time.perf_counter()
 
         self.awake = False
+        self.counter = 0
 
         # set up sigint handler
         self.original_sigint_handler = signal.getsignal(signal.SIGINT)
@@ -114,27 +117,104 @@ class ArtusAPI_V2:
         signal.signal(signal.SIGINT, self.original_sigint_handler)
     
     def wake_up(self,control_type:int=3):
-        """
-        Wake up the hand and set the control type
-         3 for position control, 2 for velocity control, 1 for torque control -- maximum 3 bits
-        """
-        wake_command = self._command_handler.get_robot_start_command(control_type=control_type)
+        # """
+        # Wake up the hand and set the control type
+        #  3 for position control, 2 for velocity control, 1 for torque control -- maximum 3 bits
+        # """
+        # wake_command = self._command_handler.get_robot_start_command(control_type=control_type)
 
+        # self.control_type = control_type
+        # self.logger.info(f"Current configuration {self.robot_type} and {self.hand_type}, attemping wakeup")
+        # self.counter = 0
+        # while not self.awake and self.counter < len(slave_ID_map.SLAVE_ID_BY_ROBOT_HAND):
+        #     self._communication_handler.send_data(wake_command)
+        #     self.last_time = time.perf_counter()
+
+        #     # wait for hand state ready
+        #     ready_result = self._communication_handler.wait_for_ready(vis=False,timeout=30)
+
+        #     # TODO try another slave ID if the hand times out 
+        #     self.logger.info(f"Current configuration {self.robot_type} and {self.hand_type}, attemping wakeup")
+        #     if not ready_result:
+        #         self.iterate_slave_id()
+        #         # self.logger.error("Hand timed out waiting for ready")
+        #     elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
+        #         # try to wake hand again
+        #         self.wake_up()
+        #     else:
+        #         self.logger.info("Hand ready")
+        #         self.state = ActuatorState.ACTUATOR_IDLE
+        #         self.awake = True
+        """
+        Wake up the hand and set the control type.
+        Cycles through all known slave IDs until a hand responds.
+        3 for position control, 2 for velocity control, 1 for torque control
+        """
         self.control_type = control_type
-        self._communication_handler.send_data(wake_command)
-        self.last_time = time.perf_counter()
+        self.counter = 0
+        self.awake = False
 
-        # wait for hand state ready
-        ready_result = self._communication_handler.wait_for_ready(vis=False,timeout=30)
-        if not ready_result:
-            self.logger.error("Hand timed out waiting for ready")
-        elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
-            # try to wake hand again
-            self.wake_up()
-        else:
-            self.logger.info("Hand ready")
-            self.state = ActuatorState.ACTUATOR_IDLE
-            self.awake = True
+        # Build ordered list of slave_ids to try, starting with the current config
+        current_id = slave_ID_map.expected_slave_id(self.robot_type, self.hand_type)
+        all_ids = list(slave_ID_map.SLAVE_ID_TO_ROBOT_HAND.keys())
+        
+        # Put current_id first, then the rest
+        try_order = [current_id] + [sid for sid in all_ids if sid != current_id]
+
+        for slave_id in try_order:
+            if self.awake: # connection made!
+                break
+
+            robot_type, hand_type = slave_ID_map.robot_hand_from_slave_id(slave_id)
+            self.logger.info(f"Trying slave_id={slave_id} ({robot_type}, {hand_type})")
+
+            # Update the rs485 with the ID
+            self._communication_handler.update_slave_address(slave_id)
+
+            # Rebuild robot handler and command handler for this configuration
+            self._robot_handler = Robot(
+                robot_type=robot_type, hand_type=hand_type, logger=self.logger
+            )
+            self._command_handler = NewCommands(num_joints=len(self._robot_handler.robot.hand_joints), logger=self.logger,)
+
+            # Build the wake command for THIS robot's joint count
+            wake_command = self._command_handler.get_robot_start_command(control_type=control_type)
+            self._communication_handler.send_data(wake_command)
+            self.last_time = time.perf_counter()
+
+            # Wait for hand state ready (shorter timeout when scanning)
+            ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=5)
+
+            if not ready_result:
+                self.logger.info(f"No response from slave_id={slave_id}, moving on")
+                continue
+            elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
+                # Hand acknowledged but is asleep — retry this same config
+                self.logger.info("Retrying wakeup on same config")
+                self._communication_handler.send_data(wake_command)
+                ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=10)
+                if ready_result and ready_result != ActuatorState.ACTUATOR_SLEEP.value:
+                    self.logger.info("Hand ready after retry")
+                    self._apply_discovered_config(robot_type, hand_type)
+                    break
+            else:
+                self.logger.info(f"Hand ready on slave_id={slave_id}")
+                self._apply_discovered_config(robot_type, hand_type)
+                break
+
+        if not self.awake:
+            self.logger.error(
+                "Failed to wake any hand after trying all known slave IDs"
+            )
+
+    def _apply_discovered_config(self, robot_type: str, hand_type: str):
+        """Commit the correct robot configuration. Used after connecting with wake_up"""
+        self.robot_type = robot_type
+        self.hand_type = hand_type
+        self.state = ActuatorState.ACTUATOR_IDLE
+        self.awake = True
+        self.logger.info(f"Connected to {self.robot_type} ({self.hand_type})")
+
 
     def sleep(self):
         sleep_command = self._command_handler.get_sleep_command()
