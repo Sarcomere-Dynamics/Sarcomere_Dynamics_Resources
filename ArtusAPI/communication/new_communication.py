@@ -48,10 +48,6 @@ class NewCommunication:
         """ Updates the slave address. Used for auto slave_id """
         self.slave_address = new_slave_address
         self.communicator.update_slave_address(new_slave_address)
-
-    def probe_slave_address(self):
-        """Probe the bus and return the actual slave address that responds, or None. Used for auto slave_id"""
-        return self.communicator.probe_slave_address()
     
     def raw_write_register(self, register: int, value: int, slave_override: int = None):
         """Raw write bypassing address validation. Returns responding slave addr or None. Used for auto slave_id"""

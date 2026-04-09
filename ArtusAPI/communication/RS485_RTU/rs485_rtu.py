@@ -147,34 +147,6 @@ class RS485_RTU:
 
     def close(self):
         self.instrument.serial.close()
-
-    def probe_slave_address(self):
-        """
-        Send a read to register 0 and return the slave address from the response.
-        If the address matches, returns self.slave_address.
-        If there's a mismatch, parses the actual address from the error or raw response.
-        Returns None if no device responds at all.
-        """
-        import re
-        try:
-            self.instrument.read_register(0)
-            return self.slave_address  # matched, current config is correct
-        except minimalmodbus.InvalidResponseError as e:
-            # minimalmodbus error string contains the raw response bytes,
-            msg = str(e)
-            # Try to extract "Wrong return slave address: X instead of Y"
-            match = re.search(r'Wrong return slave address:\s*(\d+)\s*instead of', msg)
-            if match:
-                return int(match.group(1))
-            # Fallback: try to extract the first byte from the raw response bytes
-            resp_match = re.search(r"b'\\x([0-9a-fA-F]{2})", msg)
-            if resp_match:
-                return int(resp_match.group(1), 16)
-            return None
-        except minimalmodbus.NoResponseError:
-            return None  # nothing on the bus at this address
-        except Exception:
-            return None
         
     def update_slave_address(self, new_slave_address):
         """Update the Modbus slave address on the live hand."""
@@ -182,11 +154,7 @@ class RS485_RTU:
         if hasattr(self, 'instrument'):
             self.instrument.address = new_slave_address
 
-    
-
-    # ---------- CRC helper (Modbus RTU CRC-16) ----------
-    @staticmethod
-    def _crc16(data: bytes) -> int:
+    def _crc16(self, data: bytes) -> int:
         crc = 0xFFFF
         for byte in data:
             crc ^= byte
@@ -211,9 +179,7 @@ class RS485_RTU:
 
     def raw_write_register(self, register: int, value: int, slave_override: int = None):
         """
-        Write a single register using raw serial, bypassing minimalmodbus
-        address validation. Returns the actual slave address from the
-        response, or None if no response.
+        Write a single register using raw serial, bypassing minimalmodbus address validation. Returns the actual slave address from the response, or None if no response.
         """
         addr = slave_override if slave_override is not None else self.slave_address
         frame = self._build_write_single_register_frame(addr, register, value)
@@ -226,7 +192,7 @@ class RS485_RTU:
         # FC 0x06 echo response is always 8 bytes
         resp = ser.read(8)
         if len(resp) < 8:
-            self.logger.warning(f"raw_write_register: short response ({len(resp)} bytes)")
+            self.logger.warning(f"raw_write_register: short response ({len(resp)} bytes")
             return None
 
         resp_slave = resp[0]
@@ -235,9 +201,7 @@ class RS485_RTU:
 
     def raw_read_registers(self, start_register: int, count: int, slave_override: int = None):
         """
-        Read holding registers using raw serial, bypassing minimalmodbus
-        address validation. Returns (actual_slave_addr, [register_values])
-        or (None, None) on failure.
+        Read holding registers using raw serial, bypassing minimalmodbus address validation. Returns (actual_slave_addr, [register_values]) or (None, None) on failure.
         """
         addr = slave_override if slave_override is not None else self.slave_address
         frame = self._build_read_holding_registers_frame(addr, start_register, count)
