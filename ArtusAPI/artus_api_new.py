@@ -512,7 +512,7 @@ class ArtusAPI_V2:
         while end_effector not in ["l", "t"]:
             end_effector = input("Invalid, enter l for lite or t for talos: ")
 
-        if end_effector is 'l':
+        if end_effector == 'l':
             self.flash_lite(drivers_to_flash, fw_size)
         
         else:
