@@ -22,7 +22,6 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(o
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 # import ArtusAPI
-from ..ArtusAPI.artus_api import ArtusAPI
 
 # Determine OS and run appropriate flash script
 import platform

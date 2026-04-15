@@ -53,7 +53,7 @@ class ArtusScorpion(BLDCRobot):
         # speeds
         self.max_velocity = 70 # mm/s
         self.min_velocity = 0
-        self.default_velocity = 30 # mm/s
+        self.default_velocity = 50 # mm/s
 
         # forces
         self.max_force = 100 # N
@@ -73,7 +73,7 @@ class ArtusScorpion(BLDCRobot):
         target_data = None
         # look for gripper_joint in joint_angles
         if 'gripper_joint' not in joint_angles:
-            self.logger.warning("Gripper joint not found in joint angles, defaulting to thumb_spread")
+            self.logger.info("Gripper joint not found in joint angles, defaulting to thumb_spread")
             target_data = joint_angles['thumb_spread'] # use the zero index joint as default
         else:
             target_data = joint_angles['gripper_joint']

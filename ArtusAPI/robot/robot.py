@@ -23,6 +23,10 @@ from .artus_talos.artus_talos_right import ArtusTalos_Right
 # Artus Scorpion
 from .artus_scorpion.artus_scorpion import ArtusScorpion
 
+# Artus Dex
+from .artus_dex.artus_dex_left import ArtusDex_Left
+from .artus_dex.artus_dex_right import ArtusDex_Right
+
 class Robot:
     def __init__(self,
                  robot_type='artus_lite',
@@ -65,6 +69,13 @@ class Robot:
                 raise ValueError("Unknown hand")
         elif self.robot_type == 'artus_scorpion':
             self.robot = ArtusScorpion(logger=self.logger)
+        elif self.robot_type == 'artus_dex':
+            if self.hand_type == 'right':
+                self.robot = ArtusDex_Right(logger=self.logger)
+            elif self.hand_type == 'left':
+                self.robot = ArtusDex_Left(logger=self.logger)
+            else:
+                raise ValueError("Unknown hand")
         else:
             raise ValueError("Unknown robot type")
         

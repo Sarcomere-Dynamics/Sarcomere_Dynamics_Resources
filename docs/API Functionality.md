@@ -1,42 +1,52 @@
 <img src='../data/images/SarcomereLogoHorizontal.svg'>
 
-### Creating an ArtusAPI Class Object
-Below are some examples of instantiating the ArtusAPI class to control a single hand. Below is a description of the parameters and what they mean.
+> **Note:** The legacy `ArtusAPI` class in `artus_api.py` has been **removed** from this repository. All examples here use **`ArtusAPI_V2`** in [`ArtusAPI/artus_api_new.py`](../ArtusAPI/artus_api_new.py). Import with `from ArtusAPI import ArtusAPI_V2`.
 
-* `__communication_method__` : The communication method between the host system and the Artus hand
-* `__communication_channel_identifier__` : The identifying parameter of the communication method such as COM port over Serial or network name over WiFi
-* `__robot_type__` : The Artus robot hand name 
-* `__hand_type__` : left or right hand
-* `__stream__` : whether streaming feedback data is required or not. Default: `False`
-* `__communication_frequency__` : The frequency of the feedback and command communication. Default: `200` Hz
-* `__logger__` : If integrating the API into control code, you may already have a logger. THis will allow for homogeneous logging to the same files as what you currently have. Default: `None`
-* `__reset_on_start__` : If the hand is not in a closed state when last powered off, setting to `1` will open the hand before ready to receive commands. This _MUST_ be set if powered off in a closed state, and a calibrate may need to be run before sending accurate target commands
-* `__baudrate__` : required to differentiate between Serial over USB-C and Serial over RS485, default `921600`
-* `__awake__` : False by default - if the hand is already in a ready state (LED is green) when starting or restarting a control script, set woken to `True` to bypass resending the `wake_up` function, which could lead to lost calibration.
+### Creating an `ArtusAPI_V2` object
 
-#### Serial Example
+Below is how to construct the API for a single hand. Common constructor arguments:
+
+* `communication_method` — How the host talks to the hand (for example `RS485_RTU`; must match what [`NewCommunication`](../ArtusAPI/communication/new_communication.py) supports for your checkout).
+* `communication_channel_identifier` — Port or device path (for example `COM7` on Windows or `/dev/ttyUSB0` on Linux).
+* `robot_type` — Which hand model (for example `artus_lite`, `artus_talos`, `artus_scorpion`).
+* `hand_type` — `left` or `right` where applicable.
+* `communication_frequency` — Control/feedback loop rate in Hz (default in code is `50`).
+* `logger` — Optional Python `logging.Logger`; if `None`, the API creates its own.
+* `baudrate` — Serial baud rate (default `115200` in `ArtusAPI_V2`; match your harness and firmware).
+
+The constructor calls `connect()` to open the transport. Then call `wake_up(control_type=...)` with `3` for position, `2` for velocity, or `1` for torque, consistent with your application.
+
+#### Example (RS485-style serial)
+
 ```python
-from ArtusAPI.artus_api import ArtusAPI
-artus_lite = ArtusAPI(robot_type='artus_lite', communication_type='UART',hand_type='right',communication_channel_identifier='COM7',reset_on_start=0)
+from ArtusAPI import ArtusAPI_V2
 
-artus_lite.connect()
+hand = ArtusAPI_V2(
+    communication_method="RS485_RTU",
+    communication_channel_identifier="COM7",
+    robot_type="artus_lite",
+    hand_type="right",
+    communication_frequency=50,
+    baudrate=115200,
+)
+hand.wake_up(control_type=3)  # position control
 ```
 
 ## Interacting with the API
-To get the most out of the Artus hands, the functions that will likely be most interacted with are `set_joint_angles(self, joint_angles:dict)` and `get_joint_angles(self)`. The `set_joint_angles` function allows the user to set 16 independent joint values with a desired velocity/force value in the form of a dictionary. See the [grasp_close file](data/hand_poses/grasp_close.json) for an example of a full 16 joint dictionary for the Artus Lite. See the [Artus Lite README](ArtusAPI/robot/artus_lite/README.md) for joint mapping.
+To get the most out of the Artus hands, the functions you will call often are `set_joint_angles(joint_angles: dict)` and `get_joint_angles()`. Joint count and key names depend on **`robot_type`** (for example ARTUS Lite uses many joints; Talos or Scorpion differ). See [`data/hand_poses/grasp_example.json`](../data/hand_poses/grasp_example.json) for a sample pose dictionary and the [Artus Lite joint documentation](../ArtusAPI/robot/artus_lite/ARTUS_LITE.md) for mapping on Lite-class hands.
 
 e.g. 
 ```python
 artusapi.set_joint_angles(pinky_dict)
 ```
-### Startup Commands
-* `connect` is used to start a connection between the API and the hand via the communication method chosen. It will then send a `wake_up` command if `awake == False`. 
-* The `wake_up` command properly configures the hand and the actuators. Once an `ack` is returned, the hand is now ready to be controlled 
-* `calibrate` sends a full calibration command sequence for all the fingers. 
+### Startup commands
+* `connect()` opens the link for the configured communication method (also invoked from the `ArtusAPI_V2` constructor).
+* `wake_up(control_type=...)` configures the hand and actuators for the selected control mode; wait until the hand reports ready before commanding motion.
+* `calibrate()` runs the calibration sequence when required for your robot model.
 
 
-### Setting Joints
-As mentioned above, there are 16 independent degrees of freedom for the Artus Lite, which can be set simultaneously or independently. If, for example, a user need only curl the pinky, a shorter dictionary like the following could be used as a parameter to the function:
+### Setting joints
+On models with many DOF (for example Artus Lite), joints can be set together or in a subset. If you only need to curl the pinky, a shorter dictionary can be passed to `set_joint_angles`:
 
 ```
 pinky_dict = {"pinky_flex" : 
@@ -51,7 +61,7 @@ pinky_dict = {"pinky_flex" :
                             }
             }
 
-ArtusAPI.set_joint_angles(pinky_dict)
+hand.set_joint_angles(pinky_dict)
 ```
 
 Notice that the above example does not include the `"input_speed"` field that the json file has. The `"input_speed"` field is optional and will default to the nominal speed.
@@ -60,12 +70,13 @@ Notice that the above example does not include the `"input_speed"` field that th
 * Input Angle: the input angle is an integer value in degrees
 * velocity: the velocity is in a percentage unit 0-100. Minimum movement requirement is around 30. This value pertains to the gripping force of the movement. 
 
-### Getting Feedback
-There are two ways to get feedback data depending on how the class is instantiated.
+### Getting feedback
 
-1. In streaming mode (`stream = True`), after sending the `wake_up()` command, the system will start streaming feedback data which will populate the `ArtusAPI._robot_handler.robot.hand_joints` dictionary. Fields that hold feedback data are named with `feedback_X` where _X_ could be angle, current or temperature.
-2. In Request mode (`stream = False`), sending a `get_joint_angles()` command will request the feedback data before anything is sent from the Artus hand. This communication setting is slower than the streaming mode, but for testing purposes and getting familiar with the Artus hand, we recommend starting with this setting. 
-3. Feedback message has the following data: ACK, Feedback angle (degrees), Motor Current (mA), Temperature. The following is a table for the ACK value. 
+With **`ArtusAPI_V2`**, request feedback with explicit getters such as `get_joint_angles()`, `get_joint_speeds()`, `get_joint_forces()`, and `get_joint_temperatures()`. The older “streaming vs request” toggle from legacy `ArtusAPI` does not apply the same way; `get_streamed_joint_angles()` is not implemented in V2 and will log an error if called.
+
+After reads complete, updated values are reflected under `hand._robot_handler.robot.hand_joints` (field names depend on the robot model).
+
+Feedback includes status/ACK semantics, angles (degrees where applicable), motor current (mA), temperature, etc. ACK meanings include:
 
 | ACK Value  | Meaning | 
 | :---: | :------: | 

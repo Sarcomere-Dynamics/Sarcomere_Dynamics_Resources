@@ -216,7 +216,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
 
     def send_data(self):
         # This will send the current joint values via ZMQ
-        print(f"Sending data to ZMQ")
+        # print(f"Sending data to ZMQ")
         data_to_send = {
             "joint_values": self.joint_values,
             "force": self.force_value,

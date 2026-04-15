@@ -1,10 +1,10 @@
 # Configuration Example
 
-This folder shows how to drive the Artus APIs from a YAML config file. The main entry point is `configuration.py`, which loads `robot_config.yaml`, converts it into a `SimpleNamespace`, and returns the appropriate API object based on which robot is connected.
+This folder shows how to drive the Artus API from a YAML config file. The main entry point is `configuration.py`, which loads `robot_config.yaml`, converts it into a `SimpleNamespace`, and returns an **`ArtusAPI_V2`** instance for the connected robot.
 
 ## Files
 
-- `configuration.py`: Loads config, selects the connected robot, and returns `ArtusAPI` or `ArtusAPI_V2`.
+- `configuration.py`: Loads config, selects the connected robot, and returns `ArtusAPI_V2`.
 - `robot_config.yaml`: Example configuration for left/right hand robots and logging.
 
 ## How it works

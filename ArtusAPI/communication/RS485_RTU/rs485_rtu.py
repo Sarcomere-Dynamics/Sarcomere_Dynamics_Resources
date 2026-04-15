@@ -29,7 +29,7 @@ The only received data is the feedback data from the hand. This has to be polled
 The sent data uses two modbus functions, write single register and write multiple registers.
 """
 class RS485_RTU:
-    def __init__(self, port='COM9', baudrate=115200, timeout=0.015, logger=None, slave_address=1):
+    def __init__(self, port='COM9', baudrate=115200, timeout=0.1, logger=None, slave_address=1):
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -62,7 +62,7 @@ class RS485_RTU:
             self.logger.error(f"Error opening {self.port} @ {self.baudrate} baudrate")
             quit()
     
-    def send(self, data:list, command:int, max_retries=3, retry_delay=0.1):
+    def send(self, data:list, command:int, max_retries=3, retry_delay=0.5):
         """
         Data needs to be in 16b format
         max_retries: Number of times to retry on exception

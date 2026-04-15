@@ -53,18 +53,7 @@ The setup on the PC creates a temporary port (/tmp/ttyUR) that forwards artus co
 sudo apt install socat
 ```
 2. Connect the remote PC to the control box using ethernet cable.
-<!-- 2. Run the following command on the remote PC to forware COM port to the UR Arm over the network:
-```
-# Setup your robot IP here:
-export ROBOT_IP=192.168.56.101 # IP of the robot
-# Setup the name for the device you wish to create. Make sure that your user can write to that location.
-export LOCAL_DEVICE_NAME=/tmp/ttyUR
-socat pty,link=${LOCAL_DEVICE_NAME},raw,ignoreeof,waitslave tcp:${ROBOT_IP}:54329
-```
-1. Set the COM port on Artus API with the temporary device name created in the previous step.
-```
-artus_api = ArtusAPI(comm_port='/tmp/ttyUR')
-``` -->
+<!-- Legacy snippet (pre–`artus_api.py` removal): after socat exposes `/tmp/ttyUR`, construct `ArtusAPI_V2` with that path as `communication_channel_identifier`, matching `communication_method` / `baudrate` to your harness. The current `urarm_rs485_example.py` uses `ArtusAPIPortForwarder` instead of pasting this by hand. -->
 3. Determine UR Robot's IP:
 
     example:

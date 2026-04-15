@@ -57,7 +57,7 @@ class ZMQSubscriber:
             # split data into topic and message
             parts = message.split(' ', 1)
             result = [parts[0], parts[1] if len(parts) > 1 else ""]
-            print(f"ZMQ receive: topic={result[0]}, message={result[1]}")
+            # print(f"ZMQ receive: topic={result[0]}, message={result[1]}")
             return result[1]
         except zmq.Again:
             # print("ZMQ error")
@@ -90,7 +90,8 @@ def subscriber_example():
     while True:
         received_message = subscriber.receive()
         if received_message:
-            print(f"Received: {received_message}")
+            None
+            # print(f"Received: {received_message}")
         else:
             print("No message available")
             time.sleep(1)  # Simulate work

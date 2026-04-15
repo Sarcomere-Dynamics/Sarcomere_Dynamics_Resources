@@ -13,7 +13,6 @@ See the LICENSE file in the repository for full details.
 import yaml
 from types import SimpleNamespace
 
-from ArtusAPI.artus_api import ArtusAPI
 from ArtusAPI.artus_api_new import ArtusAPI_V2
 
 import os
@@ -75,9 +74,6 @@ class ArtusConfig:
         based on the connected robot. Only one robot can be connected at a time.
         Checks the robot connected status and returns the appropriate API instance.
         """
-        # Lazy import to avoid issues at class definition time
-        from ArtusAPI.artus_api import ArtusAPI
-        # from ArtusAPI.artus_api_new import ArtusAPI_V2
 
         # Figure out which robot is connected
         if self.config.robots.left_hand_robot.robot_connected and not self.config.robots.right_hand_robot.robot_connected:

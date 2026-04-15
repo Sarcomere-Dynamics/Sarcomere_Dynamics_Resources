@@ -22,6 +22,7 @@ class BLDCRobot:
                 joint_names=['thumb_spread','thumb_flex','index_flex',
                             'middle_flex','ring_flex','pinky_flex'],
                 number_of_joints=6,
+                number_of_controllers=None,
                 logger=None):
 
         self.force_sensors = None
@@ -39,6 +40,11 @@ class BLDCRobot:
         self.joint_forces = joint_forces
         self.joint_names = joint_names
         self.number_of_joints = number_of_joints
+
+        if number_of_controllers is None:
+            self.number_of_controllers = number_of_joints
+        else:
+            self.number_of_controllers = number_of_controllers
 
         class Joint:
             def __init__(self, index, min_angle, max_angle, default_angle, target_angle, target_force, temperature, joint_rotation_direction):
