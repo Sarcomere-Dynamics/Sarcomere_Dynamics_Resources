@@ -174,7 +174,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         except json.JSONDecodeError:
             print("Error decoding JSON feedback data.")
 
-        print(f"Updated Plots")
+        # print(f"Updated Plots")
 
     def _on_feedback_type_changed(self):
         self.feedback_type = self.feedback_type_selector.currentText()
