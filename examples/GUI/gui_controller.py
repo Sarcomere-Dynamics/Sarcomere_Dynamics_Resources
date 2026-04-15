@@ -137,10 +137,7 @@ class ArtusGUIController:
         """
         try:
             # backward compatibility with v1 api
-            if 'lite' in str(self.artus_api._robot_handler.robot_type):
-                self.artus_api.get_joint_angles()
-            else:
-                self.artus_api.get_hand_feedback_data()
+            self.artus_api.get_hand_feedback_data()
         except Exception as e:
             self.logger.error(f"Error in _receive_feedback: {e}")
             return None

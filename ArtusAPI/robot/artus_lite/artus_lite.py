@@ -44,7 +44,10 @@ class ArtusLite(BLDCRobot):
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
                          logger=logger)
-
+        
+        # set sensors
+        self.available_feedback_types = ['feedback_position_start_reg', 'feedback_force_start_reg', 'feedback_velocity_start_reg']
+        
         # speeds (deg/s)
         self.max_velocity = 300
         self.min_velocity = 0

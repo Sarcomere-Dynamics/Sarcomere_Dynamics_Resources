@@ -42,7 +42,7 @@ class ArtusAPI_V2:
                 hand_type='left',
                 communication_frequency = 50, # hz
                 logger = None,
-                baudrate = 115200):
+                baudrate = 115200): #115200 for RS485, 250000 for UART
 
         self.control_types = {
             'position': 3,
@@ -148,7 +148,7 @@ class ArtusAPI_V2:
             self.logger.error(f"Invalid actuator state: {robot_state}")
             return None
 
-    def calibrate(self,joint=1):
+    def calibrate(self,joint=0):
         if not self._check_awake():
             return
         calibrate_cmd = self._command_handler.get_calibration_command()
