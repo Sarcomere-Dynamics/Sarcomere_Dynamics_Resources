@@ -18,6 +18,15 @@ class TestNewCommands(unittest.TestCase):
     def test_get_sleep_command(self):
         self.assertEqual(self.nc.get_sleep_command(), [self.nc.commands["sleep_command"]])
 
+    def test_get_clear_errors_command(self):
+        # Single-byte payload mirroring get_sleep_command - firmware maps the
+        # 0x1A value through Actuator_event_e -> ACTUATOR_EVENT_CLEAR_ERRORS.
+        self.assertEqual(
+            self.nc.get_clear_errors_command(),
+            [self.nc.commands["clear_errors_command"]],
+        )
+        self.assertEqual(self.nc.commands["clear_errors_command"], 0x1A)
+
     def test_get_calibration_command(self):
         self.assertEqual(self.nc.get_calibration_command(), [self.nc.commands["calibrate_command"]])
 

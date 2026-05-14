@@ -177,6 +177,22 @@ class NewCommands(Commands,ModbusMap):
                     decoded_data.append(round(float_value, 2))
             return decoded_data
 
+        def helper_decode_feedback_16b_uint32(data:list) -> list:
+            """
+            Helper for bit-field fields transported as pairs of uint16 registers.
+            Firmware packs the low 16 bits at the even register and the high 16
+            bits at the odd register (see host_communication.c::get_word). Decode
+            as little-endian uint32 per joint — do NOT reinterpret as IEEE float.
+            """
+            decoded_data = []
+            for i in range(0, len(data), 2):
+                if i + 1 < len(data):
+                    # low word first, high word second (matches get_word() on firmware)
+                    packed_bytes = struct.pack('<HH', data[i], data[i + 1])
+                    uint32_value = struct.unpack('<I', packed_bytes)[0]
+                    decoded_data.append(uint32_value)
+            return decoded_data
+
         def helper_decode_feedback_signed_16b(data:Any) -> Any:
             """
             Helper function to decode signed 16-bit feedback data
@@ -214,6 +230,13 @@ class NewCommands(Commands,ModbusMap):
                 return []
             return [int(feedback_data[0]) & 0xFF]
 
+        # error_report is a 32-bit bitfield per joint transported as (low_word, high_word).
+        # Route it to the uint32 helper so bit flags like DRV_FAULT=0x20 survive intact —
+        # the multiplier=2 path would otherwise reinterpret the bytes as IEEE float.
+        if modbus_key == "feedback_actuator_error_reg":
+            decoded_data = helper_decode_feedback_16b_uint32(feedback_data)
+            return decoded_data
+
         match ModbusMap().data_type_multiplier_map[modbus_key]:
             case 0.5:
                 decoded_data = helper_decode_feedback_16b_8b(feedback_data)
@@ -235,6 +258,14 @@ class NewCommands(Commands,ModbusMap):
 
     def get_sleep_command(self):
         return [self.commands['sleep_command']]
+
+    def get_clear_errors_command(self):
+        """Explicit host-triggered error clear. Firmware state_machine_process
+        consumes this only in ACTUATOR_ERROR (primary recovery) or
+        ACTUATOR_IDLE (no-op refresh); swallowed silently in every other
+        state. Response is observed via the existing feedback stream
+        (FEEDBACK_STATUS register 200 and FEEDBACK_ERROR_START register 500)."""
+        return [self.commands['clear_errors_command']]
 
     def get_states_command(self,type=0):
         return [self.commands['get_feedback_command']]
@@ -536,15 +567,32 @@ class TestNewCommands(unittest.TestCase):
         self.assertEqual(result, expected)
     
     def test_get_decoded_feedback_data_error_register(self):
-        """Test get_decoded_feedback_data with error register data"""
-        # Error register data (multiplier = 0.5, byte data)
+        """Test get_decoded_feedback_data with error register data.
+        error_report is a 32-bit bitfield per joint transmitted as two 16-bit
+        registers: (low_word, high_word). Firmware get_word() places the low
+        16 bits at the even register (low_word) and the high 16 bits at the
+        odd register (high_word). Little-endian decode => uint32 per joint.
+        """
         test_commands = NewCommands(num_joints=6)
-        feedback_data = [0x0102, 0x0304, 0x0506]  # 3 registers for 6 joints
-        
+        # 6 joints × 2 regs each = 12 registers.
+        # Joint 0: error_report = 0x00000020 (DRV_FAULT only)
+        # Joint 1: 0
+        # Joint 2: error_report = 0x12345678
+        # Joint 3: 0
+        # Joint 4: error_report = 0x00010020 (DRV_FAULT + stat1 bit)
+        # Joint 5: 0
+        feedback_data = [
+            0x0020, 0x0000,   # joint 0 low, joint 0 high
+            0x0000, 0x0000,   # joint 1
+            0x5678, 0x1234,   # joint 2 low, joint 2 high
+            0x0000, 0x0000,   # joint 3
+            0x0020, 0x0001,   # joint 4 low, joint 4 high
+            0x0000, 0x0000,   # joint 5
+        ]
+
         result = test_commands.get_decoded_feedback_data(feedback_data, modbus_key='feedback_actuator_error_reg')
-        
-        # Should decode to individual bytes
-        expected = [0x01, 0x02, 0x03, 0x04, 0x05, 0x06]
+
+        expected = [0x00000020, 0x00000000, 0x12345678, 0x00000000, 0x00010020, 0x00000000]
         self.assertEqual(result, expected)
 
     @classmethod

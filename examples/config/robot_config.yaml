@@ -1,20 +1,22 @@
 robots:
   left_hand_robot:
-    robot_connected: false
+    robot_connected: true
     robot_type: 'artus_talos'
     communication_method: 'RS485_RTU'
-    communication_channel_identifier: '/dev/ttyUSB0'
+    baudrate: 115200
+    communication_channel_identifier: '/dev/ttyACM0'
     hand_type: 'left'
     start_robot: true
     reset_on_start: 0
     streaming_frequency: 20  # data/seconds
-    calibrate: false
+    calibrate: true
 
 
   right_hand_robot:
-    robot_connected: true
+    robot_connected: false
     robot_type: 'artus_talos'
     communication_method: 'RS485_RTU'
+    baudrate: 115200
     communication_channel_identifier: '/dev/ttyACM0'
     hand_type: 'right'
     start_robot: true

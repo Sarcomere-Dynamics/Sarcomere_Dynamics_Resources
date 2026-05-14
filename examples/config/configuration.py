@@ -13,7 +13,16 @@ See the LICENSE file in the repository for full details.
 import yaml
 from types import SimpleNamespace
 
+import minimalmodbus
+import serial.tools.list_ports
+
 from ArtusAPI.artus_api_new import ArtusAPI_V2
+from ArtusAPI.common.SlaveIDMap import (
+    SLAVE_ID_BY_ROBOT_HAND,
+    expected_slave_id,
+    robot_hand_from_slave_id,
+)
+from ArtusAPI.common.ModbusMap import ModbusMap
 
 import os
 import sys
@@ -85,10 +94,119 @@ class ArtusConfig:
         else:
             raise ValueError("No robot connected or multiple robots connected. Only one robot can be connected at a time.")
 
-        # Choose API class based on robot_type or some convention if needed.
-        # Here we assume artus_api_new for demonstration — modify as needed.
-        # (You may want to base this on the robot_type field, or another field relevant to you)
-        return self.return_api(robot_cfg=robot_cfg,logger=logger)
+        robot_cfg = self._preflight(robot_cfg, logger)
+        return self.return_api(robot_cfg=robot_cfg, logger=logger)
+
+    # ------------------------------------------------------------------
+    # Pre-flight helpers
+    # ------------------------------------------------------------------
+
+    def _preflight(self, robot_cfg, logger):
+        """Validate port and slave ID before instantiating the API, correcting
+        robot_cfg in place if either needs to be discovered."""
+        robot_cfg = self._validate_port_or_select(robot_cfg, logger)
+        robot_cfg = self._validate_slave_or_discover(robot_cfg, logger)
+        return robot_cfg
+
+    def _validate_port_or_select(self, robot_cfg, logger):
+        """If the configured serial port is not available, list available ports
+        and prompt the user to pick one."""
+        available_ports = serial.tools.list_ports.comports()
+        available_devices = [p.device for p in available_ports]
+
+        if robot_cfg.communication_channel_identifier in available_devices:
+            return robot_cfg
+
+        if not available_ports:
+            raise RuntimeError(
+                "No serial ports found. Check USB connection."
+            )
+
+        if len(available_ports) == 1:
+            selected = available_ports[0].device
+            print(
+                f"Configured port {robot_cfg.communication_channel_identifier} not available. "
+                f"Auto-selecting only available port: {selected}"
+            )
+            robot_cfg.communication_channel_identifier = selected
+            return robot_cfg
+
+        print(f"\nConfigured port {robot_cfg.communication_channel_identifier} not available.")
+        print("\nAvailable ports:")
+        for i, p in enumerate(available_ports):
+            print(f"  [{i}] {p.device:<20} {p.description}")
+
+        while True:
+            try:
+                choice = int(input(f"\nSelect port number (0-{len(available_ports) - 1}): "))
+                if 0 <= choice < len(available_ports):
+                    robot_cfg.communication_channel_identifier = available_ports[choice].device
+                    return robot_cfg
+                print(f"Enter a number between 0 and {len(available_ports) - 1}.")
+            except ValueError:
+                print("Invalid input. Enter a number.")
+
+    def _validate_slave_or_discover(self, robot_cfg, logger):
+        """Probe the configured Modbus slave ID. If it does not respond, scan
+        all known slave IDs and update robot_cfg with what is actually found."""
+        port = robot_cfg.communication_channel_identifier
+        baudrate = getattr(robot_cfg, 'baudrate', 115200)
+        configured_slave = expected_slave_id(robot_cfg.robot_type, robot_cfg.hand_type)
+        status_reg = ModbusMap().modbus_reg_map['feedback_register']
+        all_slave_ids = list(SLAVE_ID_BY_ROBOT_HAND.values())
+
+        instrument = minimalmodbus.Instrument(port=port, slaveaddress=configured_slave, debug=False)
+        instrument.serial.baudrate = baudrate
+        instrument.serial.timeout = 0.15
+        instrument.mode = minimalmodbus.MODE_RTU
+
+        try:
+            # Probe the configured slave ID first.
+            try:
+                instrument.read_register(registeraddress=status_reg, functioncode=3)
+                return robot_cfg
+            except (minimalmodbus.NoResponseError, minimalmodbus.InvalidResponseError):
+                pass
+
+            # No response — scan all known IDs.
+            print(
+                f"\nNo response at configured slave ID {configured_slave} "
+                f"({robot_cfg.robot_type}/{robot_cfg.hand_type}). Scanning all slave IDs..."
+            )
+
+            found_id = None
+            for slave_id in all_slave_ids:
+                if slave_id == configured_slave:
+                    continue
+                instrument.address = slave_id
+                try:
+                    instrument.read_register(registeraddress=status_reg, functioncode=3)
+                    found_id = slave_id
+                    break
+                except (minimalmodbus.NoResponseError, minimalmodbus.InvalidResponseError):
+                    continue
+
+            if found_id is None:
+                raise RuntimeError(
+                    f"No ARTUS hand found on {port}. Check power and USB connection."
+                )
+
+            discovered_type, discovered_hand = robot_hand_from_slave_id(found_id)
+            msg = (
+                f"Found slave ID {found_id} ({discovered_type}/{discovered_hand}). "
+                f"Update robot_config.yaml: robot_type: {discovered_type}, hand_type: {discovered_hand}"
+            )
+            if logger:
+                logger.warning(msg)
+            else:
+                print(f"WARNING: {msg}")
+
+            robot_cfg.robot_type = discovered_type
+            robot_cfg.hand_type = discovered_hand
+            return robot_cfg
+
+        finally:
+            instrument.serial.close()
     
     def return_api(self,robot_cfg:dict=None,logger=None):
         """
@@ -113,7 +231,8 @@ class ArtusConfig:
             communication_method=robot_cfg.communication_method,
             communication_channel_identifier=robot_cfg.communication_channel_identifier,
             hand_type=robot_cfg.hand_type,
-            communication_frequency=robot_cfg.streaming_frequency if hasattr(robot_cfg, "streaming_frequency") else 20
+            communication_frequency=robot_cfg.streaming_frequency if hasattr(robot_cfg, "streaming_frequency") else 20,
+            baudrate=getattr(robot_cfg, "baudrate", 115200),
         )
             
 

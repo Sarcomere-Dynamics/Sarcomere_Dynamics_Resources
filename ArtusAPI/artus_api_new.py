@@ -140,6 +140,22 @@ class ArtusAPI_V2:
         sleep_command = self._command_handler.get_sleep_command()
         self._communication_handler.send_data(sleep_command)
         self.last_time = time.perf_counter()
+
+    def clear_errors(self):
+        """Explicitly clear latched actuator errors.
+
+        The firmware consumes this command only when the hand is in
+        ACTUATOR_ERROR (primary recovery path) or ACTUATOR_IDLE (no-op
+        refresh). It is silently ignored in every other state so mid-operation
+        error bookkeeping is not wiped.
+
+        There is no dedicated ack register - confirm the clear by polling
+        ``get_error_report()`` and the robot status register (expect
+        ``ACTUATOR_IDLE`` and all joint error_report values zeroed).
+        """
+        clear_errors_command = self._command_handler.get_clear_errors_command()
+        self._communication_handler.send_data(clear_errors_command)
+        self.last_time = time.perf_counter()
     
     def get_robot_status(self):
         try:
@@ -166,7 +182,7 @@ class ArtusAPI_V2:
         self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True,timeout=10,acceptable_state=ActuatorState.ACTUATOR_READY.value):
+        if not self._communication_handler.wait_for_ready(vis=True,timeout=10):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")

@@ -28,6 +28,7 @@ class Commands:
     get_feedback_command = 0x68,
     update_param_command = 0x44,
     set_zero_command = 0x15,
+    clear_errors_command = 0x1A,
 
     save_grasp_onboard_command = 0xC8,
     return_grasps_command = 0xD2,
@@ -49,7 +50,8 @@ class Commands:
             'execute_grasp_command': execute_grasp_command,
             'update_param_command' : update_param_command,
             'wipe_sd_command' : wipe_sd_command,
-            'set_zero_command' : set_zero_command
+            'set_zero_command' : set_zero_command,
+            'clear_errors_command' : clear_errors_command
         }
         self.reset_on_start = reset_on_start
 

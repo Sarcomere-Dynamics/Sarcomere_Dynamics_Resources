@@ -50,9 +50,14 @@ def main_menu():
     ║   9 -> Get Feedback Position Data                                ║
     ║   10 -> Get Feedback Velocity Data                               ║
     ║   11 -> Get Feedback Torque Data                                 ║
+    ║   12 -> Get Fingertip Forces                                     ║
+    ║   13 -> Get Voltage                                              ║
+    ║   14 -> Get Average Temperature                                  ║
+    ║   15 -> Get Joint Temperatures                                   ║
+    ║   16 -> Get Error Report                                         ║
     ║                                                                  ║
     ╚══════════════════════════════════════════════════════════════════╝
-    >> Input Command Code (1-8): """
+    >> Input Command Code (1-16): """
     
     )
 
@@ -161,6 +166,8 @@ def example():
                     artusapi.get_joint_temperatures()
                 case '16':
                     artusapi.get_error_report()
+                case 'c':
+                    artusapi.clear_errors()
                 case 'r':
                     artusapi.reset()
                 case 'f':
