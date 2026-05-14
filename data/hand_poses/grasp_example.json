@@ -29,7 +29,7 @@
     },
     "index_spread":
     {
-        "target_angle": 60,
+        "target_angle": 0,
         "target_force": 40,
         "velocity": 40,
         "index": 4

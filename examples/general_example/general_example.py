@@ -187,3 +187,13 @@ def example():
 # ----------------------------------------------------------------------------------
 if __name__ == '__main__':
     example()
+    # import serial
+    # x = serial.Serial(port='COM13',baudrate=250000, timeout= 1)
+    
+    # n = bytearray([0x33])*139
+    
+    # while True:
+    #     x.write(n)
+    #     time.sleep(1)
+    
+    

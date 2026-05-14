@@ -19,7 +19,7 @@ from tqdm import tqdm
 class UART:
     def __init__(self,
                  port='COM9',
-                 baudrate=921600, #115200, 
+                 baudrate=115200, #921600, 
                  timeout=0.5,
                  logger = None,
                  type='UART'):

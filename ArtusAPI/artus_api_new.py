@@ -43,7 +43,7 @@ class ArtusAPI_V2:
                 hand_type='left',
                 communication_frequency = 50, # hz
                 logger = None,
-                baudrate = 115200):
+                baudrate = 115200): #115200 for RS485, 250000 for UART
 
         self.robot_type = robot_type
         self.hand_type = hand_type
@@ -160,7 +160,6 @@ class ArtusAPI_V2:
     def get_robot_status(self):
         try:
             robot_state = self._communication_handler._check_robot_state()
-            
             actuator_state = ActuatorState((robot_state & 0b00001111)).name
             trajectory_return = TrajectoryReturn((robot_state & 0b11110000) >> 4).name
             self.logger.info(f"Actuator state: {actuator_state}, Trajectory return: {trajectory_return}")
@@ -178,6 +177,7 @@ class ArtusAPI_V2:
             calibrate_cmd.append(joint)
         
         self._communication_handler.send_data(calibrate_cmd)
+        time.sleep(3)
         self.last_time = time.perf_counter()
         self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value
 
@@ -186,7 +186,7 @@ class ArtusAPI_V2:
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")
-            self.state = ActuatorState.ACTUATOR_IDLE
+            self.state = ActuatorState.ACTUATOR_IDLE.value
 
     def set_joint_angles_by_list(self, joint_angles:list, control_type:int=3):
         """
@@ -554,6 +554,7 @@ class ArtusAPI_V2:
 
         time.sleep(0.5)
 
+        self.logger.info(f"next line is sending the firmware data")
         # send firmware data 
         self._firmware_updater.update_firmware(fw_size)
 

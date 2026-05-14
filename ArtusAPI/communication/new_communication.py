@@ -50,6 +50,7 @@ class NewCommunication:
         self.communicator.send(data,command_type)
 
     def receive_data(self,amount_dat:int=1,start:int=ModbusMap().modbus_reg_map['feedback_register']): # default is receive robot state
+        #self.logger.info(f"data received is {self.communicator.receive([start,amount_dat])}")
         return self.communicator.receive([start,amount_dat])
     
     def close_connection(self):
@@ -62,17 +63,24 @@ class NewCommunication:
         :int: ActuatorState enum value
         :int: trajectory enum status -- only applicable to actuator active state
         """
+        #self.logger.info(f"entering _check_robot_state")
         ret = self.receive_data()
+        #self.logger.info(f"finished receive_data")
+        
+
         if isinstance(ret, int) and ret <= 0xFFFF:  # Check if ret is a 16-bit value
             high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits
             low_byte = ret & 0xFF          # Extract lower 8 bits
+            #self.logger.info(f"high_byte: {high_byte}, low_byte: {low_byte}")
             return low_byte
         else:
             raise ValueError("Received data is not a 16-bit value")
         return None  # Continue waiting
+    
     def wait_for_ready(self,timeout=15,vis=False,acceptable_state=None):
         start_time = time.perf_counter()
         time.sleep(0.2) 
+        #self.logger.info(f"the self state is: {acceptable_state}")
         if not acceptable_state:
             acceptable_states = [ActuatorState.ACTUATOR_IDLE.value,ActuatorState.ACTUATOR_ERROR.value,ActuatorState.ACTUATOR_READY.value,ActuatorState.ACTUATOR_ACTIVE.value]
         else:
@@ -80,7 +88,10 @@ class NewCommunication:
         if vis:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:
-                    result = self._check_robot_state() & 0xF
+                    #self.logger.info(f"does it get here")
+                    
+                    result = self._check_robot_state() & 0xF 
+                    #self.logger.info(f"does it get here x2")                   
                     self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
                     time_diff = time.perf_counter() - start_time
                     self.ntrips += 1
@@ -98,6 +109,7 @@ class NewCommunication:
         else:
             while 1:
                 result = self._check_robot_state() & 0xF
+                #self.logger.info(f"enters else statement")                   
                 self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
                 self.ntrips += 1
                 if result in acceptable_states:

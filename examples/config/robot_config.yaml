@@ -19,7 +19,7 @@ robots:
     baudrate: 115200
     communication_channel_identifier: '/dev/ttyACM0'
     hand_type: 'right'
-    start_robot: true
+    start_robot: false
     reset_on_start: 0
     streaming_frequency: 30  # data/seconds
     calibrate: true
