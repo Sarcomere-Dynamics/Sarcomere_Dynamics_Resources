@@ -1,5 +1,5 @@
 colorama
-minimalmodbus
+pymodbus>=3.5
 numpy
 psutil
 pyqtgraph
@@ -11,5 +11,4 @@ PyYAML
 pyzmq
 shiboken6
 tqdm
-windows-curses
-zmq
+windows-curses; sys_platform == "win32"
