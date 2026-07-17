@@ -13,7 +13,8 @@ See the LICENSE file in the repository for full details.
 import yaml
 from types import SimpleNamespace
 
-import minimalmodbus
+from pymodbus.client import ModbusSerialClient
+from pymodbus.exceptions import ModbusException
 import serial.tools.list_ports
 
 from ArtusAPI.artus_api_new import ArtusAPI_V2
@@ -23,6 +24,7 @@ from ArtusAPI.common.SlaveIDMap import (
     robot_hand_from_slave_id,
 )
 from ArtusAPI.common.ModbusMap import ModbusMap
+from ArtusAPI.communication.RS485_RTU.rs485_rtu import find_port_holders
 
 import os
 import sys
@@ -104,6 +106,9 @@ class ArtusConfig:
     def _preflight(self, robot_cfg, logger):
         """Validate port and slave ID before instantiating the API, correcting
         robot_cfg in place if either needs to be discovered."""
+        if getattr(robot_cfg, 'communication_method', 'RS485_RTU') == 'Modbus_TCP':
+            # serial port selection and slave ID probing only apply to RS485
+            return robot_cfg
         robot_cfg = self._validate_port_or_select(robot_cfg, logger)
         robot_cfg = self._validate_slave_or_discover(robot_cfg, logger)
         return robot_cfg
@@ -155,18 +160,29 @@ class ArtusConfig:
         status_reg = ModbusMap().modbus_reg_map['feedback_register']
         all_slave_ids = list(SLAVE_ID_BY_ROBOT_HAND.values())
 
-        instrument = minimalmodbus.Instrument(port=port, slaveaddress=configured_slave, debug=False)
-        instrument.serial.baudrate = baudrate
-        instrument.serial.timeout = 0.15
-        instrument.mode = minimalmodbus.MODE_RTU
+        client = ModbusSerialClient(
+            port=port, baudrate=baudrate,
+            bytesize=8, parity='N', stopbits=1,
+            timeout=0.15, retries=0,
+        )
+        if not client.connect():
+            holders = find_port_holders(port)
+            msg = f"Could not open {port} to probe slave ID."
+            if holders:
+                msg += f" Port is held by: {'; '.join(holders)}"
+            raise RuntimeError(msg)
+
+        def _probe(slave_id) -> bool:
+            try:
+                result = client.read_holding_registers(status_reg, count=1, device_id=slave_id)
+                return not result.isError()
+            except ModbusException:
+                return False
 
         try:
             # Probe the configured slave ID first.
-            try:
-                instrument.read_register(registeraddress=status_reg, functioncode=3)
+            if _probe(configured_slave):
                 return robot_cfg
-            except (minimalmodbus.NoResponseError, minimalmodbus.InvalidResponseError):
-                pass
 
             # No response — scan all known IDs.
             print(
@@ -178,13 +194,9 @@ class ArtusConfig:
             for slave_id in all_slave_ids:
                 if slave_id == configured_slave:
                     continue
-                instrument.address = slave_id
-                try:
-                    instrument.read_register(registeraddress=status_reg, functioncode=3)
+                if _probe(slave_id):
                     found_id = slave_id
                     break
-                except (minimalmodbus.NoResponseError, minimalmodbus.InvalidResponseError):
-                    continue
 
             if found_id is None:
                 raise RuntimeError(
@@ -206,7 +218,7 @@ class ArtusConfig:
             return robot_cfg
 
         finally:
-            instrument.serial.close()
+            client.close()
     
     def return_api(self,robot_cfg:dict=None,logger=None):
         """

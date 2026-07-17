@@ -16,10 +16,15 @@ import struct
 from tqdm import tqdm
 
 from .RS485_RTU.rs485_rtu import RS485_RTU
+from .Modbus_TCP.modbus_tcp import ModbusTCP
 from ..common.ModbusMap import ModbusMap,ActuatorState,CommandType
 
 class NewCommunication:
     def __init__(self, port='COM9', baudrate=115200, logger=None, slave_address=1, communication_method="RS485_RTU"):
+        """
+        :param port: serial device for RS485_RTU (e.g. '/dev/ttyUSB0'), or
+                     'host' / 'host:tcp_port' for Modbus_TCP (e.g. '192.168.2.8:502')
+        """
         self.port = port
         self.baudrate = baudrate
         self.logger = logger
@@ -38,8 +43,13 @@ class NewCommunication:
     def _setup_communication(self):
         if self.communication_method == "RS485_RTU":
             self.communicator = RS485_RTU(port=self.port, baudrate=self.baudrate, timeout=0.2, logger=self.logger, slave_address=self.slave_address)
+        elif self.communication_method == "Modbus_TCP":
+            host, _, tcp_port = str(self.port).partition(':')
+            # 0.5s: first connect after idle needs firmware-side ARP resolution; 0.2s flakes
+            self.communicator = ModbusTCP(host=host, port=int(tcp_port) if tcp_port else 502,
+                                          timeout=0.5, logger=self.logger, slave_address=self.slave_address)
         else:
-            raise ValueError("Unknown communication method")
+            raise ValueError(f"Unknown communication method: {self.communication_method}")
 
     def open_connection(self):
         self.communicator.open()

@@ -65,8 +65,10 @@ class ArtusGUIController:
         """
         self.artus_api = self.robot_config.get_api(logger=self.logger)
 
-        # connect wake and calibrate the robot
-        self.artus_api.connect()
+        # always try to get data first 
+        logger.info(self.artus_api.get_robot_status())
+
+        
         # wake if set in config
         if self.robot_config.get_robot_wake_up(hand_type=self.artus_api._robot_handler.hand_type):
             self.artus_api.wake_up()

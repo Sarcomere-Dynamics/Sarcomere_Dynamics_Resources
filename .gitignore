@@ -23,3 +23,7 @@ wheels/
 
 
 test_workspace/
+
+# local work plans (not for repo)
+work_plans/
+CLAUDE.md
