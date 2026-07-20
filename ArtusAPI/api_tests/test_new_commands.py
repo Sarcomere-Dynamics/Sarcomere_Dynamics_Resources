@@ -98,6 +98,19 @@ class TestNewCommands(unittest.TestCase):
         self.assertEqual(out[0], self.nc.modbus_reg_map["target_force_start_reg"])
         self.assertGreater(len(out), 2)
 
+    def test_update_config_command(self):
+        self.assertEqual(
+            self.nc.update_config_command(1),
+            [self.nc.commands["update_config_command"], 1],
+        )
+        self.assertEqual(self.nc.commands["update_config_command"], 0x44)
+
+    def test_update_config_len_command(self):
+        # "AB" -> one packed register 0x4142
+        regs = [0x4142]
+        out = self.nc.update_config_len_command(regs, "AB")
+        self.assertEqual(out, [2, 0x4142])
+
 
 if __name__ == "__main__":
     unittest.main()

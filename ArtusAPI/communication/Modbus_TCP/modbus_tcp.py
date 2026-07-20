@@ -79,6 +79,8 @@ class ModbusTCP:
                     result = self.client.write_registers(data[0], data[1:], device_id=self.slave_address)
                 elif command == CommandType.FIRMWARE_COMMAND.value:
                     result = self.client.write_registers(0, data, device_id=self.slave_address)
+                elif command == CommandType.CONFIG_COMMAND.value:
+                    result = self.client.write_registers(0, data, device_id=self.slave_address)
                 else:
                     self.logger.error(f"Unknown command: {command}")
                     return False

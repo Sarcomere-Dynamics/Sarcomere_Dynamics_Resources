@@ -2,7 +2,7 @@
 
 import unittest
 
-from ArtusAPI.common.ModbusMap import ModbusMap, ActuatorState, CommandType
+from ArtusAPI.common.ModbusMap import ModbusMap, ActuatorState, CommandType, TrajectoryReturn
 
 
 class TestModbusMap(unittest.TestCase):
@@ -28,6 +28,20 @@ class TestModbusMap(unittest.TestCase):
     def test_command_type_values(self):
         self.assertEqual(CommandType.SETUP_COMMANDS.value, 6)
         self.assertEqual(CommandType.TARGET_COMMAND.value, 16)
+
+    def test_config_command_matches_update_config_opcode(self):
+        # CONFIG_COMMAND (68) must equal update_config_command's 0x44 opcode -
+        # both identify the same onboard-config write to the firmware.
+        self.assertEqual(CommandType.CONFIG_COMMAND.value, 0x44)
+
+    def test_actuator_config_states(self):
+        self.assertEqual(ActuatorState.ACTUATOR_CONFIG.value, 14)
+        self.assertEqual(ActuatorState.ACTUATOR_CONFIG_FINISH.value, 15)
+
+    def test_trajectory_return_enum(self):
+        self.assertEqual(TrajectoryReturn.TRAJECTORY_RUNNING.value, 0)
+        self.assertEqual(TrajectoryReturn.TRAJECTORY_STOPPED.value, 1)
+        self.assertEqual(TrajectoryReturn.TRAJECTORY_COMPLETE.value, 2)
 
 
 if __name__ == "__main__":

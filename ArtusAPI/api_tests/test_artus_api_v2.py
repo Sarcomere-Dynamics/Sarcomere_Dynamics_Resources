@@ -205,6 +205,29 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         with patch.object(api, "get_joint_angles", return_value={}):
             self.assertTrue(api.get_hand_feedback_data())
 
+    def test_get_config_writes_wifi_and_reads_ip(self):
+        comm = MagicMock()
+        comm.wait_for_ready.side_effect = [
+            ActuatorState.ACTUATOR_CONFIG.value, ActuatorState.ACTUATOR_CONFIG_FINISH.value,
+            ActuatorState.ACTUATOR_CONFIG.value, ActuatorState.ACTUATOR_CONFIG_FINISH.value,
+        ]
+        comm.receive_data.return_value = [(192 << 8) | 168, (1 << 8) | 50]
+        api, comm = build_api(communication_mock=comm)
+
+        api.get_config("SSID", "PASS")
+
+        # 2 send_data calls per config value (trigger + payload) x 2 values
+        self.assertEqual(comm.send_data.call_count, 4)
+        payload_call_types = [c.args[1] for c in comm.send_data.call_args_list if len(c.args) > 1]
+        self.assertTrue(all(t == CommandType.CONFIG_COMMAND.value for t in payload_call_types))
+        self.assertEqual(len(payload_call_types), 2)
+
+    def test_string_to_registers(self):
+        api, _ = build_api()
+        self.assertEqual(api.string_to_registers("AB"), [0x4142])
+        # odd-length strings are zero-padded to fill the last register
+        self.assertEqual(api.string_to_registers("A"), [0x4100])
+
     def test_get_hand_feedback_data_talos_with_force_patch(self):
         api, _ = build_api(robot_type="artus_talos", hand_type="left")
         api.awake = True

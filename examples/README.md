@@ -21,6 +21,7 @@ If you are new here, treat this folder as a **cookbook**, not as a second produc
 | [`UR_PortForward/`](UR_PortForward/) | Bridging network serial to a local pseudo-TTY (see folder README) | [README](UR_PortForward/README.md) |
 | [`Teleoperation/`](Teleoperation/) | Human-in-the-loop control (glove, camera) | [README](Teleoperation/README.md) |
 | [`Tracking/`](Tracking/) | Hand tracking pipelines and UI glue code | [README](Tracking/README.md) |
+| [`StandardBotsDemo/`](StandardBotsDemo/) | ARTUS hand mounted on a Standard Bots arm, driven by routine state | [README](StandardBotsDemo/README.md) |
 | [`deprecated/`](deprecated/) | Older scripts kept for reference | [README](deprecated/README.md) |
 
 ## Dependencies

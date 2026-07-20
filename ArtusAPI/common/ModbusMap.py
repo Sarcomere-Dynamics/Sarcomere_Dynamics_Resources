@@ -86,8 +86,18 @@ class ActuatorState(Enum):
     ACTUATOR_FLASHING = 11
     ACTUATOR_FLASHING_ACK = 12
     ACTUATOR_RESET = 13
+    ACTUATOR_CONFIG = 14         # onboard config write in progress (e.g. WiFi SSID/password)
+    ACTUATOR_CONFIG_FINISH = 15  # onboard config write acknowledged
+
+class TrajectoryReturn(Enum):
+    """Trajectory sub-state, packed into the upper nibble of the status register
+    alongside ActuatorState in the lower nibble."""
+    TRAJECTORY_RUNNING = 0
+    TRAJECTORY_STOPPED = 1
+    TRAJECTORY_COMPLETE = 2
 
 class CommandType(Enum):
     SETUP_COMMANDS = 6
     TARGET_COMMAND = 16
     FIRMWARE_COMMAND = 33 # actual data being sent
+    CONFIG_COMMAND = 68 # onboard config write (e.g. WiFi SSID/password), same opcode as update_config_command

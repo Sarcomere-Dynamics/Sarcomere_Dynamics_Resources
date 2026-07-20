@@ -271,3 +271,19 @@ class NewCommands(Commands,ModbusMap):
     def get_firmware_command(self,drivers):
         return [self.commands['firmware_update_command'],drivers]
 
+    def update_config_command(self,config_type:int):
+        """
+        Trigger the hand to enter ACTUATOR_CONFIG for an onboard config write.
+        :param config_type: 1 for WiFi SSID, 2 for WiFi password
+        """
+        return [self.commands['update_config_command'],config_type]
+
+    def update_config_len_command(self,config_reg:list,config_value:str):
+        """
+        @param config_reg: list of packed 16-bit registers (see NewCommands helper below
+               or ArtusAPI_V2.string_to_registers) representing config_value
+        @param config_value: the raw string being written, used only for its length
+        @return command_list: length-prefixed register payload written starting at register 0
+        """
+        return [len(config_value),*config_reg]
+

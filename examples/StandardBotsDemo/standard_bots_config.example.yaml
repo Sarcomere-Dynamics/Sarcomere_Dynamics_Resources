@@ -1,0 +1,13 @@
+# Copy this file to `standard_bots_config.yaml` (gitignored) and fill in your
+# own values. Never commit a real API token.
+
+standard_bots:
+  url: "https://your-robot.sb.app"
+  token: "YOUR_STANDARD_BOTS_API_TOKEN"
+  robot_kind: "Live"  # or "Sim" for the Standard Bots simulator
+
+  # Populate these by running find_routine_id_standard_bot.py once you have
+  # a routine built in the Standard Bots routine editor.
+  routine_id: "routine_XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+  first_target_id: "00000000-0000-0000-0000-000000000000"
+  second_target_id: "00000000-0000-0000-0000-000000000000"

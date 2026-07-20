@@ -27,3 +27,8 @@ test_workspace/
 # local work plans (not for repo)
 work_plans/
 CLAUDE.md
+
+gripper_force_demo/
+
+# Standard Bots demo - real API token, never commit
+examples/StandardBotsDemo/standard_bots_config.yaml

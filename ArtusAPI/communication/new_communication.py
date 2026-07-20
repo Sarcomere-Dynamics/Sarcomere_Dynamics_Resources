@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from .RS485_RTU.rs485_rtu import RS485_RTU
 from .Modbus_TCP.modbus_tcp import ModbusTCP
-from ..common.ModbusMap import ModbusMap,ActuatorState,CommandType
+from ..common.ModbusMap import ModbusMap,ActuatorState,CommandType,TrajectoryReturn
 
 class NewCommunication:
     def __init__(self, port='COM9', baudrate=115200, logger=None, slave_address=1, communication_method="RS485_RTU"):
@@ -99,10 +99,12 @@ class NewCommunication:
             with tqdm(total=timeout,unit="s",desc="Waiting for Robot Ready") as progresbar:
                 while 1:
                     #self.logger.info(f"does it get here")
-                    
-                    result = self._check_robot_state() & 0xF 
-                    #self.logger.info(f"does it get here x2")                   
-                    self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
+
+                    raw_state = self._check_robot_state()
+                    result = raw_state & 0xF
+                    trajectory_state = (raw_state & 0b11110000) >> 4
+                    #self.logger.info(f"does it get here x2")
+                    self.logger.info(f"Robot state: {ActuatorState(result).name}, Trajectory: {TrajectoryReturn(trajectory_state).name}")
                     time_diff = time.perf_counter() - start_time
                     self.ntrips += 1
                     if result in acceptable_states:
@@ -118,9 +120,11 @@ class NewCommunication:
                 # print(f"Roundtrip time: {self.ntrips/timeout} trips per second")
         else:
             while 1:
-                result = self._check_robot_state() & 0xF
-                #self.logger.info(f"enters else statement")                   
-                self.logger.info(f"Robot state: {ActuatorState(result & 0xF).name}")
+                raw_state = self._check_robot_state()
+                result = raw_state & 0xF
+                trajectory_state = (raw_state & 0b11110000) >> 4
+                #self.logger.info(f"enters else statement")
+                self.logger.info(f"Robot state: {ActuatorState(result).name}, Trajectory: {TrajectoryReturn(trajectory_state).name}")
                 self.ntrips += 1
                 if result in acceptable_states:
                     return result

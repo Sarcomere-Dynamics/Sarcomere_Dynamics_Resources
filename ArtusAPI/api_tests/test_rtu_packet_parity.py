@@ -218,6 +218,12 @@ class TestPymodbusImplCalls(unittest.TestCase):
         self.assertEqual(call, ("read_holding", 201, 10))
         self.assertEqual(ret, list(range(10)))
 
+    def test_config_command(self):
+        # CONFIG_COMMAND has no minimalmodbus-era baseline (added after the
+        # migration, for onboard WiFi config writes) - not part of SEND_CASES.
+        call = self.capture.send([2, 0x4142, 0x4300], CommandType.CONFIG_COMMAND.value)
+        self.assertEqual(call, ("write_multiple", 0, [2, 0x4142, 0x4300]))
+
 
 @needs_minimalmodbus
 class TestCallParity(unittest.TestCase):

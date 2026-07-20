@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from ArtusAPI.communication.new_communication import NewCommunication, ActuatorState
-from ArtusAPI.common.ModbusMap import ModbusMap
+from ArtusAPI.common.ModbusMap import ModbusMap, TrajectoryReturn
 
 
 class TestNewCommunicationMocked(unittest.TestCase):
@@ -55,6 +55,18 @@ class TestNewCommunicationMocked(unittest.TestCase):
     def test_unknown_method_raises(self):
         with self.assertRaises(ValueError):
             NewCommunication(communication_method="NOT_A_METHOD")
+
+    def test_wait_for_ready_decodes_trajectory_state(self):
+        # low nibble 0x1 = ACTUATOR_IDLE, high nibble 0x2 = TRAJECTORY_COMPLETE
+        inst = MagicMock()
+        inst.receive.return_value = 0x21
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        with patch.object(nc.logger, "info") as log_info:
+            result = nc.wait_for_ready(acceptable_state=ActuatorState.ACTUATOR_IDLE.value)
+        self.assertEqual(result, ActuatorState.ACTUATOR_IDLE.value)
+        logged = " ".join(str(c.args[0]) for c in log_info.call_args_list)
+        self.assertIn(TrajectoryReturn.TRAJECTORY_COMPLETE.name, logged)
 
 
 if __name__ == "__main__":

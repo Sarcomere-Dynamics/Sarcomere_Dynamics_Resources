@@ -27,6 +27,7 @@ class Commands:
     target_command = 0x66,
     get_feedback_command = 0x68,
     update_param_command = 0x44,
+    update_config_command = 0x44, # same opcode as update_param_command; new firmware repurposes it to enter ACTUATOR_CONFIG for onboard config writes (e.g. WiFi SSID/password)
     set_zero_command = 0x15,
     clear_errors_command = 0x1A,
 
@@ -49,6 +50,7 @@ class Commands:
             'return_grasps_command': return_grasps_command,
             'execute_grasp_command': execute_grasp_command,
             'update_param_command' : update_param_command,
+            'update_config_command' : update_config_command,
             'wipe_sd_command' : wipe_sd_command,
             'set_zero_command' : set_zero_command,
             'clear_errors_command' : clear_errors_command

@@ -16,18 +16,12 @@ import signal
 import math
 from enum import Enum
 from tracemalloc import start
-from .common.ModbusMap import ModbusMap
+from .common.ModbusMap import ModbusMap,TrajectoryReturn
 from .common.SlaveIDMap import expected_slave_id
 from .commands import NewCommands
 from .communication.new_communication import NewCommunication,ActuatorState,CommandType
 from .robot import Robot
 from .firmware_update import FirmwareUpdaterNew
-
-# trajectory returns are the return values for the trajectory enum
-class TrajectoryReturn(Enum):
-    TRAJECTORY_RUNNING = 0
-    TRAJECTORY_STOPPED = 1
-    TRAJECTORY_COMPLETE = 2
 
 class ArtusAPI_V2:
     """
@@ -156,7 +150,82 @@ class ArtusAPI_V2:
         clear_errors_command = self._command_handler.get_clear_errors_command()
         self._communication_handler.send_data(clear_errors_command)
         self.last_time = time.perf_counter()
-    
+
+    def get_config(self, wifi_name:str, wifi_pass:str):
+        """
+        Write new WiFi credentials to the hand's onboard config over Modbus and
+        read back the IP address it was assigned. Applicable to hands with a
+        WiFi-capable communication module; on wired transports (RS485_RTU,
+        Modbus_TCP) this still exercises the onboard config write/ack flow but
+        the reported IP reflects the WiFi radio regardless of the transport
+        used to send this command.
+
+        Sequence per parameter (SSID, then password):
+          1. send update_config_command -> hand enters ACTUATOR_CONFIG
+          2. send the length-prefixed register payload for the value
+          3. wait for ACTUATOR_CONFIG_FINISH ack
+        Then read the assigned IP from the feedback position registers.
+        """
+        ssid_regs = self.string_to_registers(wifi_name)
+        pass_regs = self.string_to_registers(wifi_pass)
+
+        config_types = [1, 2] # 1 -> wifi name, 2 -> wifi pass
+        labels = {1: "wifi name", 2: "wifi pass"}
+        regs = {1: ssid_regs, 2: pass_regs}
+        values = {1: wifi_name, 2: wifi_pass}
+
+        for config_type in config_types:
+            config_command = self._command_handler.update_config_command(config_type)
+            self._communication_handler.send_data(config_command)
+
+            ready_result = self._communication_handler.wait_for_ready(vis=False,acceptable_state=ActuatorState.ACTUATOR_CONFIG.value,timeout=30)
+            if not ready_result:
+                self.logger.error("Hand timed out waiting for ready")
+                continue
+
+            length_command = self._command_handler.update_config_len_command(regs[config_type],values[config_type])
+            self._communication_handler.send_data(length_command, CommandType.CONFIG_COMMAND.value)
+
+            ready_result = self._communication_handler.wait_for_ready(vis=False,acceptable_state=ActuatorState.ACTUATOR_CONFIG_FINISH.value,timeout=10)
+            if not ready_result:
+                self.logger.error("Hand timed out waiting for ready")
+            else:
+                self.logger.info(f"Finished writing {labels[config_type]}")
+            time.sleep(0.2)
+
+        feedback_data = self._communication_handler.receive_data(amount_dat=4,start=ModbusMap().modbus_reg_map['feedback_position_start_reg'])
+
+        bytes_out = []
+        for reg in feedback_data[:2]: # only first 2 registers contain the IP
+            bytes_out.append((reg >> 8) & 0xFF)
+            bytes_out.append(reg & 0xFF)
+
+        ip_address = ".".join(str(b) for b in bytes_out)
+
+        if ip_address == '0.0.0.0':
+            self.logger.info("WiFi failed to connect. Please retry.")
+        else:
+            self.logger.info(f"WiFi parameters set as:\nWiFi name: {wifi_name}\nWiFi pass: {wifi_pass}\nIP address: {ip_address}\nRestart the API with the corresponding IP address.")
+
+    @staticmethod
+    def string_to_registers(s:str) -> list:
+        """
+        Convert a string into a list of 16-bit Modbus register values.
+        Each register holds two ASCII bytes.
+        """
+        data = s.encode("utf-8")
+
+        # pad to even length
+        if len(data) % 2 != 0:
+            data += b"\x00"
+
+        registers = []
+        for i in range(0, len(data), 2):
+            reg = (data[i] << 8) | data[i + 1]
+            registers.append(reg)
+
+        return registers
+
     def get_robot_status(self):
         try:
             robot_state = self._communication_handler._check_robot_state()
