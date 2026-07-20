@@ -2,239 +2,173 @@
 
 # Python ARTUS Robotic Hand API
 
-This repository contains a Python API for controlling the ARTUS robotic hands by Sarcomere Dynamics Inc.
+A Python API for controlling the ARTUS family of robotic hands (Lite, Lite+, Talos, Scorpion, Dex) by Sarcomere Dynamics Inc., over RS485/Modbus RTU or TCP.
 
-Please contact the team if there are any issues that arise through the use of the API. See [Software License](/Software%20License_24March%202025.pdf).
-
-## Introduction
->[!IMPORTANT]
-__Please read through the entire README and the _User Manual_ before using the ARTUS hand__
+Please contact the team if any issues arise through use of the API. See [Software License](/Software%20License_24March%202025.pdf).
 
 >[!IMPORTANT]
->Please see [changelog folder](/changelog/) for updates and notes.
+>Please read through this entire README **and** the _User Manual_ before using the ARTUS hand. See the [changelog folder](/changelog/) for release notes and updates.
 
-The user manual contains in-depth operational and troubleshooting guidelines for the device. 
+## Table of Contents
+* [Quick Start](#quick-start)
+* [Supported Hardware](#supported-hardware)
+* [Documentation Map](#documentation-map)
+* [1. Getting Started](#1-getting-started)
+  * [1.1 Software Requirements](#11-software-requirements)
+  * [1.2 Installing the Python API](#12-installing-the-python-api)
+  * [1.3 Hardware Requirements](#13-hardware-requirements)
+* [2. Basic Usage](#2-basic-usage)
+  * [2.1 Normal Startup Procedure](#21-normal-startup-procedure)
+  * [2.2 Normal Shutdown Procedure](#22-normal-shutdown-procedure)
+  * [2.3 LED States](#23-led-states)
+  * [2.4 Running `general_example.py`](#24-running-general_examplepy)
+* [3. Control Examples](#3-control-examples)
+  * [3.1 GUI](#31-gui)
+  * [3.2 Manus Glove Teleoperation](#32-manus-glove-teleoperation)
+  * [3.3 MediaPipe Teleoperation](#33-mediapipe-teleoperation)
+* [Revision Control](#revision-control)
+* [Appendix](#appendix)
 
-This repository contains the following:
-* [ARTUS API](/ArtusAPI/)
-* [ROS2 Node](/ros2/)
-* [Examples](/examples/)
+## Quick Start
 
-### Documentation map (by folder)
+For readers who already know their way around Python and just want the shortest path from clone to a moving joint:
 
-Short guides for navigating the tree—useful if you are new to robotics or to this repo:
+1. Install Python 3.10–3.13, then install the API: `pip install ArtusAPI` (see [1.2](#12-installing-the-python-api)).
+2. Connect the hand's power harness and USB-C data cable (see [1.3](#13-hardware-requirements)).
+3. Set your hand model/port in [`examples/config/robot_config.yaml`](examples/config/README.md).
+4. Run [`examples/general_example/general_example.py`](examples/general_example/README.md) and follow the prompts.
+
+Everyone else, continue with [Getting Started](#1-getting-started) below — it walks through each of these steps in detail.
+
+## Supported Hardware
+
+Every hand variant supported by the API has its own README covering wiring, joint maps, and calibration requirements specific to that model. Start there once your hand is connected.
+
+| Hand | Left/Right | Calibration required | Hardware README |
+|---|---|---|---|
+| ARTUS Lite | Both | No | [ARTUS_LITE.md](/ArtusAPI/robot/artus_lite/ARTUS_LITE.md) |
+| ARTUS Lite+ | Both | No | [ARTUS_LITE_PLUS.md](/ArtusAPI/robot/artus_lite/ARTUS_LITE_PLUS.md) |
+| ARTUS Talos | Both | **Yes** | [ARTUS_TALOS.MD](/ArtusAPI/robot/artus_talos/ARTUS_TALOS.MD) |
+| ARTUS Scorpion | N/A (single DOF gripper) | **Yes** | [ARTUS_SCORPION.md](/ArtusAPI/robot/artus_scorpion/ARTUS_SCORPION.md) |
+| ARTUS Dex | Both | No | *hardware README pending — see [`ArtusAPI/robot/artus_dex/`](/ArtusAPI/robot/artus_dex/) source* |
+
+>[!IMPORTANT]
+>Talos and Scorpion will not enter an active targeting state until `calibrate()` has been run. See [2.1 Normal Startup Procedure](#21-normal-startup-procedure).
+
+Before updating firmware or the API package, check [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md) for which versions are known to work together.
+
+## Documentation Map
+
+Short guides for navigating the tree — useful if you are new to robotics or to this repo:
 
 | Area | README |
 |------|--------|
 | Python library layout | [ArtusAPI/README.md](ArtusAPI/README.md) |
 | Supported hand models (code + datasheets) | [ArtusAPI/robot/README.md](ArtusAPI/robot/README.md) |
 | Runnable sample programs | [examples/README.md](examples/README.md) |
+| Configuration file (`robot_config.yaml`) | [examples/config/README.md](examples/config/README.md) |
 | Images and saved pose JSON | [data/README.md](data/README.md) |
 | Experimental / internal scripts | [test_workspace/README.md](test_workspace/README.md) |
-| API notes and CLI / flash docs | [docs/README.md](docs/README.md) |
+| API notes, CLI / flash docs, firmware compatibility | [docs/README.md](docs/README.md) |
 | Release-style notes | [changelog/README.md](changelog/README.md) |
-| ROS 2 workspace entry | [ros2/README.md](ros2/README.md) |
 | URDF ↔ real joint mapping | [urdf/README.md](urdf/README.md) |
 
-## Robot Specific READMEs
-Below is a list of the ARTUS hand-specific READMEs that are compatible with the API. This includes _electrical wiring specifics_, _joint maps_ and more:
-* [ARTUS Lite Information](/ArtusAPI/robot/artus_lite/ARTUS_LITE.md)
-* [ARTUS Talos Information](/ArtusAPI/robot/artus_talos/ARTUS_TALOS.MD)
-* [ARTUS Scorpion Information](/ArtusAPI/robot/artus_scorpion/ARTUS_SCORPION.md)
+## 1. Getting Started
 
-### VERY IMPORTANT
-* [Requirements](#requirements)
-* [Normal Startup Procedure](#normal-startup-procedure)
-* [Normal Shutdown Procedure](#normal-shutdown-procedure)
+The first step to working with an ARTUS hand is connecting to it and achieving joint control and feedback. It is highly recommended that this be done for the first time via the [general example program](#24-running-general_examplepy). The sections below walk through everything needed to get there.
 
-## Table of Contents
-* [Getting Started](#1-getting-started)
-  * [1.1 Requirements](#11-requirements)
-  * [1.2 Python Requirements](#12-python-requirements)
-    * [1.2.1 Use-as-Released](#121-use-as-released)
-    * [1.2.2 Use Cloned Repository](#122-use-cloned-repository)
-    * [1.3 Hardware Requirements](#13-hardware-requirements) 
-* [Basic Usage](#2-basic-usage)
-  * [2.1 Normal Startup Procedure](#21-normal-startup-procedure)
-  * [2.2 Normal Shutdown Procedure](#22-normal-shutdown-procedure)
-  * [2.3 LED States](#23-led-states)
-  * [2.4 Running _general_example.py_](#24-running-general_examplepy)
-  * [2.4.1 Video Introduction](#241-video-introduction)
-* [Control Examples](#artus-lite-control-examples-setup)
-  * [GUIv2](#1-gui-setup)
-  * [ROS2](#2-ros2-node-control-setup)
-  * [Manus Glove Teleoperation](#3-manus-glove-setup)
-
-See the [Appendix](#appendix) for additional links and information.
-
-## Wiring Diagram
-See below the wiring diagram with the circuit connection names and cable colours. You can use either the 8P nano M8 or the 4P nano M8. We recommend a 200W rated 24V power supply, please review the power requirements here: [ARTUS Lite Information](/ArtusAPI/robot/artus_lite/ARTUS_LITE.md) 
-
-## 1. Getting Started 
-__Sections__
-* [1.1 Requirements](#11-requirements)
-* [1.2 Python Requirements](#12-python-requirements)
-  * [1.2.1 Use-as-Released](#121-use-as-released)
-  * [1.2.2 Use Cloned Repository](#122-use-cloned-repository)
-  * [1.3 Hardware Requirements](#13-hardware-requirements) 
-
-The first step to working with the Artus Lite is to connect to the hand, and achieve joint control and joint feedback. It is highly recommended that this should be done for the first time via the [example program provided](#24-running-general_examplepy). In preparation for this example, please follow the subsequent sections step by step, outlining all requirements for working with both the initial example program, as well as the API as a whole.
-
-### 1.1 Requirements
-Below is a list of Requirements for the Artus to be compatible 
-1. Python v3.10+ - Requires Python version >= 3.10 & < 3.14 installed on the host system. Please visit the [Python website](https://www.python.org/downloads/) to install Python. Within the setup instructions, there will be a prompt that allows you to "disable PATH length limit". Please continue with this option selected.
-2. FTDI USB Driver (Windows Only) - Necessary for the Artus Lite to be recognized as a USB device once it is connected over USBC, go to [FTDI Driver Download](https://ftdichip.com/drivers/vcp-drivers/) to install the virtual COM port driver. 
-
-
->[!IMPORTANT]
->ArtusAPIv2 is currently not pushed to pip and must be run locally.
-
-### 1.2 Python Requirements
-There are two ways to install the Python API. The first is through Python's package manager, where the API can be imported as a library like any other. The second is through this cloned Github repository, using and importing the local files. 
+### 1.1 Software Requirements
+* **Python 3.10–3.13** — [download here](https://www.python.org/downloads/). On Windows, enable "disable PATH length limit" during setup.
+* **FTDI USB driver (Windows only)** — required for the hand to be recognized as a USB device over USB-C. [Download here](https://ftdichip.com/drivers/vcp-drivers/).
 
 >[!NOTE]
->If you have multiple Python installations (different versions) on your PC, ensure that your *pip* commands apply to the installation/version you intend to use to run the Artus API, and is the same one used later in any IDE used to create your own programs. You can ensure this by adding the path to the to-be-used python executable as a prefix to this command. An example of this is below.
->```
->C:\Users\zanem\AppData\Local\Programs\Python\Python311\python.exe -m pip install psutil
->```
->Take a look at [these steps on creating and using a virtual environment](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/) to ensure that you are using the correct python at all times
+>If you have multiple Python installations, make sure your `pip` commands target the same interpreter you'll use to run the API. Prefix commands with the full path to the intended `python.exe`/`python3`, or use a [virtual environment](https://www.freecodecamp.org/news/how-to-setup-virtual-environments-in-python/).
 
-#### 1.2.1 Use-as-Released
-The ArtusAPI is available via pip [here](https://pypi.org/project/ArtusAPI/) using the following command:
-```python
+### 1.2 Installing the Python API
+
+There are two ways to install, depending on whether you plan to modify the source.
+
+**Option A — Use as released (recommended for most users)**
+```bash
 pip install ArtusAPI
 ```
-Once this is complete, the software dependecies are all met! 
+This is published on [PyPI](https://pypi.org/project/ArtusAPI/). Make sure you're on the latest version before filing an issue.
 
->[!NOTE]
->Please make sure that the latest version of the pip package is installed.
-
-
-#### 1.2.2 Use Cloned Repository
-If you plan to eventually make changes to the source code, you will need to clone the GitHub *SARCOMERE_DYNAMICS_RESOURCES* repository. Once cloned, you can utilize the *requirements.txt* included in the package to install the dependencies. With a terminal open, execute the following command:
-```
-pip install -r path\to\requirements.txt
-```
-Alternatively, if your terminal is open in the cloned repo's folder, you can run the following simpler version of the above command. 
-```
-pip install -r requirements.txt
+**Option B — Use the cloned repository (for contributors / source changes)**
+```bash
+git clone <this-repo>
+cd Sarcomere_Dynamics_Resources
+pip install -r requirements_v2.txt
 ```
 
 ### 1.3 Hardware Requirements
-1. Power and Data Harness connection (options below)
-	1. __4P Nano M8 (Power) + USB-C (COM)__. These are the harnesses that should be connected when running the *general_example.py* script below. Out-of-the-box, the hand is set up to use USBC as the communication method. 
-	2. 8P Nano M8 (Power + COM). This harness setup is reserved for more advanced use, once you are familiar with the hand. This harness allows for CAN or RS485 communication and power all-in-one.
+
+Connect power and data using the supplied cables. Please see robot's exact documentation pages for specific wiring. 
 
 >[!NOTE]
->Wiring Connection may vary depending on the Artus model. Please refer to those specific datasheets.
+>Wiring may vary by model — always check the [hardware README for your specific hand](#supported-hardware).
 
 <div align=center>
-  <img src='data/images/wiring_diagram.png'>
+  <img src='data/images/wiring_diagram.png' alt='Example wiring diagram' />
+
+  <sub>
+    <b>Example wiring for Artus Lite:</b> The diagram above shows the required wiring layout for the Artus Lite hand, including power, ground, and data connections. Always reference your hand model’s specific documentation for any model-specific differences before wiring.
+  </sub>
 </div>
 
 ## 2. Basic Usage
-This section covers very basic usage of the Artus Lite using **`ArtusAPI_V2`** (the supported Python API in this repository).
 
-__Sections__
-* [2.0.1 Configuration File](#201-configuration-file)
-* [2.1 Normal Startup Procedure](#21-normal-startup-procedure)
-* [2.2 Normal Shutdown Procedure](#22-normal-shutdown-procedure)
-* [2.3 LED States](#23-led-states)
-* [2.4 Running _general_example.py_](#24-running-general_examplepy)
-* [2.4.1 Video Introduction](#241-video-introduction)
-
-### 2.0.1 Configuration File
-Please refer to the [Configuration File README](/examples/config/README.md) for more information on the setting the configuration file.
+This section covers basic usage via **`ArtusAPI_V2`** (see [`ArtusAPI/artus_api_new.py`](ArtusAPI/artus_api_new.py)), the only supported entry point in this repository.
 
 ### 2.1 Normal Startup Procedure
-There is a standard series of commands that need to be followed before sending target commands or receiving feedback data is possible. 
 
-Before any software, ensure that the power connector is secured and connected to the Artus hand and if using a wired connection (Serial or CANbus), ensure the connection/cable is good. 
-
-The Python library in this repository exposes **`ArtusAPI_V2`** (see [`ArtusAPI/artus_api_new.py`](ArtusAPI/artus_api_new.py)). The legacy module **`artus_api.py` has been removed**; use `ArtusAPI_V2` for all supported hands.
-
-First, open communication with the hand. Creating an `ArtusAPI_V2` instance calls `connect()` internally; if you disconnected, call `connect()` again before continuing.
-
-Second, run `wake_up()` (with the appropriate control mode for your application) so the hand loads its configuration and enters a ready state.
-
-Once these steps are complete, optionally run `calibrate()` if your robot model requires it. Otherwise, the system is ready to send targets and read feedback.
+1. **Check hardware** — confirm the power connector is secure and, if using a wired connection (Serial or CANbus), that the cable is good.
+2. **Connect** — creating an `ArtusAPI_V2` instance calls `connect()` internally. If you disconnect manually, call `connect()` again before continuing.
+3. **Wake up** — call `wake_up()` with the control mode appropriate for your application so the hand loads its configuration and enters a ready state.
+4. **Calibrate (if required)** — run `calibrate()` if your model requires it (see [Supported Hardware](#supported-hardware)). Otherwise the hand is ready to accept targets and report feedback.
 
 >[!NOTE]
->Exact parameters for `wake_up()` (for example position vs velocity control) depend on your script; see [`examples/general_example/general_example.py`](examples/general_example/general_example.py) and [`docs/API Functionality.md`](docs/API%20Functionality.md).
-
->[!IMPORTANT]
->calibration requirement is based on the robot model itself. Artus Talos & Artus Scorpion require calibration to be completed to enter an active targetting state.
->See the [specific ReadMEs](#robot-specific-readmes).
+>Exact `wake_up()` parameters (e.g. position vs. velocity control) depend on your script — see [`examples/general_example/general_example.py`](examples/general_example/general_example.py) and [`docs/API Functionality.md`](docs/API%20Functionality.md).
 
 ### 2.2 Normal Shutdown Procedure
-When getting ready to power off the device please do the following:
-* Send a zero position command to all the joints so that the hand is opened
-* Once the hand is in an open position, call `sleep()` on your API instance to save parameters to the SD Card (if applicable)
-* When ACK is received, the device can be turnedd off. 
+
+1. Send a zero position command to all joints so the hand opens.
+2. Once open, call `sleep()` to save parameters to the SD card (if applicable).
+3. Wait for the ACK — once received, the device can be powered off.
 
 >[!NOTE]
->This is different than the mk8 where the SD Card would save periodically. Now, saving to SD Card is more intentional.
+>Unlike the Artus Lite mk8 (which saved to SD card periodically), saving is now intentional and only happens on `sleep()`.
 
 ### 2.3 LED States
-See the [specific ReadMEs](#robot-specific-readmes).
+See the [hardware README for your specific hand](#supported-hardware).
 
-### 2.4 Running _general_example.py_
-See the [General Example README to complete this task](/examples/general_example/README.md)
+### 2.4 Running `general_example.py`
+See the [General Example README](/examples/general_example/README.md) for full instructions.
 
-#### 2.4.1 Video Introduction
-[![Getting Started Video (deprecated)](/data/images/thumbnail.png)](https://www.youtube.com/watch?v=30BkuA0EkP4)
+## 3. Control Examples
 
-## Artus Control Examples Setup
+### 3.1 GUI
+Desktop UI for interactive testing. See the [Artus GUI README](examples/GUI/README.md).
 
-### 1. GUI Setup
-Please check the [Artus GUI README](examples/GUI/README.md) for a GUI setup to control the Artus Lite hand.
+### 3.2 Manus Glove Teleoperation
+Drive an ARTUS hand from a Manus glove in real time. See the [Manus Glove README](examples/Teleoperation/ManusGloveControl/README.md).
 
-Also, check the video below for a demonstration of the GUI setup.
->[!NOTE]
->Video is for GUIv1, but GUIv1 is depracated.
-
-<div align="center">
-  <a href="https://www.youtube.com/watch?v=l_Sl6bAeGuc">
-  <img src="./data/images/gui.png" alt="Watch the video" width="200" />
-  </a>
-</div>
-
-<!-- ### 2. ROS2 Node Control Setup
-Please check the [Artus ROS2 Node README](ros2/artuslite_ws/README.md) for a ROS2 node setup to control the Artus Lite hand.
-
-Also, check the video below for a demonstration of the ROS2 node setup.
-
-<div align="center">
-  <a href="https://www.youtube.com/watch?v=GHyG1NuuRv4">
-  Watch the video
-  </a>
-</div>
-
-### 3. Manus Glove Setup
-Please check the [Manus Glove README](examples/Control/ArtusLiteControl/ManusGloveControl/README.md) for a Manus Glove setup to control the Artus Lite hand.
-
-Also, check the video below for a demonstration of the Manus Glove setup.
-
-<div align="center">
-  <a href="https://www.youtube.com/watch?v=SPXJlxMaDVQ&list=PLNUrV_GAAyA8HNBAvwBlsmIqoWiJJLRwW&index=2">
-  Watch the video
-  </a>
-</div> -->
-
-
+### 3.3 MediaPipe Teleoperation
+Drive an ARTUS hand from a webcam using Google MediaPipe hand tracking. See the [MediaPipe Control README](examples/Teleoperation/GoogleMediaPipeControl/README.md).
 
 ## Revision Control
-| Date  | Revision | Description | Pip Release |
+| Date  | Revision | Changelog | Pip Release |
 | :---: | :------: | :---------: | :----------: |
-| Nov. 14, 2023 | v1.0b | Initial release - Artus Lite Mk 5 | NA |
-| Apr. 23, 2024 | v1.1b | Beta release - Artus Lite Mk 6 | NA |
-| Oct. 9, 2024 | v1.0 | Artus Lite Release | v1.0 |
-| Oct. 23, 2024 | v1.0.2 | awake parameter added, wake up function in connect | v1.0.1 |
-| Nov. 14, 2024 | v1.1 | firmware v1.1 release | v1.1 |
+| Jul. 20, 2026 | v2.1 | [2026-07.md](/changelog/2026-07.md) | - |
+| Dec. 31, 2025 | v2.0 | [2025-12.md](/changelog/2025-12.md) | - |
+| Jun. 2, 2025 | v1.3.10 | [2025-06.md](/changelog/2025-06.md) | v1.3.10 |
 | Apr. 22, 2025 | v1.1.1 | readmes/documentation updated | - |
-| Jun.  2, 2025 | v1.3.10 | changes publish, see [changelog](/changelog/)  | v1.3.10 |
-| Dec. 31, 2025 | v2.0 | addition of Talos and Scorpion | NA |
+| Nov. 14, 2024 | v1.1 | firmware v1.1 release | v1.1 |
+| Oct. 23, 2024 | v1.0.2 | awake parameter added, wake up function in connect | v1.0.1 |
+| Oct. 9, 2024 | v1.0 | Artus Lite Release | v1.0 |
+| Apr. 23, 2024 | v1.1b | Beta release - Artus Lite Mk 6 | - |
+| Nov. 14, 2023 | v1.0b | Initial release - Artus Lite Mk 5 | - |
 
 ## Appendix
-* [Artus API (`ArtusAPI_V2`)](ArtusAPI/artus_api_new.py) — Main Python class that talks to ARTUS hands (Lite, Talos, Scorpion, Dex, and related variants). The older `artus_api.py` entry point has been removed from this repository.
-* [API Docs](docs/API%20Functionality.md) - Contains a little more information on application and reasoning behind the API functions.
+* [Artus API (`ArtusAPI_V2`)](ArtusAPI/artus_api_new.py) — Main Python class that talks to ARTUS hands (Lite, Lite+, Talos, Scorpion, Dex, and related variants). The legacy v1 `artus_api.py` entry point has been removed from this repository.
+* [API Docs](docs/API%20Functionality.md) — Background on the reasoning behind the API's functions.

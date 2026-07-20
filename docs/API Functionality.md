@@ -52,23 +52,24 @@ On models with many DOF (for example Artus Lite), joints can be set together or 
 pinky_dict = {"pinky_flex" : 
                             {
                                 "index": 14,
-                                "input_angle" : 90
+                                "target_angle" : 90
                             },
               "pinky_d2" :
                             {
                                 "index":15,
-                                "input_angle" : 90
+                                "target_angle" : 90
                             }
             }
 
 hand.set_joint_angles(pinky_dict)
 ```
 
-Notice that the above example does not include the `"input_speed"` field that the json file has. The `"input_speed"` field is optional and will default to the nominal speed.
+Notice that the above example does not include the `"target_velocity"` or `"target_force"` field that the json file has. These field are optional and will default to their respective nominal values based on the robot model.
 
 ### Input Units
-* Input Angle: the input angle is an integer value in degrees
-* velocity: the velocity is in a percentage unit 0-100. Minimum movement requirement is around 30. This value pertains to the gripping force of the movement. 
+* `target_angle`: the target angle is an integer value, usually in degrees, but see specific robot model for more information on units
+* `target_velocity`: the target velocity is an integer value, usually in degrees per second, but see specific robot model for more information on units
+* `target_force`: the target force is a float value, usually in Newtons, but see specific robot model for more information on units
 
 ### Getting feedback
 
@@ -76,16 +77,11 @@ With **`ArtusAPI_V2`**, request feedback with explicit getters such as `get_join
 
 After reads complete, updated values are reflected under `hand._robot_handler.robot.hand_joints` (field names depend on the robot model).
 
-Feedback includes status/ACK semantics, angles (degrees where applicable), motor current (mA), temperature, etc. ACK meanings include:
+### SD Card Interactions
 
-| ACK Value  | Meaning | 
-| :---: | :------: | 
-| 2 | ACK_RECEIVED FOR BLOCKING COMMANDS | 
-| 9 | ERROR |
-| 25 | TARGET ACHIEVED |
+>[!NOTE]
+>**Not yet implemented in `ArtusAPI_V2`.** The onboard SD-card grasp workflow below (`save_grasp_onhand`, `execute_grasp`, `get_saved_grasps_onhand`) exists as firmware-level commands but is not yet exposed as public methods on `ArtusAPI_V2`. This section describes the intended behavior once it lands.
 
-
-### SD Card Intersactions
 Before using the Artus Lite's digital IO functionality to communicate with a robotic arm, there are two steps that need to be done. 
 1. Users must set the grasps that they want to call. This is done through the UI or general_example.py, using the `save_grasp_onhand` command. This command will save the last command sent to the hand in the designated position specified (1-6) on the SD card and persist through resets.
 2. Users can use the `execute_grasp` command to call the grasps through the API. 
@@ -94,13 +90,25 @@ Before using the Artus Lite's digital IO functionality to communicate with a rob
 Each of the above will print the target command saved on the SD card to the terminal.
 
 ### Changing Communication Methods
-To change the communication method between USBC, RS485 and CAN, use the `update_param` command. __Additional steps have to be taken to switch to CAN__. Please reach out to the Sarcomere Dynamics team.
+As of `v2.1`, all communications channels are active in parallel.
 
 ### Controlling multiple hands
-We can define two instances of hands with different `communication_channel_identifier`. In theory, it can spin up an unlimited amount of hands, bottlenecked by the amount of wifi controllers and COM ports associated with the machine.
+The bottleneck for controlling multiple systems is their MODBUS ID which is currently hard-coded by default and specific to the robot model. Same handidness robot hands can be controlled from the same source through separate serial channels. 
 
 ### Special Commands
-The following commands are to be used in only certain circumstances with the help of the Sarcomere Dynamics Team. __THESE COMMANDS ARE NOT TO BE USED WITHOUT INSTRUCTION FROM SARCOMERE DYNAMICS INC.__
 
-* `reset` command is to be used when a finger is jammed in an closed state and won't respond to a open command, requiring the index of the joint and the motor. 
-* `hard_close` command is used when a joint is fully opened and isn't responding to closing command, requiring the index of the joint and the motor.
+### Other API Methods
+
+Beyond joint control and feedback, `ArtusAPI_V2` exposes:
+
+| Method | Purpose |
+|---|---|
+| `set_control_type(control_type)` | Switch the hand's active control type (position/velocity/torque) without a full `wake_up()`. |
+| `set_home_position()` | Moves the hand to its home position at the default velocity. |
+| `get_robot_status()` | Reads and decodes the hand's current actuator and trajectory state. |
+| `get_fingertip_forces()` | Reads fingertip force feedback (on hands with force sensors). |
+| `get_avg_temperature()` | Reads the hand's average temperature feedback. |
+| `get_error_report()` | Reads the per-joint actuator error bitfield report. |
+| `clear_errors()` | Explicitly clears latched actuator errors. |
+| `get_config(wifi_name, wifi_pass)` | Writes new WiFi credentials to the hand and reads back its assigned IP. |
+| `update_firmware(file_location=None, drivers_to_flash=None)` | Flashes new firmware to one or all actuator drivers on the hand. See [`docs/COMPATIBILITY.md`](COMPATIBILITY.md) before updating. |

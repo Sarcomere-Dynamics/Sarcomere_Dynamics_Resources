@@ -15,13 +15,3 @@ With pytest (optional):
 pip install pytest
 PYTHONPATH=. python3 -m pytest ArtusAPI/api_tests -v
 ```
-
-## Not publishing to GitHub
-
-To keep this folder out of a public clone, add to the repo `.gitignore`:
-
-```
-ArtusAPI/api_tests/
-```
-
-Remove that line if you choose to publish tests later.
