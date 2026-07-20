@@ -4,10 +4,18 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+"""
+
+"""Coordinates an ARTUS hand grasp/release with a Standard Bots pick-and-place routine.
+
+Wakes up the ARTUS hand, then polls the Standard Bots robot's running
+routine for its current step. As the arm reaches the pick/place targets,
+the script alternates grasping and opening the hand so its state tracks
+the arm's position through a repeating pick-drop cycle.
 """
 
 import time
@@ -34,6 +42,18 @@ from examples.config.configuration import ArtusConfig
 from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_config
 
 def setup_logger(level='ERROR', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):
+    """Creates (or reuses) a console logger for the ArtusAPI example.
+
+    Args:
+        level: Logging level for both the logger and its console handler
+            (e.g. 'ERROR', 'INFO').
+        format: Format string passed to logging.Formatter for console
+            output.
+
+    Returns:
+        logging.Logger: Logger named 'ArtusAPI_Example' with a console
+        handler attached (attached only once across repeated calls).
+    """
     logger = logging.getLogger('ArtusAPI_Example')
     logger.setLevel(level)
     console_handler = logging.StreamHandler()
@@ -51,6 +71,12 @@ hand_poses_path = os.path.join(PROJECT_ROOT, 'data', 'hand_poses')
 
 # Helper functions to trigger hand movements
 def execute_grasp():
+    """Sends the grasp_example.json pose to the ARTUS hand.
+
+    Loads the pose from data/hand_poses/grasp_example.json, fills in each
+    joint's target_velocity and target_force from the robot's configured
+    defaults, and sends the resulting pose via artusapi.set_joint_angles.
+    """
     logger.info("Executing Grasp")
     with open(os.path.join(hand_poses_path, 'grasp_example.json'), 'r') as file:
         pose_dict = json.load(file)
@@ -60,6 +86,12 @@ def execute_grasp():
     artusapi.set_joint_angles(pose_dict)
 
 def execute_open():
+    """Sends the grasp_open.json pose to the ARTUS hand.
+
+    Loads the pose from data/hand_poses/grasp_open.json, fills in each
+    joint's target_velocity and target_force from the robot's configured
+    defaults, and sends the resulting pose via artusapi.set_joint_angles.
+    """
     logger.info("Executing Open")
     with open(os.path.join(hand_poses_path, 'grasp_open.json'), 'r') as file:
         pose_dict = json.load(file)

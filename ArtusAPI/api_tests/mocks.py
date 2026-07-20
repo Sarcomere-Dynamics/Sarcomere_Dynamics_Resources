@@ -12,6 +12,13 @@ from ArtusAPI.communication.new_communication import ActuatorState
 
 
 def make_communication_mock() -> mock.MagicMock:
+    """Builds a MagicMock standing in for NewCommunication.
+
+    Returns:
+        A MagicMock with the NewCommunication methods used by ArtusAPI_V2
+        (open_connection, close_connection, send_data, receive_data,
+        wait_for_ready, _check_robot_state) pre-configured with sane defaults.
+    """
     m = mock.MagicMock()
     m.open_connection = mock.Mock()
     m.close_connection = mock.Mock()
@@ -26,9 +33,15 @@ def make_communication_mock() -> mock.MagicMock:
 def patched_artus_api_v2_constructor(
     communication_mock: mock.MagicMock | None = None,
 ) -> Generator[Tuple[Type, mock.MagicMock], None, None]:
-    """
-    Patch NewCommunication, time.sleep, and signal.signal while constructing ArtusAPI_V2.
-    Yields (ArtusAPI_V2 class, communication mock instance returned to the API).
+    """Patches NewCommunication, time.sleep, and signal.signal while constructing ArtusAPI_V2.
+
+    Args:
+        communication_mock: Mock to substitute for the real NewCommunication
+            instance. If None, one is created via make_communication_mock().
+
+    Yields:
+        A tuple of (ArtusAPI_V2 class, communication mock instance returned
+        to the API).
     """
     if communication_mock is None:
         communication_mock = make_communication_mock()
@@ -48,7 +61,18 @@ def build_api(
     communication_mock: mock.MagicMock | None = None,
     **kwargs: Any,
 ):
-    """Construct ArtusAPI_V2 with communication fully mocked."""
+    """Constructs ArtusAPI_V2 with communication fully mocked.
+
+    Args:
+        robot_type: Robot type string passed to ArtusAPI_V2 (e.g. "artus_lite").
+        hand_type: Hand type string passed to ArtusAPI_V2 (e.g. "left").
+        communication_mock: Mock to substitute for the real NewCommunication
+            instance. If None, one is created via make_communication_mock().
+        **kwargs: Additional keyword arguments forwarded to ArtusAPI_V2.
+
+    Returns:
+        A tuple of (ArtusAPI_V2 instance, communication mock instance).
+    """
     comm = communication_mock or make_communication_mock()
     with patched_artus_api_v2_constructor(comm) as (Cls, _):
         api = Cls(

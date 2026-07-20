@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -15,6 +15,7 @@ from ..bldc_robot.bldcrobot import BLDCRobot
 
 
 class ArtusDex(BLDCRobot):
+    """ARTUS Dex hand model: 18 joints (5 fingers + wrist) with velocity/force defaults."""
     def __init__(self,
                  joint_max_angles=[40, 90, 90, 90,  # thumb
                                   17, 90, 90,  # index
@@ -38,6 +39,20 @@ class ArtusDex(BLDCRobot):
                               'pinky_spread', 'pinky_flex', 'pinky_d2','wrist_pitch','wrist_yaw'],
                  number_of_joints=18,
                  logger=None):
+        """Initializes the ARTUS Dex joint model and velocity/force defaults.
+
+        Args:
+            joint_max_angles: Maximum angle per joint (18 values: thumb,
+                index, middle, ring, pinky, wrist).
+            joint_min_angles: Minimum angle per joint.
+            joint_default_angles: Default (home) angle per joint.
+            joint_rotation_directions: +1/-1 rotation multiplier per joint.
+            joint_forces: Per-joint force values (unused by base
+                construction).
+            joint_names: Ordered joint name strings.
+            number_of_joints: Total number of joints (18).
+            logger: Optional logger instance passed through to ``BLDCRobot``.
+        """
         super().__init__(joint_max_angles=joint_max_angles,
                          joint_min_angles=joint_min_angles,
                          joint_default_angles=joint_default_angles,

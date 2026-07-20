@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -36,12 +36,20 @@ from ArtusAPI.artus_api_new import ArtusAPI_V2
 
 
 class ArtusGUIController:
+    """Backend bridge between the ARTUS API and a ZMQ-connected GUI application.
+
+    Manages data IO to the ArtusAPI: publishes joint/force-sensor feedback
+    over a ZMQ publisher socket and receives target joint angles from a
+    ZMQ subscriber socket.
+    """
+
     def __init__(self, feedbackPub_address="tcp://127.0.0.1:5555", jointSub_address="tcp://127.0.0.1:5556"):
-        """
-        Artus GUI Controller backend interaction that manages data IO to Artus API
-        Interacts with ZMQ to and from the GUI Application
-        Sends joint feedback to ZMQ Publisher
-        Receives joint angles from ZMQ Subscriber
+        """Sets up ZMQ sockets and initializes the ARTUS API connection.
+
+        Args:
+            feedbackPub_address: ZMQ address to publish feedback data on.
+            jointSub_address: ZMQ address to subscribe to for incoming
+                target joint angles (topic "Target").
         """
 
         self.zmq_publisher = ZMQPublisher(address=feedbackPub_address)
@@ -59,9 +67,11 @@ class ArtusGUIController:
 
 
     def _initialize_api(self):
-        """
-        Initialize a single instance of the API class 
-        The GUI can only control one robot at a time
+        """Initializes a single ArtusAPI instance for the configured robot.
+
+        The GUI can only control one robot at a time. Also fetches the
+        initial robot status, and wakes up / calibrates the robot if those
+        options are enabled in the configuration.
         """
         self.artus_api = self.robot_config.get_api(logger=self.logger)
 
@@ -87,8 +97,12 @@ class ArtusGUIController:
         # self.logger.info("Robot connected")
 
     def _send_joint_angles(self,joint_angles:dict=None):
-        """
-        Send dict of joint angles
+        """Sends a dict of target joint angles to the robot.
+
+        Args:
+            joint_angles: Mapping of joint name/index to target angle
+                data, as expected by ArtusAPI_V2.set_joint_angles. If
+                None, logs an error and returns without sending anything.
         """
         if joint_angles is not None:
             self.artus_api.set_joint_angles(joint_angles=joint_angles)
@@ -97,9 +111,16 @@ class ArtusGUIController:
             return
 
     def _publish_feedback(self,feedback:dict=None):
-        """
-        Get all available feedback data from the robot and publish to the GUI.
-        Includes force sensor data when available.
+        """Publishes the robot's current feedback data to the GUI over ZMQ.
+
+        Reads joint feedback (index, angle, force, velocity, current) and,
+        when available, force sensor data directly from
+        self.artus_api._robot_handler.robot, then publishes the combined
+        payload as JSON on the "Feedback" ZMQ topic.
+
+        Args:
+            feedback: Accepted for interface compatibility but not used;
+                feedback data is always read from self.artus_api directly.
         """
 
         # Only include specific fields from each joint in the feedback
@@ -133,8 +154,12 @@ class ArtusGUIController:
 
 
     def _receive_feedback(self):
-        """
-        Receive feedback data from the robot
+        """Triggers a feedback read from the robot for backward compatibility.
+
+        Returns:
+            None: Always returns None; the actual feedback is stored on
+            self.artus_api's robot handler and read separately by
+            _publish_feedback. Errors are logged and swallowed.
         """
         try:
             # backward compatibility with v1 api
@@ -145,8 +170,16 @@ class ArtusGUIController:
         return None
 
     def _receive_joint_anglesZMQ(self):
-        """
-        Receive joint angles from the GUI Application
+        """Receives target joint angles from the GUI over the ZMQ subscriber.
+
+        Reads a JSON package containing joint_values, force, and speed,
+        and reshapes it into the {joint_name: {target_angle, target_force,
+        target_velocity}} format expected by ArtusAPI.
+
+        Returns:
+            dict | None: Mapping of joint name to target angle/force/
+            velocity dict, or None if no package was available (logs an
+            error in that case).
         """
         package = self.zmq_subscriber.receive()
         if package is not None:
@@ -168,8 +201,12 @@ class ArtusGUIController:
             return None
 
     def start_streaming(self):
-        """
-        Start streaming joint angles and feedback data
+        """Runs the main loop forwarding joint commands and feedback via ZMQ.
+
+        Continuously receives target joint angles from the GUI and sends
+        them to the robot, then reads and publishes feedback data back to
+        the GUI. Runs indefinitely; exceptions in a single iteration are
+        logged and the loop continues.
         """
         while True:
             try:

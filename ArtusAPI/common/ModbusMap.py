@@ -3,7 +3,21 @@ from enum import Enum
 
 # in-house link https://sarcomere-my.sharepoint.com/:x:/g/personal/ryan_lee_sarcomeredynamics_com/EZc0Efig0G1FmhJh-1EKzkMBEruf7tcIM2OreEytxHWceA?e=opvYYD
 class ModbusMap: # Artus Generic Modbus Map
+    """Generic Modbus RTU/TCP register map shared by all ARTUS hands.
+
+    Attributes:
+        modbus_reg_map: Mapping of logical register name to its starting
+            Modbus register address.
+        data_type_multiplier_map: Mapping of the same logical register
+            names to the number of 16-bit words used to encode one joint's
+            sample: 0.5 means two joints are packed per register (8-bit
+            pairs), 1 means one joint per 16-bit register, and 2 means two
+            registers per joint (IEEE 754 float, except
+            ``feedback_actuator_error_reg`` which is a uint32 bitfield).
+    """
+
     def __init__(self):
+        """Initializes the register address map and data-type multipliers."""
         self.modbus_reg_map = {
             # size is 16b
             'command_register': 0, # input command register
@@ -72,6 +86,8 @@ class ModbusMap: # Artus Generic Modbus Map
         }
 
 class ActuatorState(Enum):
+    """Firmware actuator state machine values reported in the status register."""
+
     ACTUATOR_INITIALIZING = 0    # at Boot
     ACTUATOR_IDLE = 1            # idle state, set control type and mode
     ACTUATOR_CALIBRATING_LL = 2  # calibrating the rotor position for foc
@@ -97,6 +113,8 @@ class TrajectoryReturn(Enum):
     TRAJECTORY_COMPLETE = 2
 
 class CommandType(Enum):
+    """Modbus function/command grouping used when sending data to the hand."""
+
     SETUP_COMMANDS = 6
     TARGET_COMMAND = 16
     FIRMWARE_COMMAND = 33 # actual data being sent

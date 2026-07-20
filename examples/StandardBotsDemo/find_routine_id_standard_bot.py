@@ -4,10 +4,18 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+"""
+
+"""Lists Standard Bots routines and their IDs to help populate standard_bots_config.yaml.
+
+Connects to the Standard Bots robot using the credentials from
+standard_bots_config.yaml and prints the name and ID of every routine
+defined on the robot, so those IDs can be used for routine_id,
+first_target_id, and second_target_id in the config file.
 """
 
 import os

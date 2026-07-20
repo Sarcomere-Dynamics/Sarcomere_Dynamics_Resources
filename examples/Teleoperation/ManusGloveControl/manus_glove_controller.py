@@ -4,10 +4,18 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+"""
+
+"""Streams joint angles from a Manus glove SDK client to ARTUS hands.
+
+Launches the Manus SDK client executable, reads hand tracking data it
+produces (via HandTrackingData), and forwards the resulting joint angles
+to whichever ARTUS hand(s) are marked as connected in the robot
+configuration.
 """
 
 import time
@@ -34,9 +42,19 @@ logger = logging.getLogger(__name__)
 logger.propagate = True  # Ensure logs propagate to parent loggers
 
 class ManusGloveController:
+    """Bridges Manus glove hand-tracking data to one or two ARTUS hands.
+
+    Loads the robot configuration, connects to whichever ARTUS hand(s) are
+    marked connected, launches the Manus SDK client executable, and
+    streams glove-derived joint angles to the connected hand(s).
+    """
+
     def __init__(self):
-        """
-        Update the configuration file before running the controller
+        """Initializes the robot API connection(s) and starts the Manus client.
+
+        Note:
+            Update the configuration file (robot_config.yaml) before
+            running the controller.
         """
         # Load robot configuration
         self.robot_config = ArtusConfig()
@@ -50,12 +68,25 @@ class ManusGloveController:
         self._run_manus_executable()
 
     def _run_manus_executable(self):
+        """Launches the Manus SDK client executable that publishes glove data.
+
+        Blocks for 5 seconds afterward to give the executable time to
+        start before hand tracking data is read.
+        """
         # Start Manus executable to receive data
         os.startfile(r"C://Users//General User//Downloads//MANUS_Core_2.3.0_SDK//ManusSDK_v2.3.0//SDKClient//Output//x64\Debug//Client//SDKClient.exe")
         # os.startfile(r"c:\\Users\\rleeu\\Documents\\Github\\MANUS_Core_2.3.0.1_SDK\\ManusSDK_v2.3.0.1\\SDKClient\\Output\\x64\\Debug\\Client\\SDKClient.exe")
         time.sleep(5)
 
     def _initialize_api(self):
+        """Creates the ArtusAPI instance for whichever hand(s) are connected.
+
+        Reads robot_config.robots.left_hand_robot / right_hand_robot and,
+        for each side marked robot_connected, assigns self.artus_api via
+        ArtusConfig.return_api. If both sides are connected, self.artus_api
+        ends up referencing only the right hand's API (the left hand's
+        assignment is overwritten).
+        """
         # Check and print configuration for left hand robot
         if self.robot_config.config.robots.left_hand_robot.robot_connected:
             self.artus_api = self.robot_config.return_api(robot_cfg=self.robot_config.config.robots.left_hand_robot,logger=logger)
@@ -65,6 +96,13 @@ class ManusGloveController:
             self.artus_api = self.robot_config.return_api(robot_cfg=self.robot_config.config.robots.right_hand_robot,logger=logger)
 
     def start_streaming(self):
+        """Continuously reads glove data and forwards it to the ARTUS hand(s).
+
+        Runs indefinitely, on each iteration receiving new joint angles
+        from the Manus glove stream and sending them to the connected
+        hand(s). Exceptions during a single iteration are logged and
+        swallowed so the loop keeps running.
+        """
         while True:
             try:
                 self.hand_tracking_data.receive_joint_angles()
@@ -76,6 +114,14 @@ class ManusGloveController:
                 pass
 
     def _send_joint_angles(self, joint_angles_left=None, joint_angles_right=None):
+        """Sends joint angle lists to the connected ARTUS hand(s).
+
+        Args:
+            joint_angles_left: Joint angles list for the left hand, or
+                None if no left-hand data is available (logs a warning).
+            joint_angles_right: Joint angles list for the right hand, or
+                None if no right-hand data is available (logs a warning).
+        """
         if joint_angles_left is not None:
             if self.artus_api is not None:
                 self.artus_api.set_joint_angles_by_list(joint_angles_list=joint_angles_left)
@@ -91,6 +137,10 @@ class ManusGloveController:
 
 
 def both_hands_control_manus_gloves():
+    """Creates a ManusGloveController and starts streaming joint angles.
+
+    Entry point used when this module is run as a script.
+    """
     manus_glove_joint_angles_streamer = ManusGloveController()
     manus_glove_joint_angles_streamer.start_streaming()
 

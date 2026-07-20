@@ -4,10 +4,14 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+"""
+
+"""Receives raw Manus glove joint data over TCP and maps it to ARTUS hand
+joint angles, including optional interactive calibration.
 """
 
 
@@ -29,11 +33,25 @@ sys.path.append(str(PROJECT_ROOT))
 from examples.Tracking.manus_gloves_data.moving_average import MultiMovingAverage
 
 class ManusGlovesHandTrackingData:
+    """Receives Manus glove joint data and maps it to ARTUS hand joint angles.
+
+    Owns a TCP server that receives raw joint data from the Manus core
+    executable for both hands, applies user-hand-to-ARTUS-hand range
+    interpolation and moving-average smoothing, and exposes the resulting
+    per-hand joint angle lists for use by the application.
+    """
 
     def __init__(self,
                  port='65432',
                  calibration=False):
-        
+        """Initializes tracking state, the TCP server, and calibration data.
+
+        Args:
+            port: TCP port to listen on for incoming Manus glove data.
+            calibration: If True, runs the interactive calibration sequence
+                for both hands and saves the results to disk. If False,
+                loads previously saved calibration data from disk.
+        """
         self.port = port
 
 
@@ -82,6 +100,11 @@ class ManusGlovesHandTrackingData:
     #     pass
 
     def _initialize_tcp_server(self, port="65432"):
+        """Creates and starts the TCP server used to receive Manus glove data.
+
+        Args:
+            port: TCP port to bind the server to.
+        """
         sys.path.append(str(PROJECT_ROOT))
         from examples.Tracking.zmq_class.tcp_server import TCPServer
 
@@ -94,8 +117,15 @@ class ManusGlovesHandTrackingData:
     ## ---------------------- Data for Application ---------------------- ##
     ## ------------------------------------------------------------------ ##
     def receive_joint_angles(self):
-        """
-        Receive joint angles from the hand tracking method
+        """Receives raw joint data and updates the decoded left/right joint angles.
+
+        If new data is received, decodes it and refreshes
+        self.joint_angles_left and self.joint_angles_right as a side effect.
+
+        Returns:
+            The raw joint angle string/data received from the TCP server,
+            or the current left/right joint angle dicts if no new data was
+            available.
         """
         joint_angles = self.tcp_server.receive() # receive encoded data
         # print("1. Original Data: ", joint_angles)
@@ -106,12 +136,37 @@ class ManusGlovesHandTrackingData:
         return joint_angles
     
     def get_left_hand_joint_angles(self):
+        """Gets the most recently computed left-hand joint angles.
+
+        Returns:
+            The left-hand joint angle list, or None if none has been
+            computed yet.
+        """
         return self.joint_angles_left
-    
+
     def get_right_hand_joint_angles(self):
+        """Gets the most recently computed right-hand joint angles.
+
+        Returns:
+            The right-hand joint angle list, or None if none has been
+            computed yet.
+        """
         return self.joint_angles_right
 
     def manus_data_to_dict(self, joint_angles):
+        """Parses the raw Manus data string into per-finger joint angle dicts.
+
+        Extracts the "L[...]" and "R[...]" segments from the raw data,
+        converts each into a flat list of integer angles, and splits the
+        result into self.joint_angles_dict_L and self.joint_angles_dict_R
+        keyed by finger name. Also applies a fixed correction to the thumb's
+        second joint value for both hands.
+
+        Args:
+            joint_angles: Raw data string received from the TCP server,
+                expected to contain "L[...]" and "R[...]" segments of
+                space-separated angle values.
+        """
         data_L = None
         data_R = None
         pattern_L = r'L\[(.*?)\]'
@@ -178,8 +233,20 @@ class ManusGlovesHandTrackingData:
         self.joint_angles_dict_R['thumb'][1] = (70-self.joint_angles_dict_R['thumb'][1])
     
     def _joint_angles_manus_to_joint_streamer(self, joint_angles):
-        """
-        Decodes input data from manus core executable to desired format for application
+        """Decodes raw Manus data into the joint angle format used by the application.
+
+        Parses the raw data, maps user-hand values to the ARTUS hand's
+        range, and assembles the flattened per-hand joint angle lists
+        (thumb, index, middle, ring, pinky) expected by the rest of the
+        application. Updates self.joint_angles_left and
+        self.joint_angles_right as a side effect.
+
+        Args:
+            joint_angles: Raw data string received from the TCP server.
+
+        Returns:
+            A tuple (joint_angles_left, joint_angles_right) of the
+            flattened joint angle lists for the left and right hands.
         """
 
         # decode received data and split to left and right
@@ -233,8 +300,19 @@ class ManusGlovesHandTrackingData:
     ## --------------------- Map User Hand to Artus Hand ---------------- ##
     ## ------------------------------------------------------------------ ##
     def map_user_hand_to_artus_hand(self, hand="L"):
-        """
-        Maps data from user hand to artus hand using the calibration data
+        """Maps user-hand joint values to ARTUS hand values using calibration data.
+
+        Interpolates the relevant hand's joint angle dict from the user's
+        calibrated range into the ARTUS hand's range, then flattens it into
+        a moving-average-smoothed list ordered for the ARTUS hand.
+
+        Args:
+            hand: Which hand(s) to map. One of "L", "R", or "LR".
+
+        Returns:
+            If hand is "L" or "R", the flattened joint rotations list for
+            that hand. If hand is "LR", a tuple
+            (joint_rotations_list_L, joint_rotations_list_R).
         """
         # Hand can take these values: L, R, LR
     
@@ -261,6 +339,20 @@ class ManusGlovesHandTrackingData:
             return joint_rotations_list_L, joint_rotations_list_R
     
     def _append_list_L(self, joint_rotations_dict, joint_rotations_list):
+        """Flattens the left-hand joint dict into joint_rotations_list and smooths it.
+
+        Appends the interpolated left-hand joint values (in ARTUS joint
+        order) to joint_rotations_list in place, and feeds a copy of that
+        list into the left-hand moving-average filter. Note: the resulting
+        averaged values are computed but assigned only to a local variable,
+        so joint_rotations_list retains the unsmoothed values.
+
+        Args:
+            joint_rotations_dict: Interpolated left-hand joint angle dict
+                keyed by finger name.
+            joint_rotations_list: List to append the flattened joint values
+                to, in place.
+        """
         joint_rotations_list.append(joint_rotations_dict['index'][0])
         joint_rotations_list.append(joint_rotations_dict['middle'][0])
         joint_rotations_list.append(joint_rotations_dict['pinky'][0])
@@ -293,6 +385,20 @@ class ManusGlovesHandTrackingData:
         joint_rotations_list = self.moving_average_lefthand.get_averages()
 
     def _append_list_R(self, joint_rotations_dict, joint_rotations_list):
+        """Flattens the right-hand joint dict into joint_rotations_list and smooths it.
+
+        Appends the interpolated right-hand joint values (in ARTUS joint
+        order) to joint_rotations_list in place, and feeds a copy of that
+        list into the right-hand moving-average filter. Note: the resulting
+        averaged values are computed but assigned only to a local variable,
+        so joint_rotations_list retains the unsmoothed values.
+
+        Args:
+            joint_rotations_dict: Interpolated right-hand joint angle dict
+                keyed by finger name.
+            joint_rotations_list: List to append the flattened joint values
+                to, in place.
+        """
         joint_rotations_list.append(joint_rotations_dict['index'][0])
         joint_rotations_list.append(joint_rotations_dict['middle'][0])
         joint_rotations_list.append(joint_rotations_dict['pinky'][0])
@@ -323,6 +429,21 @@ class ManusGlovesHandTrackingData:
         joint_rotations_list = self.moving_average_righthand.get_averages()
     
     def _scale_value(self, value, min_val, max_val, arm_min_val, arm_max_val):
+        """Linearly rescales a value from a source range to a target range.
+
+        Clamps value to [min_val, max_val] before rescaling.
+
+        Args:
+            value: The raw value to rescale.
+            min_val: Lower bound of the source range.
+            max_val: Upper bound of the source range.
+            arm_min_val: Lower bound of the target (ARTUS) range.
+            arm_max_val: Upper bound of the target (ARTUS) range.
+
+        Returns:
+            The rescaled value in the target range. Returns arm_min_val if
+            min_val equals max_val, to avoid division by zero.
+        """
         # Ensure the value is within the min_max range
         value = max(min_val, min(value, max_val))
 
@@ -334,6 +455,19 @@ class ManusGlovesHandTrackingData:
         return scaled_value
     
     def _interpolate_data_L(self, joint_angles_dict):
+        """Rescales left-hand joint values from the user's calibrated range to ARTUS range.
+
+        Mutates joint_angles_dict in place, scaling each finger's joint
+        values using self.user_hand_min_max_left as the source range and
+        self.artus_min_max as the target range.
+
+        Args:
+            joint_angles_dict: Left-hand joint angle dict keyed by finger
+                name, mutated in place.
+
+        Returns:
+            The same joint_angles_dict, with values rescaled in place.
+        """
         for finger in self.order_of_joints:
             num_joints = 0
             if finger == "thumb":
@@ -357,6 +491,19 @@ class ManusGlovesHandTrackingData:
         return joint_angles_dict
     
     def _interpolate_data_R(self, joint_angles_dict):
+        """Rescales right-hand joint values from the user's calibrated range to ARTUS range.
+
+        Mutates joint_angles_dict in place, scaling each finger's joint
+        values using self.user_hand_min_max_right as the source range and
+        self.artus_min_max as the target range.
+
+        Args:
+            joint_angles_dict: Right-hand joint angle dict keyed by finger
+                name, mutated in place.
+
+        Returns:
+            The same joint_angles_dict, with values rescaled in place.
+        """
         for finger in self.order_of_joints:
             num_joints = 0
             if finger == "thumb":
@@ -384,6 +531,18 @@ class ManusGlovesHandTrackingData:
     ## ------------------------------------------------------------------ ##
 
     def calibrate(self, calibration):
+        """Runs or loads calibration data for both hands.
+
+        If calibration is True, runs the interactive calibration sequences
+        for the left and right hands and writes the resulting min/max
+        dicts to calibration_data_L.txt and calibration_data_R.txt. If
+        False, loads the previously saved calibration dicts from those
+        files instead.
+
+        Args:
+            calibration: Whether to run interactive calibration (True) or
+                load existing calibration data from disk (False).
+        """
 
         file_path_L = str(PROJECT_ROOT) + "/examples/Tracking/manus_gloves_data/calibration_data_L.txt"
         file_path_R = str(PROJECT_ROOT) + "/examples/Tracking/manus_gloves_data/calibration_data_R.txt"
@@ -405,8 +564,15 @@ class ManusGlovesHandTrackingData:
                 self.user_hand_min_max_right = ast.literal_eval(f.read())
     
     def receive_joint_angles_for_calibration(self):
-        """
-        Receive joint angles from the hand tracking method
+        """Receives raw joint data and decodes it into the per-hand joint dicts.
+
+        Used during calibration to keep self.joint_angles_dict_L and
+        self.joint_angles_dict_R up to date without running the full
+        ARTUS-mapping pipeline.
+
+        Returns:
+            The raw joint angle data received from the TCP server, or None
+            if no data was available.
         """
         joint_angles = self.tcp_server.receive() # receive encoded data
         if joint_angles == None:
@@ -415,6 +581,16 @@ class ManusGlovesHandTrackingData:
         return joint_angles
 
     def calibrate_L(self):
+        """Runs the interactive left-hand calibration sequence.
+
+        Prompts the user through a series of hand poses (finger spread
+        min/max, flat/bent/curled positions, thumb positions), recording a
+        live-averaged sample after each prompt via self.get_data("L"), and
+        uses those samples to populate self.user_hand_min_max_left.
+
+        Returns:
+            The updated self.user_hand_min_max_left dict.
+        """
 
         ############# Calibrating Finger Spread (Abduction) ###########################
         for finger in self.order_of_joints:
@@ -482,6 +658,16 @@ class ManusGlovesHandTrackingData:
      
 
     def calibrate_R(self):
+        """Runs the interactive right-hand calibration sequence.
+
+        Prompts the user through a series of hand poses (finger spread
+        min/max, flat/bent/curled positions, thumb positions), recording a
+        live-averaged sample after each prompt via self.get_data("R"), and
+        uses those samples to populate self.user_hand_min_max_right.
+
+        Returns:
+            The updated self.user_hand_min_max_right dict.
+        """
 
         ############# Calibrating Finger Spread (Abduction) ###########################
         for finger in self.order_of_joints:
@@ -548,6 +734,11 @@ class ManusGlovesHandTrackingData:
         return self.user_hand_min_max_right
     
     def gather_data_L(self):
+        """Continuously samples left-hand joint angles into self.temp while running.
+
+        Intended to run in a background thread started by get_data(); loops
+        until self.running is set to False, polling roughly every 0.1s.
+        """
         while self.running:
             self.receive_joint_angles_for_calibration()
             for finger in self.order_of_joints:
@@ -555,6 +746,11 @@ class ManusGlovesHandTrackingData:
             time.sleep(0.1)
 
     def gather_data_R(self):
+        """Continuously samples right-hand joint angles into self.temp while running.
+
+        Intended to run in a background thread started by get_data(); loops
+        until self.running is set to False, polling roughly every 0.1s.
+        """
         while self.running:
             self.receive_joint_angles_for_calibration()
             for finger in self.order_of_joints:
@@ -562,6 +758,16 @@ class ManusGlovesHandTrackingData:
             time.sleep(0.1)
 
     def get_data(self, hand):
+        """Collects a live-averaged joint sample for one hand during calibration.
+
+        Starts a background thread that continuously updates self.temp with
+        the latest joint angles for the given hand, waits for the user to
+        press Enter, then stops the thread. Used as a single calibration
+        step to capture the pose the user is holding.
+
+        Args:
+            hand: Which hand to sample. One of "L" or "R".
+        """
         self.running = True
         if hand == "L":
             thread = threading.Thread(target=self.gather_data_L)
@@ -578,6 +784,7 @@ class ManusGlovesHandTrackingData:
 
 
 def test_hand_tracking_data():
+    """Manually exercises ManusGlovesHandTrackingData by polling and printing joint angles."""
     hand_tracking_data = ManusGlovesHandTrackingData(port="65432")
     while True:
         # Receive joint angles from Manus core exe

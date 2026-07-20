@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -22,6 +22,13 @@ class ArtusLite_Plus(ArtusLite):
     def __init__(self,
                  joint_rotation_directions=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
                  logger=None):
+        """Initializes the ARTUS Lite Plus and its per-finger force sensors.
+
+        Args:
+            joint_rotation_directions: +1/-1 rotation multiplier per joint
+                (16 values), passed through to ``ArtusLite``.
+            logger: Optional logger instance passed through to ``ArtusLite``.
+        """
         super().__init__(joint_rotation_directions=joint_rotation_directions, logger=logger)
 
         # Force sensor init (one per finger, 3 axes each)

@@ -1,3 +1,5 @@
+"""Computes absolute fingertip poses from relative per-node glove joint data."""
+
 import numpy as np
 
 import os
@@ -44,6 +46,14 @@ class FingerPoseTransformer:
 
 
     def __init__(self, chains: dict[str, list[int]] = None):
+        """Initializes the transformer with the finger node chains to use.
+
+        Args:
+            chains: Mapping of finger name to the ordered list of node ids
+                that form the kinematic chain for that finger, from the
+                wrist/root outward to the fingertip. Defaults to
+                DEFAULT_CHAINS when not provided.
+        """
         self.chains = chains or self.DEFAULT_CHAINS
         
         self.mapper = IndexFingerMapper()
@@ -77,6 +87,15 @@ class FingerPoseTransformer:
 
     @staticmethod
     def quat_mul(q: np.ndarray, r: np.ndarray) -> np.ndarray:
+        """Multiplies two quaternions in [x, y, z, w] order.
+
+        Args:
+            q: Left-hand quaternion as [x, y, z, w].
+            r: Right-hand quaternion as [x, y, z, w].
+
+        Returns:
+            The Hamilton product q * r as a [x, y, z, w] quaternion.
+        """
         x1, y1, z1, w1 = q
         x2, y2, z2, w2 = r
         return np.array([
@@ -88,10 +107,27 @@ class FingerPoseTransformer:
 
     @staticmethod
     def quat_conj(q: np.ndarray) -> np.ndarray:
+        """Computes the conjugate of a quaternion in [x, y, z, w] order.
+
+        Args:
+            q: Quaternion as [x, y, z, w].
+
+        Returns:
+            The conjugate quaternion [-x, -y, -z, w].
+        """
         return np.array([-q[0], -q[1], -q[2], q[3]])
 
     @classmethod
     def rotate_vec(cls, v: np.ndarray, q: np.ndarray) -> np.ndarray:
+        """Rotates a 3D vector by a quaternion.
+
+        Args:
+            v: The vector to rotate, as (x, y, z).
+            q: Rotation quaternion as [x, y, z, w].
+
+        Returns:
+            The rotated vector as an (x, y, z) numpy array.
+        """
         v_q = np.array([v[0], v[1], v[2], 0.0])
         return cls.quat_mul(
             cls.quat_mul(q, v_q),
@@ -102,6 +138,19 @@ class FingerPoseTransformer:
                 p1: np.ndarray, q1: np.ndarray,
                 p2: np.ndarray, q2: np.ndarray
                ) -> tuple[np.ndarray, np.ndarray]:
+        """Composes a parent pose with a child pose expressed in its frame.
+
+        Args:
+            p1: Parent position as (x, y, z).
+            q1: Parent orientation quaternion as [x, y, z, w].
+            p2: Child position, relative to the parent frame, as (x, y, z).
+            q2: Child orientation quaternion, relative to the parent frame,
+                as [x, y, z, w].
+
+        Returns:
+            A tuple of (p_abs, q_abs): the child's position and orientation
+            expressed in the parent's reference frame.
+        """
         p_abs = p1 + self.rotate_vec(p2, q1)
         q_abs = self.quat_mul(q1, q2)
         return p_abs, q_abs
@@ -110,9 +159,23 @@ class FingerPoseTransformer:
         self,
         decoded: dict[int, tuple[tuple[float,float,float], tuple[float,float,float,float]]]
     ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
-        """
-        decoded: { node_id: ((x,y,z), (w,qx,qy,qz)), … }
-        returns: { finger_name: (pos_abs, quat_abs in [x,y,z,w]), … }
+        """Chains per-node relative poses into an absolute pose per finger.
+
+        Walks each finger's node chain (see self.chains), composing each
+        node's relative position/rotation onto the accumulated parent pose,
+        starting from a fixed base orientation used to match the Isaac Sim
+        frame convention.
+
+        Args:
+            decoded: Mapping of node_id to ((x, y, z), (w, qx, qy, qz)),
+                where the tuple holds that node's position and rotation
+                relative to its parent node.
+
+        Returns:
+            A dict mapping finger name to a two-element list
+            [pos_abs, quat_abs], where pos_abs is the fingertip position as
+            an (x, y, z) numpy array and quat_abs is the orientation as a
+            [w, x, y, z] numpy array.
         """
         result = {}
         for finger, node_ids in self.chains.items():
@@ -143,9 +206,17 @@ class FingerPoseTransformer:
         return result
     
     def _euler_to_quaternion(self, roll_degrees, pitch_degrees, yaw_degrees):
-        """
-        Converts Euler angles (in degrees) to a unit quaternion (w, x, y, z).
+        """Converts Euler angles in degrees to a unit quaternion.
+
         Assumes ZYX rotation order.
+
+        Args:
+            roll_degrees: Roll angle in degrees.
+            pitch_degrees: Pitch angle in degrees.
+            yaw_degrees: Yaw angle in degrees.
+
+        Returns:
+            The equivalent orientation as a (w, x, y, z) quaternion.
         """
         # Convert degrees to radians
         roll_rad = math.radians(roll_degrees)

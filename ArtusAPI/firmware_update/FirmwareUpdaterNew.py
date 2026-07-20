@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -25,11 +25,37 @@ BYTES_CHUNK = 64
 
 
 class FirmwareUpdaterNew:
+    """Uploads firmware binaries to an ARTUS hand over Modbus RTU/TCP.
+
+    Streams a `.bin` file to the hand's master board in fixed-size
+    chunks, polling the actuator state after each page (or half-page) is
+    sent to confirm the firmware update flash acknowledged the write.
+
+    Attributes:
+        _communication_handler: Communication handler used to send
+            firmware data and poll robot state.
+        _command_handler: Command handler providing the firmware update
+            opcode.
+        file_location: Path to the firmware binary file to upload.
+        logger: Logger used for progress/error messages.
+    """
+
     def __init__(self,
                  communication_handler:NewCommunication = None,
                  command_handler = None,
                  file_location = None,
                  logger = None):
+        """Initializes the firmware updater.
+
+        Args:
+            communication_handler: Communication handler used to send
+                firmware data and poll robot state.
+            command_handler: Command handler providing the firmware
+                update opcode.
+            file_location: Path to the firmware binary file to upload.
+            logger: Logger to use; a module-level logger is created if
+                not provided.
+        """
         self._communication_handler = communication_handler
         self._command_handler = command_handler
         self.file_location = file_location
@@ -39,11 +65,27 @@ class FirmwareUpdaterNew:
             self.logger = logger
 
     def get_bin_file_info(self):
+        """Reads and logs the size of the configured firmware binary.
+
+        Returns:
+            The size of the file at ``self.file_location``, in bytes.
+        """
         file_size = int(os.path.getsize(self.file_location))
         self.logger.info(f"Bin file size = {file_size} @ location {self.file_location}")
         return file_size
-    
+
     def flashing_ack_checker(self):
+        """Polls the robot state until the flash erase/write is acknowledged.
+
+        Blocks, checking the actuator state every 5 seconds, until the
+        hand reports ``ACTUATOR_FLASHING_ACK`` (success) or
+        ``ACTUATOR_ERROR`` (failure). Logs and continues on transient
+        state-check exceptions.
+
+        Returns:
+            True once ``ACTUATOR_FLASHING_ACK`` is observed, False if
+            ``ACTUATOR_ERROR`` is observed.
+        """
         while True:
             self.logger.info(f"entered flashing_ack_checker")
             try:
@@ -62,8 +104,20 @@ class FirmwareUpdaterNew:
             time.sleep(5)
     
     def update_firmware_piecewise(self,file_size):
-        """
-        @info function to update brushless drivers through masterboard
+        """Uploads firmware to brushless drivers through the masterboard, one page at a time.
+
+        Reads the binary at ``self.file_location``, and for each 256-byte
+        page waits for a flashing acknowledgment before sending the next
+        page, updating a progress bar as pages complete. Sends a
+        terminating ``[0x0, 0x0]`` chunk once all pages are uploaded.
+
+        Args:
+            file_size: Size of the firmware binary in bytes, used to
+                compute the number of 256-byte pages required.
+
+        Returns:
+            False if the initial or any per-page flashing acknowledgment
+            fails; otherwise returns None after the upload completes.
         """
         byte_counter = 0
         page_counter = 0
@@ -136,6 +190,24 @@ class FirmwareUpdaterNew:
     # this function is only managing sending the actuatl binary data to the master
     # it is not managing starting the firmware update process on the master
     def update_firmware(self,file_size):
+        """Uploads firmware binary data to the master board in half-page chunks.
+
+        Only manages sending the actual binary data to the master; it
+        does not start the firmware update process on the master. Reads
+        the binary at ``self.file_location`` and streams it in 128-byte
+        (half-page) chunks, waiting for the initial flashing
+        acknowledgment before starting and pausing briefly every 50
+        (half-)pages. Sends a terminating ``[0x0, 0x0]`` chunk once the
+        upload completes.
+
+        Args:
+            file_size: Size of the firmware binary in bytes, used to
+                compute the number of 256-byte pages required.
+
+        Returns:
+            False if the initial flashing acknowledgment fails;
+            otherwise returns None after the upload completes.
+        """
         byte_counter = 0
         page_counter = 0
         ret = None

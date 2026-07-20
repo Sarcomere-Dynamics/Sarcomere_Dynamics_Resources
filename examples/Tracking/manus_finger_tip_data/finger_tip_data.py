@@ -5,10 +5,14 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+"""
+
+"""Receives raw Manus fingertip node data over TCP and exposes absolute
+fingertip poses per finger.
 """
 
 
@@ -30,8 +34,19 @@ from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_gloves_data.mo
 
 
 class FingerTipData:
-    
+    """Streams and decodes Manus fingertip node data into absolute poses.
+
+    Owns a TCP server that receives the raw fingertip data feed and a
+    FingerPoseTransformer that converts the decoded per-node relative poses
+    into absolute per-finger poses.
+    """
+
     def __init__(self, port='65432'):
+        """Initializes the TCP server and pose transformer.
+
+        Args:
+            port: TCP port to listen on for incoming fingertip data.
+        """
         self.port = port
         self.order_of_fingers = ['index', 'middle', 'ring', 'pinky', 'thumb']
         self.decoded_data = {}
@@ -42,18 +57,33 @@ class FingerTipData:
     
         
     def _initialize_tcp_server(self, port="65432"):
+        """Creates and starts the TCP server used to receive fingertip data.
+
+        Args:
+            port: TCP port to bind the server to.
+        """
         sys.path.append(str(PROJECT_ROOT))
         from Sarcomere_Dynamics_Resources.examples.Control.Tracking.zmq_class.tcp_server import TCPServer
 
         self.tcp_server = TCPServer(port=int(port))
         self.tcp_server.create()
-        
+
     def _setup_pose_transformer(self):
+        """Instantiates the FingerPoseTransformer used to compute absolute poses."""
         sys.path.append(str(PROJECT_ROOT))
         from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_finger_tip_data.finger_pose_transformer import FingerPoseTransformer
         self.pose_transformer = FingerPoseTransformer()
-        
+
     def receive_fingerTip_data(self):
+        """Receives and parses one batch of raw fingertip data from the TCP server.
+
+        Updates self.decoded_data whenever new, non-empty data is parsed.
+
+        Returns:
+            The parsed dict mapping node_id to (position, rotation) tuples,
+            or an empty dict if no data was available or parsing yielded
+            nothing.
+        """
         raw_data = self.tcp_server.receive() # receive encoded data
         # print("1. Original Data: ", joint_angles)
         clean_data = self.parse_fingertip_data(raw_data) # parse the data
@@ -64,10 +94,19 @@ class FingerTipData:
 
 
     def parse_fingertip_data(self, s: str) -> dict[int, tuple[tuple[float, float, float], tuple[float, float, float, float]]]:
-        """
-        Parse a string of the form:
-        "... L_FingerTips[Node ID: 0 Pos=(0, 0, 0) Rot=(1, 0, 0, 0) Node ID: 1 Pos=(...) Rot=(...) ...]"
-        into a dict mapping node_id -> (position_tuple, rotation_tuple).
+        """Parses raw fingertip text data into a per-node pose dict.
+
+        Expects a string of the form:
+        "... L_FingerTips[Node ID: 0 Pos=(0, 0, 0) Rot=(1, 0, 0, 0)
+        Node ID: 1 Pos=(...) Rot=(...) ...]"
+
+        Args:
+            s: The raw string received from the TCP server. May be None.
+
+        Returns:
+            A dict mapping node_id to (position_tuple, rotation_tuple),
+            with position and rotation values rounded to 2 decimal places.
+            Returns an empty dict if s is None or no nodes are matched.
         """
         if s is None:
             return {}
@@ -93,11 +132,12 @@ class FingerTipData:
     
     
     def get_finger_tip_data(self):
-        """
-        Get the finger tip data from the Manus gloves.
-        Returns a dictionary with the following keys:
-        'thumb', 'index', 'middle', 'ring', 'pinky'
-        Each key maps to a tuple of the form (position, orientation).
+        """Receives the latest fingertip data and converts it to absolute poses.
+
+        Returns:
+            A dict with keys 'thumb', 'index', 'middle', 'ring', 'pinky',
+            each mapping to a (position, orientation) tuple. Returns an
+            empty dict if no fingertip data has been decoded yet.
         """
         self.receive_fingerTip_data()
         if self.decoded_data == {}:
@@ -107,6 +147,7 @@ class FingerTipData:
 
 # Example usage:
 def main():
+    """Launches the Manus SDK client and prints raw per-node fingertip data in a loop."""
     fingertip_data = FingerTipData()
     node_id = 14
     
@@ -144,6 +185,7 @@ def main():
 
 
 def finger_tip_data():
+    """Launches the Manus SDK client and prints absolute per-finger poses in a loop."""
     fingertip_data = FingerTipData()
     
     MANUS_GLOVE_CONTROL = True

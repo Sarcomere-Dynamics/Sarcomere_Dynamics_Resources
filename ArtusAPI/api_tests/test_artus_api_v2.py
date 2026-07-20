@@ -13,12 +13,16 @@ from ArtusAPI.communication.new_communication import ActuatorState, CommandType
 
 
 class TestArtusAPIV2Mocked(unittest.TestCase):
+    """Exercises ArtusAPI_V2 behavior with the communication layer mocked out."""
+
     def test_connect_opens_transport(self):
+        """Verifies constructing the API opens the communication transport."""
         comm = MagicMock()
         api, comm = build_api(communication_mock=comm)
         comm.open_connection.assert_called()
 
     def test_disconnect_restores_signal(self):
+        """Verifies disconnect() re-registers the original signal handler."""
         import ArtusAPI.artus_api_new as api_mod
 
         comm = MagicMock()
@@ -34,20 +38,24 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertTrue(sig_mock.called)
 
     def test_robot_type_hand_type_stored(self):
+        """Verifies robot_type and hand_type constructor args are stored on the instance."""
         api, _ = build_api(robot_type="artus_talos", hand_type="right")
         self.assertEqual(api.robot_type, "artus_talos")
         self.assertEqual(api.hand_type, "right")
 
     def test_set_control_type_valid(self):
+        """Verifies set_control_type accepts a valid control type and updates state."""
         api, _ = build_api()
         self.assertTrue(api.set_control_type(3))
         self.assertEqual(api.control_type, 3)
 
     def test_set_control_type_invalid(self):
+        """Verifies set_control_type rejects an unknown control type."""
         api, _ = build_api()
         self.assertFalse(api.set_control_type(99))
 
     def test_wake_up_sets_awake_when_ready(self):
+        """Verifies wake_up() sets api.awake and sends the start command when the hand reports ready."""
         comm = MagicMock()
         comm.wait_for_ready.return_value = ActuatorState.ACTUATOR_IDLE.value
         api, comm = build_api(communication_mock=comm)
@@ -56,11 +64,13 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         comm.send_data.assert_called()
 
     def test_sleep_sends_command(self):
+        """Verifies sleep() sends a command over the communication layer."""
         api, comm = build_api()
         api.sleep()
         comm.send_data.assert_called()
 
     def test_get_robot_status(self):
+        """Verifies get_robot_status decodes the raw state byte into a state name and trajectory return value."""
         comm = MagicMock()
         comm._check_robot_state.return_value = 0x21
         api, comm = build_api(communication_mock=comm)
@@ -69,6 +79,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertIsNotNone(tr)
 
     def test_new_communication_gets_slave_address_from_slave_id_map(self):
+        """Verifies NewCommunication is constructed with the slave address resolved from SlaveIDMap."""
         import ArtusAPI.artus_api_new as api_mod
 
         comm = make_communication_mock()
@@ -90,6 +101,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         )
 
     def test_get_voltage(self):
+        """Verifies get_voltage decodes a two-register IEEE 754 float feedback value."""
         comm = MagicMock()
         raw = struct.pack("<f", 12.5)
         w0, w1 = struct.unpack("<HH", raw)
@@ -101,6 +113,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertAlmostEqual(v, 12.5, places=4)
 
     def test_get_joint_angles_slave_id_path(self):
+        """Verifies get_joint_angles returns the raw slave ID when reading the slave_id_reg register."""
         comm = MagicMock()
         comm.receive_data.return_value = 0x0003
         api, comm = build_api(robot_type="artus_lite_plus", hand_type="left", communication_mock=comm)
@@ -110,6 +123,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertEqual(sid, 3)
 
     def test_helper_fill_dict_from_feedback(self):
+        """Verifies helper_fill_dict_from_feedback_data maps feedback values to joint names in order."""
         api, _ = build_api()
         names = api._robot_handler.robot.joint_names
         data = list(range(len(names)))
@@ -118,6 +132,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
             self.assertEqual(d[n], data[i])
 
     def test_set_joint_angles_sends_position_command(self):
+        """Verifies set_joint_angles sends a TARGET_COMMAND for a single joint target."""
         comm = MagicMock()
         api, comm = build_api()
         api.awake = True
@@ -130,6 +145,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertEqual(args[1], CommandType.TARGET_COMMAND.value)
 
     def test_set_joint_angles_by_list_delegates_to_set_joint_angles(self):
+        """Verifies set_joint_angles_by_list builds an index-keyed target dict and delegates to set_joint_angles."""
         comm = MagicMock()
         api, comm = build_api()
         api.awake = True
@@ -143,6 +159,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertIn("target_angle", call_kw["0"])
 
     def test_set_home_position(self):
+        """Verifies set_home_position sends a command over the communication layer."""
         comm = MagicMock()
         api, comm = build_api()
         api.awake = True
@@ -152,6 +169,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         comm.send_data.assert_called()
 
     def test_get_joint_forces_returns_dict(self):
+        """Verifies get_joint_forces returns one entry per joint."""
         comm = MagicMock()
         n = 16
         regs = [0] * (2 * n)
@@ -163,6 +181,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertEqual(len(out), n)
 
     def test_get_fingertip_forces_lite_plus(self):
+        """Verifies get_fingertip_forces returns a dict for the artus_lite_plus hand."""
         comm = MagicMock()
         comm.receive_data.return_value = [0] * 30
         api, comm = build_api(robot_type="artus_lite_plus", hand_type="left", communication_mock=comm)
@@ -171,6 +190,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertIsInstance(out, dict)
 
     def test_get_avg_temperature(self):
+        """Verifies get_avg_temperature returns the value read from the feedback register."""
         comm = MagicMock()
         comm.receive_data.return_value = [25]
         api, comm = build_api(communication_mock=comm)
@@ -179,10 +199,12 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertEqual(t, 25)
 
     def test_get_streamed_joint_angles_returns_none(self):
+        """Verifies get_streamed_joint_angles returns None when no streaming data has been received."""
         api, _ = build_api()
         self.assertIsNone(api.get_streamed_joint_angles())
 
     def test_reset_with_joint_count(self):
+        """Verifies reset() sends a command over the communication layer when given a joint count."""
         comm = MagicMock()
         comm.wait_for_ready.return_value = ActuatorState.ACTUATOR_IDLE.value
         api, comm = build_api(communication_mock=comm)
@@ -192,6 +214,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         comm.send_data.assert_called()
 
     def test_calibrate(self):
+        """Verifies calibrate() sends a command over the communication layer."""
         comm = MagicMock()
         comm.wait_for_ready.return_value = ActuatorState.ACTUATOR_READY.value
         api, comm = build_api(communication_mock=comm)
@@ -200,12 +223,14 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         comm.send_data.assert_called()
 
     def test_get_hand_feedback_data_patched(self):
+        """Verifies get_hand_feedback_data succeeds with get_joint_angles patched, for a lite hand."""
         api, _ = build_api(robot_type="artus_lite", hand_type="left")
         api.awake = True
         with patch.object(api, "get_joint_angles", return_value={}):
             self.assertTrue(api.get_hand_feedback_data())
 
     def test_get_config_writes_wifi_and_reads_ip(self):
+        """Verifies get_config sends a trigger and payload write for each of SSID and password."""
         comm = MagicMock()
         comm.wait_for_ready.side_effect = [
             ActuatorState.ACTUATOR_CONFIG.value, ActuatorState.ACTUATOR_CONFIG_FINISH.value,
@@ -223,12 +248,14 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertEqual(len(payload_call_types), 2)
 
     def test_string_to_registers(self):
+        """Verifies string_to_registers packs two chars per register and zero-pads odd-length strings."""
         api, _ = build_api()
         self.assertEqual(api.string_to_registers("AB"), [0x4142])
         # odd-length strings are zero-padded to fill the last register
         self.assertEqual(api.string_to_registers("A"), [0x4100])
 
     def test_get_hand_feedback_data_talos_with_force_patch(self):
+        """Verifies get_hand_feedback_data succeeds for a talos hand with angles and fingertip forces patched."""
         api, _ = build_api(robot_type="artus_talos", hand_type="left")
         api.awake = True
         with patch.object(api, "get_joint_angles", return_value={}):

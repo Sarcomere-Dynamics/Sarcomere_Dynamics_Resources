@@ -4,10 +4,19 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+"""
+
+"""Interactive CLI demo for controlling an ARTUS hand over a UR robot's RS485 port.
+
+Uses ArtusAPIPortForwarder to expose the UR robot's onboard RS485 line as
+a local serial device, connects to the ARTUS hand through it using the
+ArtusAPI_V2 API, and presents a numbered menu for connecting/
+disconnecting, waking/sleeping, calibrating, sending saved hand poses,
+and reading back feedback data.
 """
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
@@ -30,65 +39,22 @@ from ArtusAPI.artus_api_new import ArtusAPI_V2
 # import ArtusAPIPortForwarder
 from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForwarder
 
-# ------------------------------------------------------------------------------
-# -------------------------------- Main Menu -----------------------------------
-# ------------------------------------------------------------------------------
-def main_menu():
-    return input(
-    """
-    ╔══════════════════════════════════════════════════════════════════╗
-    ║                          Artus API 2.0                           ║
-    ╠══════════════════════════════════════════════════════════════════╣
-    ║ Command Options:                                                 ║
-    ║                                                                  ║
-    ║   1 -> Start connection to hand                                  ║
-    ║   2 -> Disconnect from hand                                      ║
-    ║   3 -> Wakeup hand                                               ║
-    ║   4 -> Enter hand sleep mode                                     ║
-    ║   5 -> Calibrate                                                 ║
-    ║   6 -> Send command from data/hand_poses/grasp_example           ║
-    ║   7 -> Get robot state                                           ║
-    ║   8 -> Send command from data/hand_poses/grasp_open              ║
-    ║   9 -> Get Feedback Position Data                                ║
-    ║   10 -> Get Feedback Velocity Data                               ║
-    ║   11 -> Get Feedback Torque Data                                 ║
-    ║                                                                  ║
-    ╚══════════════════════════════════════════════════════════════════╝
-    >> Input Command Code (1-8): """
-    
-    )
-
-# ------------------------------------------------------------------------------
-# -------------------------------- Logger Setup --------------------------------
-# ------------------------------------------------------------------------------
-import logging
-
-def setup_logger(level='INFO',format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):
-    """
-    Set up a logger for the ArtusAPI with proper formatting
-    """
-    logger = logging.getLogger('ArtusAPI_Example')
-    logger.setLevel(level)
-    
-    # Create console handler with formatting
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(level)
-    
-    # Create formatter
-    formatter = logging.Formatter(format)
-    console_handler.setFormatter(formatter)
-    
-    # Add handler to logger if not already added
-    if not logger.handlers:
-        logger.addHandler(console_handler)
-    
-    return logger
-
+# reuse the interactive menu, logger setup, and command dispatch from the
+# general example instead of duplicating them here
+from examples.general_example.general_example import main_menu, setup_logger, handle_command
 
 # -------------------------------------------------------------------------------
 # --------------------------------- Example -------------------------------------
 # -------------------------------------------------------------------------------
 def example():
+    """Runs the interactive menu loop for controlling an ARTUS hand via UR RS485.
+
+    Starts an ArtusAPIPortForwarder to the UR robot's RS485 port, connects
+    to the hand using the ArtusAPI_V2 API, and then repeatedly shows
+    main_menu() and dispatches the entered command via handle_command()
+    (both shared with general_example.py). Runs until interrupted;
+    per-iteration exceptions are logged and the loop continues.
+    """
     # Load the configuration file
     config = ArtusConfig()
 
@@ -97,30 +63,16 @@ def example():
     artusAPIPortForwarder = ArtusAPIPortForwarder(robot_ip=ROBOT_IP)
     local_device_name = artusAPIPortForwarder.get_local_device_name()
 
-    artusapi = None
     hand_poses_path = None
     logger = setup_logger(level=config.config.logging.level,format=config.config.logging.format)
-    
+
     # find robot type from robot config
     robot_type = config.find_single_robot_type()
-    # v1 api
-    if "lite" in robot_type.lower():
-        logger.info("Detected a 'lite' robot type.")
-        artusapi = ArtusAPI(communication_method='UART',
-                            communication_channel_identifier=local_device_name,
-                            robot_type=robot_type,
-                            hand_type=config.config.robots.left_hand_robot.hand_type,
-                            reset_on_start=config.config.robots.left_hand_robot.reset_on_start,
-                            awake=config.config.robots.left_hand_robot.awake,
-                            baudrate=115200)
-    # v2 api
-    else:
-        logger.info("Detected a 'bldc' robot type.")
-        artusapi = ArtusAPI_V2(communication_method='RS485_RTU',
-                            communication_channel_identifier=local_device_name,
-                            robot_type=robot_type,
-                            hand_type=config.config.robots.left_hand_robot.hand_type,
-                            baudrate=115200)
+    artusapi = ArtusAPI_V2(communication_method='RS485_RTU',
+                        communication_channel_identifier=local_device_name,
+                        robot_type=robot_type,
+                        hand_type=config.config.robots.left_hand_robot.hand_type,
+                        baudrate=115200)
 
     hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
     
@@ -128,34 +80,7 @@ def example():
     while True:
         try:
             user_input = main_menu()
-
-            match user_input:
-                case '1':
-                    artusapi.connect()
-                case '2':
-                    artusapi.disconnect()
-                case '3':
-                    artusapi.wake_up()
-                case '4':
-                    artusapi.sleep()
-                case '5':
-                    artusapi.calibrate()
-                case '6':
-                    with open(os.path.join(hand_poses_path ,'grasp_example.json'),'r') as file:
-                        grasp_example_dict = json.load(file)
-                    artusapi.set_joint_angles(grasp_example_dict)
-                case '7':
-                    artusapi.get_joint_angles()
-                case '8':
-                    with open(os.path.join(hand_poses_path ,'grasp_open.json'),'r') as file:
-                        grasp_dict = json.load(file)
-                    artusapi.set_joint_angles(grasp_dict)
-                case '9':
-                    artusapi.get_joint_angles()
-                case '10':
-                    artusapi.get_joint_speeds()
-                case '11':
-                    artusapi.get_joint_forces()
+            handle_command(artusapi, user_input, logger, hand_poses_path)
         except Exception as e:
             logger.error(f"Error: {e}")
             pass

@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -19,10 +19,18 @@ from ...common.ModbusMap import CommandType
 
 
 def find_port_holders(port):
-    """
-    Return a list of 'pid <pid> (<cmdline>)' strings for every process that has
-    `port` open. Used to diagnose 'could not exclusively lock port' errors.
-    Linux only (/proc scan); returns [] on other platforms or if nothing holds it.
+    """Finds processes that currently have `port` open.
+
+    Used to diagnose "could not exclusively lock port" errors by scanning
+    `/proc` for file descriptors pointing at the given path. Linux only.
+
+    Args:
+        port: Filesystem path of the serial device to check (e.g.
+            '/dev/ttyUSB0').
+
+    Returns:
+        A list of 'pid <pid> (<cmdline>)' strings, one per process holding
+        the port open. Empty on non-Linux platforms or if nothing holds it.
     """
     holders = []
     try:
@@ -46,16 +54,34 @@ def find_port_holders(port):
         pass
     return holders
 
-"""
-RS485_RTU class for RS485 communication
-
-This class's function is to simply send and receive data using the pymodbus library to send and receive data to the Artus Hand.
-
-The only received data is the feedback data from the hand. This has to be polled.
-The sent data uses two modbus functions, write single register and write multiple registers.
-"""
 class RS485_RTU:
+    """Modbus RTU transport for RS485 communication with an ARTUS hand.
+
+    Wraps a `pymodbus` `ModbusSerialClient` to send and receive data over
+    RS485. The only data received is hand feedback, which must be polled;
+    sends use the Modbus "write single register" and "write multiple
+    registers" functions.
+
+    Attributes:
+        port: Serial device path (e.g. '/dev/ttyUSB0').
+        baudrate: Serial baud rate.
+        timeout: Serial read timeout in seconds.
+        slave_address: Modbus slave address of the target hand.
+        logger: Logger used for status and error messages.
+        client: The underlying `pymodbus` `ModbusSerialClient` instance,
+            created on the first call to `open`.
+    """
+
     def __init__(self, port='COM9', baudrate=115200, timeout=0.1, logger=None, slave_address=1):
+        """Initializes connection parameters without opening the port.
+
+        Args:
+            port: Serial device path to connect to.
+            baudrate: Serial baud rate.
+            timeout: Serial read timeout in seconds.
+            logger: Logger to use; a module-level logger is created if None.
+            slave_address: Modbus slave address of the target hand.
+        """
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -67,6 +93,13 @@ class RS485_RTU:
             self.logger = logger
 
     def open(self):
+        """Opens the RS485 serial connection.
+
+        Raises:
+            ConnectionError: If the port could not be opened; the error
+                message includes any processes found holding the port via
+                `find_port_holders`.
+        """
         try:
             # retries=0: retry behaviour is handled in send/receive below,
             # matching the previous minimalmodbus implementation
@@ -93,10 +126,31 @@ class RS485_RTU:
             raise
 
     def send(self, data:list, command:int, max_retries=3, retry_delay=0.5):
-        """
-        Data needs to be in 16b format
-        max_retries: Number of times to retry on exception
-        retry_delay: Delay in seconds between retries
+        """Writes register values to the hand, retrying on Modbus errors.
+
+        Data must be in 16-bit register format. Dispatches to
+        `write_register`/`write_registers` depending on `command`.
+
+        Args:
+            data: Register values to write. For `SETUP_COMMANDS`, either a
+                single value or a 2-element [low_byte, high_byte] pair
+                packed into one register; for other command types, the
+                first element is the starting register address followed by
+                the values to write (except FIRMWARE_COMMAND/CONFIG_COMMAND,
+                which write `data` starting at register 0).
+            command: CommandType enum value selecting the write operation.
+            max_retries: Number of times to retry on exception.
+            retry_delay: Delay in seconds between retries.
+
+        Returns:
+            True if the write succeeded. False if an unknown command type
+            was given, or if 8-bit value validation failed for
+            SETUP_COMMANDS.
+
+        Raises:
+            ModbusIOException: If the final retry attempt still receives an
+                error response.
+            ConnectionException: If the final retry attempt still fails.
         """
         for attempt in range(max_retries):
             try:
@@ -144,8 +198,22 @@ class RS485_RTU:
         return False
 
     def receive(self, data:list, max_retries=3, retry_delay=0.1):
-        """
-        Receive data with retry logic
+        """Reads holding registers from the hand, retrying on Modbus errors.
+
+        Args:
+            data: Two-element list `[start_register, count]` describing the
+                registers to read.
+            max_retries: Number of times to retry on exception.
+            retry_delay: Delay in seconds between retries.
+
+        Returns:
+            A single int if one register was read, a list of ints if more
+            than one was read, or None if `max_retries` is 0.
+
+        Raises:
+            ModbusIOException: If the final retry attempt still receives an
+                error response.
+            ConnectionException: If the final retry attempt still fails.
         """
         for attempt in range(max_retries):
             try:
@@ -174,6 +242,7 @@ class RS485_RTU:
         return None
 
     def close(self):
+        """Closes the serial connection, if one is open. Errors are suppressed."""
         client = getattr(self, "client", None)
         if client is None:
             return

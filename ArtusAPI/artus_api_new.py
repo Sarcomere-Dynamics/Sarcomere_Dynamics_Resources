@@ -4,11 +4,13 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
+
+"""Top-level user-facing API for controlling ARTUS family robotic hands over Modbus."""
 
 import time
 import logging
@@ -24,20 +26,38 @@ from .robot import Robot
 from .firmware_update import FirmwareUpdaterNew
 
 class ArtusAPI_V2:
-    """
-    This is a newer version of the ArtusAPI that has been redesigned to accomodate a more robust communication process
-    as well as accomodate our newer series of hands, whereas the legacy ArtusAPI is mainly for the Artus Lite
+    """Newer, single user-facing entry point for controlling an ARTUS hand.
+
+    Redesigned to accommodate a more robust communication process as well as
+    the newer series of hands, whereas the legacy ArtusAPI is mainly for the
+    ARTUS Lite. Composes a robot handler (joint model/limits), a command
+    handler (Modbus register serialization), and a communication handler
+    (physical bus I/O).
     """
     def __init__(self,
-                # communication method 
+                # communication method
                 communication_method='RS485_RTU',
                 communication_channel_identifier='COM9',
-                # robot 
+                # robot
                 robot_type='artus_talos',
                 hand_type='left',
                 communication_frequency = 50, # hz
                 logger = None,
                 baudrate = 115200): #115200 for RS485, 250000 for UART
+        """Initializes the robot, command, and communication handlers and connects.
+
+        Args:
+            communication_method: Transport to use, e.g. 'RS485_RTU' or 'Modbus_TCP'.
+            communication_channel_identifier: Serial port (e.g. 'COM9') or other
+                channel identifier for the chosen communication method.
+            robot_type: Robot variant, e.g. 'artus_talos', 'artus_lite',
+                'artus_lite_plus', 'artus_scorpion', 'artus_dex'.
+            hand_type: Hand side, e.g. 'left' or 'right'.
+            communication_frequency: Maximum command send frequency in Hz.
+            logger: Optional logger instance shared across handlers; a module
+                logger is created if not provided.
+            baudrate: Serial baudrate (115200 for RS485, 250000 for UART).
+        """
 
         self.robot_type = robot_type
         self.hand_type = hand_type
@@ -76,15 +96,27 @@ class ArtusAPI_V2:
         self.connect()
 
     def _sigint_handler(self, signum, frame):
+        """Handles SIGINT by putting the hand to sleep before disconnecting.
+
+        Args:
+            signum: Signal number delivered by the OS.
+            frame: Current stack frame at the time the signal was received.
+        """
         self.logger.info("Ctrl+C detected. Calling sleep and disconnecting.")
         self.sleep()
         self.disconnect()
         self.original_sigint_handler(signum, frame)
 
     def set_control_type(self,control_type:int):
-        """
-        Set the control type of the hand
-        :param control_type: 0 for position control, 1 for velocity control, 2 for torque control
+        """Sets the active control type of the hand.
+
+        Args:
+            control_type: Control type value from ``self.control_types``
+                (1 for torque control, 2 for velocity control, 3 for position
+                control).
+
+        Returns:
+            True if the control type was valid and set, False otherwise.
         """
         if control_type not in self.control_types.values():
             self.logger.error(f"Control type {control_type} is not valid")
@@ -93,24 +125,38 @@ class ArtusAPI_V2:
         return True
 
     def _check_awake(self):
+        """Checks whether the hand is awake and ready to accept commands.
+
+        Returns:
+            True (currently a stub check; the underlying awake gating is
+            commented out).
+        """
         # if not self.awake:
         #     self.logger.warning(f'Hand not ready, send `wake_up` command')
         #     return False
         return True
 
     def connect(self):
+        """Opens the underlying communication channel to the hand."""
         self._communication_handler.open_connection()
         time.sleep(1)
         # self.wake_up()
 
     def disconnect(self):
+        """Closes the communication channel and restores the original SIGINT handler."""
         self._communication_handler.close_connection()
         signal.signal(signal.SIGINT, self.original_sigint_handler)
-    
+
     def wake_up(self,control_type:int=3):
-        """
-        Wake up the hand and set the control type
-         3 for position control, 2 for velocity control, 1 for torque control -- maximum 3 bits
+        """Wakes up the hand and sets its control type.
+
+        Sends the start command, waits for the hand to report a ready state,
+        and retries once if the hand reports it is asleep.
+
+        Args:
+            control_type: Control type to wake up with -- 3 for position
+                control, 2 for velocity control, 1 for torque control
+                (maximum 3 bits).
         """
         wake_command = self._command_handler.get_robot_start_command(control_type=control_type)
 
@@ -131,6 +177,7 @@ class ArtusAPI_V2:
             self.awake = True
 
     def sleep(self):
+        """Sends the sleep command, putting the hand into a low-power/idle state."""
         sleep_command = self._command_handler.get_sleep_command()
         self._communication_handler.send_data(sleep_command)
         self.last_time = time.perf_counter()
@@ -152,9 +199,10 @@ class ArtusAPI_V2:
         self.last_time = time.perf_counter()
 
     def get_config(self, wifi_name:str, wifi_pass:str):
-        """
-        Write new WiFi credentials to the hand's onboard config over Modbus and
-        read back the IP address it was assigned. Applicable to hands with a
+        """Writes new WiFi credentials to the hand and reads back its IP.
+
+        Writes new WiFi credentials to the hand's onboard config over Modbus and
+        reads back the IP address it was assigned. Applicable to hands with a
         WiFi-capable communication module; on wired transports (RS485_RTU,
         Modbus_TCP) this still exercises the onboard config write/ack flow but
         the reported IP reflects the WiFi radio regardless of the transport
@@ -165,6 +213,10 @@ class ArtusAPI_V2:
           2. send the length-prefixed register payload for the value
           3. wait for ACTUATOR_CONFIG_FINISH ack
         Then read the assigned IP from the feedback position registers.
+
+        Args:
+            wifi_name: WiFi SSID to write to the hand.
+            wifi_pass: WiFi password to write to the hand.
         """
         ssid_regs = self.string_to_registers(wifi_name)
         pass_regs = self.string_to_registers(wifi_pass)
@@ -209,9 +261,16 @@ class ArtusAPI_V2:
 
     @staticmethod
     def string_to_registers(s:str) -> list:
-        """
-        Convert a string into a list of 16-bit Modbus register values.
-        Each register holds two ASCII bytes.
+        """Converts a string into a list of 16-bit Modbus register values.
+
+        Each register holds two ASCII bytes; the byte string is null-padded
+        to an even length before packing.
+
+        Args:
+            s: String to convert (encoded as UTF-8).
+
+        Returns:
+            List of 16-bit integers, each packing two bytes of the string.
         """
         data = s.encode("utf-8")
 
@@ -227,6 +286,12 @@ class ArtusAPI_V2:
         return registers
 
     def get_robot_status(self):
+        """Reads and decodes the hand's current actuator and trajectory state.
+
+        Returns:
+            Tuple of (actuator_state_name, trajectory_return_name) as
+            strings, or None if the raw status value could not be decoded.
+        """
         try:
             robot_state = self._communication_handler._check_robot_state()
             actuator_state = ActuatorState((robot_state & 0b00001111)).name
@@ -238,6 +303,15 @@ class ArtusAPI_V2:
             return None
 
     def calibrate(self,joint=0):
+        """Runs the calibration routine on the hand.
+
+        Sends the calibration command, optionally scoped to a single joint,
+        and blocks until the hand reports it is ready again.
+
+        Args:
+            joint: Joint index to calibrate. If 0 (default), calibrates all
+                joints/strokes.
+        """
         if not self._check_awake():
             return
         calibrate_cmd = self._command_handler.get_calibration_command()
@@ -258,12 +332,23 @@ class ArtusAPI_V2:
             self.state = ActuatorState.ACTUATOR_IDLE.value
 
     def set_joint_angles_by_list(self, joint_angles:list, control_type:int=3):
-        """
-        sends joint commands to the hand - set_joint_angles for consistency with v1 api
-        :param joint_angles: list of joint angles to set - MUST ALL BE OF SAME TYPE based on injected_control_type
-        :param injected_control_type: control type to use for the joint angles - 3 for position control, 2 for velocity control, 1 for torque control
-        JOINT LIST MUST BE IN ORDER OF JOINT INDEX
-        :return: True if the command was sent successfully, False otherwise
+        """Sends joint commands to the hand from an ordered list of angles.
+
+        Named ``set_joint_angles_by_list`` for consistency with the v1 API.
+        Internally converts the list into the indexed dict form expected by
+        ``set_joint_angles``.
+
+        Args:
+            joint_angles: List of joint angles to set. Values must all be of
+                the same type based on ``control_type``, and the list must be
+                in order of joint index.
+            control_type: Control type to use for the joint angles -- 3 for
+                position control, 2 for velocity control, 1 for torque
+                control.
+
+        Returns:
+            True if the command was sent successfully, False otherwise. None
+            if the hand is not awake.
         """
         if not self._check_awake():
             return
@@ -273,10 +358,23 @@ class ArtusAPI_V2:
         return self.set_joint_angles(joint_angles_dict, injected_control_type=control_type)
 
     def set_joint_angles(self, joint_angles:dict, injected_control_type:int=None):
-        """
-        sends joint commands to the hand - set_joint_angles for consistency with v1 api
-        :param joint_angles: dictionary of joint angles to set - can havInvalie any combination of target_angle, target_velocity, or target_force - will be converted to the correct command based on the control type
-        :return: True if the command was sent successfully, False otherwise
+        """Sends joint commands to the hand.
+
+        Named ``set_joint_angles`` for consistency with the v1 API.
+
+        Args:
+            joint_angles: Dictionary of joint angles to set. Can have any
+                combination of target_angle, target_velocity, or
+                target_force -- converted to the correct command based on the
+                control type.
+            injected_control_type: If provided, overrides the derived
+                available-control bitmask with this control type instead of
+                using what ``joint_angles`` implies.
+
+        Returns:
+            True if the command was sent successfully, False if the joint
+            dictionary contained no valid data. None if the hand is not
+            awake.
         """
         if not self._check_awake():
             return
@@ -309,16 +407,19 @@ class ArtusAPI_V2:
         return True
 
     def _check_communication_frequency(self,last_time:float):
-        """
-        checks if the time between the last command and the current command is less than the communication period
-        Necessary so that the messages stay in sync
+        """Checks whether enough time has passed since the last command.
 
-        Parameters:
-        :last_command_time: time of the last command
+        Necessary so that the messages stay in sync with the configured
+        communication frequency.
+
+        Args:
+            last_time: Timestamp (from ``time.perf_counter()``) of the last
+                command sent.
 
         Returns:
-        :True if the time between the last command and the current command is greater than the communication period
-        :False if the time between the last command and the current command is less than the communication period
+            True if the time since ``last_time`` is greater than or equal to
+            the communication period, False if a command was sent too
+            recently.
         """
         current_time = time.perf_counter()
         if current_time - self.last_time < self._communication_period:
@@ -327,11 +428,17 @@ class ArtusAPI_V2:
         return True
 
     def wait_for_com_freq(self):
+        """Blocks until the communication period has elapsed since the last command.
+
+        Returns:
+            True once it is safe to send the next command.
+        """
         while not self._check_communication_frequency(self.last_time):
             time.sleep(0.001)
         return True
-    
+
     def set_home_position(self):
+        """Moves the hand to its home position at the default velocity."""
         if not self._check_awake():
             return
         # create hand joint dict with zero value angles
@@ -343,8 +450,10 @@ class ArtusAPI_V2:
         self.last_time = time.perf_counter()
 
     def get_voltage(self):
-        """
-        get voltage feedback from the hand
+        """Reads the hand's supply voltage feedback.
+
+        Returns:
+            Decoded voltage as a float, or None if the hand is not awake.
         """
         if not self._check_awake():
             return
@@ -361,12 +470,25 @@ class ArtusAPI_V2:
         return decoded_feedback_data[0]
     
     def get_joint_angles(self,start_reg=ModbusMap().modbus_reg_map['feedback_position_start_reg']):
-        """
-        named get_joint_angles for consistency with v1 api
-        actually should be `get_feedback`
-        covers all feedback types - position, torque, velocity, temperature based on start_reg parameter
-        
-        :param start_reg: according to modbusmap
+        """Reads feedback data for a given feedback register range.
+
+        Named ``get_joint_angles`` for consistency with the v1 API; actually
+        should be ``get_feedback``. Covers all feedback types -- position,
+        torque, velocity, temperature -- based on the ``start_reg``
+        parameter.
+
+        Args:
+            start_reg: Starting Modbus register address, as defined in
+                ``ModbusMap().modbus_reg_map``.
+
+        Returns:
+            For ``slave_id_reg`` or ``feedback_voltage_start_reg``, the
+            single decoded value. Otherwise, a dict mapping joint name to its
+            decoded feedback value. None if the hand is not awake.
+
+        Raises:
+            ValueError: If ``start_reg`` does not match a known key in
+                ``ModbusMap().modbus_reg_map``.
         """
         if not self._check_awake():
             return
@@ -402,14 +524,16 @@ class ArtusAPI_V2:
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
     def helper_fill_dict_from_feedback_data(self,feedback_data:list):
-        """
-        Helper function to fill a dictionary from feedback data for getters
+        """Maps a decoded feedback list to a dict keyed by joint name.
 
-        Parameters:
-        :feedback_data: list of feedback data
+        Helper function to fill a dictionary from feedback data for getters.
+
+        Args:
+            feedback_data: List of decoded feedback data, indexed in the
+                same order as ``self._robot_handler.robot.joint_names``.
 
         Returns:
-        :feedback_data_dict: dictionary of feedback data
+            Dictionary mapping joint name to its feedback value.
         """
         # return decoded feedback data in a dict
         feedback_data_dict = {}
@@ -418,9 +542,18 @@ class ArtusAPI_V2:
         return feedback_data_dict
 
     def helper_fill_dict_from_fingertip_forces(self, feedback_data: list) -> dict:
-        """
-        Map decoded fingertip feedback (5 fingers × 3 axes = 15 floats) to finger names.
-        Order matches Modbus / firmware and ``robot.force_sensors`` iteration order.
+        """Maps decoded fingertip feedback to a dict keyed by finger name.
+
+        Fingertip feedback is 5 fingers x 3 axes = 15 floats. Order matches
+        Modbus/firmware and ``robot.force_sensors`` iteration order.
+
+        Args:
+            feedback_data: Flat list of 15 decoded force values (x, y, z per
+                finger, in finger order).
+
+        Returns:
+            Dict mapping finger name to ``{'x': float, 'y': float, 'z':
+            float}``, or an empty dict if the robot has no force sensors.
         """
         fs = self._robot_handler.robot.force_sensors
         if not fs:
@@ -438,8 +571,11 @@ class ArtusAPI_V2:
         return out
 
     def get_joint_forces(self):
-        """
-        Get the joint torques from the hand
+        """Reads joint torque/force feedback from the hand.
+
+        Returns:
+            Dict mapping joint name to feedback force value, or None if the
+            hand is not awake.
         """
         if not self._check_awake():
             return
@@ -457,12 +593,15 @@ class ArtusAPI_V2:
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
     def get_fingertip_forces(self):
-        """
-        Get the fingertip forces from the hand.
+        """Reads the fingertip forces from the hand.
 
-        Returns a dict keyed by finger name (e.g. thumb, index, …), each value is
-        ``{'x': float, 'y': float, 'z': float}``. This matches the 15 decoded samples
-        from the bus; ``robot.force_sensors`` is updated in parallel for object access.
+        This matches the 15 decoded samples from the bus;
+        ``robot.force_sensors`` is updated in parallel for object access.
+
+        Returns:
+            Dict keyed by finger name (e.g. thumb, index, ...), each value is
+            ``{'x': float, 'y': float, 'z': float}``. None if the hand is not
+            awake.
         """
         if not self._check_awake():
             return
@@ -479,8 +618,11 @@ class ArtusAPI_V2:
         return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
     
     def get_joint_speeds(self):
-        """
-        Get the joint speeds from the hand
+        """Reads joint velocity feedback from the hand.
+
+        Returns:
+            Dict mapping joint name to feedback velocity value, or None if
+            the hand is not awake.
         """
         if not self._check_awake():
             return
@@ -499,9 +641,11 @@ class ArtusAPI_V2:
 
     ### NOT IMPLEMENTED YET ###
     def get_joint_temperatures(self):
-        """
-        Get the joint temperatures from the hand
-        :todo: work in progress - not implemented yet
+        """Reads per-joint temperature feedback from the hand.
+
+        Returns:
+            Dict mapping joint name to feedback temperature value, or None
+            if the hand is not awake.
         """
         if not self._check_awake():
             return
@@ -519,8 +663,11 @@ class ArtusAPI_V2:
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
     def get_avg_temperature(self):
-        """
-        Get the average temperature of the hand
+        """Reads the hand's average temperature feedback.
+
+        Returns:
+            Decoded average temperature as a float, or None if the hand is
+            not awake.
         """
         if not self._check_awake():
             return
@@ -538,8 +685,15 @@ class ArtusAPI_V2:
         return decoded_feedback_data[0]
         
     def get_hand_feedback_data(self) -> bool:
-        """
-        Get all feedback data from the hand that is available
+        """Reads all feedback types supported by the connected robot.
+
+        Iterates ``self._robot_handler.robot.available_feedback_types`` and
+        fetches each one, routing fingertip force sensor data through
+        ``get_fingertip_forces``.
+
+        Returns:
+            True once all available feedback types have been read, or None
+            if the hand is not awake.
         """
         if not self._check_awake():
             return
@@ -552,8 +706,11 @@ class ArtusAPI_V2:
         return True
 
     def get_error_report(self):
-        """
-        Get the error report from the hand
+        """Reads the per-joint actuator error bitfield report from the hand.
+
+        Returns:
+            Dict mapping joint name to its decoded error report value, or
+            None if the hand is not awake.
         """
         if not self._check_awake():
             return
@@ -573,10 +730,25 @@ class ArtusAPI_V2:
 
     # for compatibility
     def get_streamed_joint_angles(self,dat_type=0):
+        """Stub retained for v1 API compatibility.
+
+        Args:
+            dat_type: Unused; kept for signature compatibility with v1.
+
+        Returns:
+            None. Always logs an error since this is not implemented in
+            ArtusAPI_V2.
+        """
         self.logger.error(f"get_streamed_joint_angles is not implemented in ArtusAPIv2")
         return None
 
     def reset(self,joints=None):
+        """Sends a reset command for the given number of joints.
+
+        Args:
+            joints: Number of joints to reset. If None, prompts on stdin for
+                a value between 0 and the robot's total joint count.
+        """
         if joints is None:
             joints = int(input(f"Enter number of joints to reset (0-{self._robot_handler.robot.number_of_joints}): "))
         reset_command = self._command_handler.get_reset_command(joints)
@@ -591,7 +763,20 @@ class ArtusAPI_V2:
             self.logger.info("Hand ready")
     
     def update_firmware(self,file_location=None,drivers_to_flash=None):
-        
+        """Flashes new firmware to one or all actuator drivers on the hand.
+
+        Prompts on stdin for any missing arguments (binary file path and/or
+        which drivers to flash), sends the firmware command, then streams the
+        firmware file to the hand and polls status until flashing completes.
+
+        Args:
+            file_location: Absolute path to the ``.bin`` firmware file. If
+                None or not ending in ``.bin``, prompted for on stdin.
+            drivers_to_flash: Which driver(s) to flash -- 0-5 for a specific
+                actuator mapped to a joint number, or 6 for all actuators. If
+                None, prompted for on stdin.
+        """
+
         if file_location is None or (isinstance(file_location, str) and not file_location.endswith('.bin')):
             file_location = input('Please enter absolute filepath of binary file: ')
 

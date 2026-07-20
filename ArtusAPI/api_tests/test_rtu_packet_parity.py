@@ -92,6 +92,7 @@ class MinimalmodbusCallCapture:
     """Run the archived minimalmodbus RS485_RTU against a mocked Instrument."""
 
     def __init__(self):
+        """Builds the archived minimalmodbus RS485_RTU with its Instrument mocked out."""
         from ArtusAPI.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
 
         self.instrument = MagicMock()
@@ -103,6 +104,15 @@ class MinimalmodbusCallCapture:
             self.rtu.open()
 
     def send(self, data, command):
+        """Sends data through the RTU backend and captures the resulting library call.
+
+        Args:
+            data: Command payload as produced by NewCommands.
+            command: CommandType value identifying the operation.
+
+        Returns:
+            A (kind, address, payload) tuple describing the minimalmodbus call made.
+        """
         self.instrument.reset_mock()
         self.rtu.send(data, command, max_retries=1)
         if self.instrument.write_register.called:
@@ -112,6 +122,15 @@ class MinimalmodbusCallCapture:
         return ("write_multiple", kwargs["registeraddress"], list(kwargs["values"]))
 
     def receive(self, data, return_value):
+        """Reads data through the RTU backend and captures the resulting library call.
+
+        Args:
+            data: [start_register, count] pair describing the read.
+            return_value: Value(s) the mocked Instrument should return.
+
+        Returns:
+            A tuple of ((kind, address, count), decoded return value).
+        """
         self.instrument.reset_mock()
         # minimalmodbus read_registers always returns a list
         self.instrument.read_registers.return_value = (
@@ -126,6 +145,7 @@ class PymodbusCallCapture:
     """Run the pymodbus RS485_RTU against a mocked ModbusSerialClient."""
 
     def __init__(self):
+        """Builds the pymodbus-backed RS485_RTU with its ModbusSerialClient mocked out."""
         from ArtusAPI.communication.RS485_RTU.rs485_rtu import RS485_RTU
 
         self.client = MagicMock()
@@ -142,6 +162,15 @@ class PymodbusCallCapture:
             self.rtu.open()
 
     def send(self, data, command):
+        """Sends data through the RTU backend and captures the resulting library call.
+
+        Args:
+            data: Command payload as produced by NewCommands.
+            command: CommandType value identifying the operation.
+
+        Returns:
+            A (kind, address, payload) tuple describing the pymodbus call made.
+        """
         self.client.reset_mock()
         self.rtu.send(data, command, max_retries=1)
         if self.client.write_register.called:
@@ -153,6 +182,15 @@ class PymodbusCallCapture:
         return ("write_multiple", args[0], list(args[1]))
 
     def receive(self, data, return_value):
+        """Reads data through the RTU backend and captures the resulting library call.
+
+        Args:
+            data: [start_register, count] pair describing the read.
+            return_value: Value(s) the mocked client should return.
+
+        Returns:
+            A tuple of ((kind, address, count), decoded return value).
+        """
         self.client.reset_mock()
         result = MagicMock()
         result.isError.return_value = False
@@ -165,6 +203,11 @@ class PymodbusCallCapture:
 
     @staticmethod
     def assert_slave(kwargs):
+        """Asserts the call was addressed to the expected slave/device ID.
+
+        Args:
+            kwargs: Keyword arguments captured from the mocked client call.
+        """
         assert kwargs.get("device_id") == SLAVE_ID, f"missing/wrong device_id: {kwargs}"
 
 
@@ -173,9 +216,11 @@ class TestCurrentImplCalls(unittest.TestCase):
     """Baseline: the archived minimalmodbus backend issues the expected library calls."""
 
     def setUp(self):
+        """Creates a MinimalmodbusCallCapture for each test."""
         self.capture = MinimalmodbusCallCapture()
 
     def test_send_cases(self):
+        """Verifies each SEND_CASES entry produces the expected minimalmodbus library call."""
         for name, data, command in SEND_CASES:
             with self.subTest(name=name):
                 self.assertEqual(
@@ -184,11 +229,13 @@ class TestCurrentImplCalls(unittest.TestCase):
                 )
 
     def test_receive_single_register_returns_int(self):
+        """Verifies reading a single register returns an int via minimalmodbus."""
         call, ret = self.capture.receive([200, 1], return_value=0x0506)
         self.assertEqual(call, ("read_holding", 200, 1))
         self.assertEqual(ret, 0x0506)
 
     def test_receive_multiple_registers_returns_list(self):
+        """Verifies reading multiple registers returns a list via minimalmodbus."""
         call, ret = self.capture.receive([201, 10], return_value=list(range(10)))
         self.assertEqual(call, ("read_holding", 201, 10))
         self.assertEqual(ret, list(range(10)))
@@ -198,9 +245,11 @@ class TestPymodbusImplCalls(unittest.TestCase):
     """The new pymodbus backend issues the same library calls."""
 
     def setUp(self):
+        """Creates a PymodbusCallCapture for each test."""
         self.capture = PymodbusCallCapture()
 
     def test_send_cases(self):
+        """Verifies each SEND_CASES entry produces the expected pymodbus library call."""
         for name, data, command in SEND_CASES:
             with self.subTest(name=name):
                 self.assertEqual(
@@ -209,16 +258,19 @@ class TestPymodbusImplCalls(unittest.TestCase):
                 )
 
     def test_receive_single_register_returns_int(self):
+        """Verifies reading a single register returns an int via pymodbus."""
         call, ret = self.capture.receive([200, 1], return_value=0x0506)
         self.assertEqual(call, ("read_holding", 200, 1))
         self.assertEqual(ret, 0x0506)
 
     def test_receive_multiple_registers_returns_list(self):
+        """Verifies reading multiple registers returns a list via pymodbus."""
         call, ret = self.capture.receive([201, 10], return_value=list(range(10)))
         self.assertEqual(call, ("read_holding", 201, 10))
         self.assertEqual(ret, list(range(10)))
 
     def test_config_command(self):
+        """Verifies CONFIG_COMMAND, added after the minimalmodbus migration, issues a write_multiple call."""
         # CONFIG_COMMAND has no minimalmodbus-era baseline (added after the
         # migration, for onboard WiFi config writes) - not part of SEND_CASES.
         call = self.capture.send([2, 0x4142, 0x4300], CommandType.CONFIG_COMMAND.value)
@@ -230,6 +282,7 @@ class TestCallParity(unittest.TestCase):
     """Both backends produce identical (kind, address, payload) for every case."""
 
     def test_send_parity(self):
+        """Verifies both backends produce identical send calls for every SEND_CASES entry."""
         old = MinimalmodbusCallCapture()
         new = PymodbusCallCapture()
         for name, data, command in SEND_CASES:
@@ -237,6 +290,7 @@ class TestCallParity(unittest.TestCase):
                 self.assertEqual(old.send(data, command), new.send(data, command))
 
     def test_receive_parity(self):
+        """Verifies both backends produce identical receive calls for every RECEIVE_CASES entry."""
         old = MinimalmodbusCallCapture()
         new = PymodbusCallCapture()
         for name, data in RECEIVE_CASES:
@@ -258,6 +312,15 @@ class TestWireFrameParity(unittest.TestCase):
     """
 
     def _capture_minimalmodbus_frame(self, run):
+        """Runs an operation against the real minimalmodbus framing code and captures the raw bytes written.
+
+        Args:
+            run: Callable invoked with the constructed RS485_RTU instance to
+                trigger the send/receive operation being captured.
+
+        Returns:
+            The raw RTU frame bytes minimalmodbus wrote to the mocked serial port.
+        """
         import minimalmodbus
 
         from ArtusAPI.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
@@ -281,6 +344,7 @@ class TestWireFrameParity(unittest.TestCase):
         return written[0]
 
     def test_send_frames_match(self):
+        """Verifies minimalmodbus's on-wire send frame matches the frame pymodbus builds, for every SEND_CASES entry."""
         for name, data, command in SEND_CASES:
             with self.subTest(name=name):
                 frame = self._capture_minimalmodbus_frame(
@@ -290,6 +354,7 @@ class TestWireFrameParity(unittest.TestCase):
                 self.assertEqual(frame, build_pymodbus_frame(kind, address, payload))
 
     def test_read_frames_match(self):
+        """Verifies minimalmodbus's on-wire read frame matches the frame pymodbus builds, for every RECEIVE_CASES entry."""
         for name, data in RECEIVE_CASES:
             with self.subTest(name=name):
                 frame = self._capture_minimalmodbus_frame(

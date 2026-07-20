@@ -4,11 +4,13 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
+
+"""Qt widget providing live plots of ARTUS hand feedback data."""
 
 import os
 import json
@@ -27,7 +29,26 @@ from examples.config.configuration import ArtusConfig
 from ArtusAPI.robot.robot import Robot
 
 class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
+    """Qt widget that plots live per-joint and force-sensor feedback data.
+
+    Subscribes to a ZMQ "Feedback" topic and renders scrolling plots of the
+    selected feedback type (angle, velocity, or force) for each hand joint,
+    plus per-axis force sensor plots when the connected robot has force
+    sensors.
+    """
+
     def __init__(self, win=None, zmq_feedback_subPort="tcp://127.0.0.1:5555"):
+        """Initializes the ZMQ subscriber, robot joint model, and plot widgets.
+
+        Args:
+            win: Optional reference to a parent/owning window.
+            zmq_feedback_subPort: ZMQ address to subscribe to for feedback
+                messages.
+
+        Raises:
+            ValueError: If no robot is marked as connected in the ArtusConfig
+                configuration.
+        """
         QtWidgets.QWidget.__init__(self)
         ZMQSubscriber.__init__(self, address=zmq_feedback_subPort, topics=["Feedback"])
         robot = None
@@ -72,6 +93,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         self.timer.start(50)  # Update every 50 ms
 
     def _init_ui(self):
+        """Builds the feedback-type selector, plot area, and joint/force sensor plots."""
         self.layout = QtWidgets.QVBoxLayout()
 
         # Feedback type dropdown
@@ -95,6 +117,11 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         self.setLayout(self.layout)
 
     def create_joint_plots(self):
+        """Creates one scrolling plot per hand joint and initializes its data buffers.
+
+        Populates self.plots, self.curves, self.data, and self.ptr, one
+        entry per joint in self.joint_names, arranged two plots per row.
+        """
         num_cols = np.ceil(len(self.joint_names) / 2)  # Number of plots per row
         self.plot_widget.nextRow()
         for i, name in enumerate(self.joint_names):
@@ -111,9 +138,12 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
                 self.plot_widget.nextRow()
 
     def create_force_sensor_plots(self):
-        """
-        Create plots for any available force sensors (Talos).
-        Each force sensor gets a plot with X/Y/Z curves.
+        """Creates plots for any available force sensors (e.g. ARTUS Talos).
+
+        Each force sensor gets its own plot with red/green/blue X/Y/Z
+        curves. Populates self.force_plots, self.force_curves,
+        self.force_data, and self.force_ptr. No-op if the connected robot
+        has no force sensors.
         """
         if not self.force_sensor_names:
             return
@@ -137,6 +167,14 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
                 self.plot_widget.nextRow()
 
     def update_plots(self):
+        """Timer callback that pulls the latest feedback message and redraws the plots.
+
+        Parses the JSON feedback payload from the ZMQ subscriber and
+        appends the current feedback_type value for each joint (and, if
+        present, each force sensor axis) to their respective scrolling data
+        buffers. No-op if no message is available; prints an error if the
+        payload is not valid JSON.
+        """
         raw_data = self.receive()
         if raw_data is None:
             # print(f"No feedback data received from ZMQ Subscriber")
@@ -177,11 +215,23 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         # print(f"Updated Plots")
 
     def _on_feedback_type_changed(self):
+        """Handles the feedback-type dropdown change by resetting the plots.
+
+        Updates self.feedback_type from the dropdown's current selection
+        and calls reset_plots() to clear and re-range the plots for the new
+        type.
+        """
         self.feedback_type = self.feedback_type_selector.currentText()
         print(f"Feedback type changed to: {self.feedback_type}")
         self.reset_plots()
 
     def reset_plots(self):
+        """Clears all plot data and re-applies the y-range/color for the current feedback type.
+
+        Resets each joint plot's data buffer and pointer, sets its y-range
+        and curve color based on self.feedback_type (angle, velocity, or
+        force), and clears all force sensor plot data buffers.
+        """
         for i, plot_item in enumerate(self.plots):
             # Clear existing data
             self.data[i] = np.zeros(self.history_length)
@@ -210,6 +260,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
 
 
 def main():
+    """Creates the QApplication, shows the UIFeedback window, and starts the event loop."""
     app = QtWidgets.QApplication(sys.argv)
     ui_feedback_window = UIFeedback()
     ui_feedback_window.show()

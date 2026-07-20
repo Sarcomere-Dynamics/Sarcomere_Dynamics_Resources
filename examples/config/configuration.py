@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -34,18 +34,44 @@ print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 class ArtusConfig:
-    """
-    This class is used to load and convert the configuration file into a dictionary to be used by the ArtusAPI_V2 class.
+    """Loads robot_config.yaml and builds a configured ArtusAPI_V2 instance.
+
+    The YAML config is converted into nested SimpleNamespace objects so
+    fields are accessible via attribute access (e.g. config.robots.left_hand_robot).
     """
     def __init__(self, config_file = PROJECT_ROOT + f"/examples/config/robot_config.yaml"):
+        """Loads and converts the given YAML config file.
+
+        Args:
+            config_file: Path to the robot_config.yaml file to load. Defaults
+                to examples/config/robot_config.yaml under the project root.
+        """
         self.config = self.load_and_convert_config(config_file)
 
     def load_and_convert_config(self, config_file):
+        """Reads a YAML config file and converts it to nested SimpleNamespace objects.
+
+        Args:
+            config_file: Path to the YAML config file to load.
+
+        Returns:
+            A SimpleNamespace (or nested structure of SimpleNamespace/list)
+            representing the parsed YAML content.
+        """
         with open(config_file, 'r') as file:
             config_dict = yaml.safe_load(file)
         return self.dict_to_namespace(config_dict)
 
     def dict_to_namespace(self, d):
+        """Recursively converts a dict (and any nested dicts/lists) into SimpleNamespace objects.
+
+        Args:
+            d: A dict, list, or scalar value to convert.
+
+        Returns:
+            The equivalent structure with dicts replaced by SimpleNamespace
+            objects; lists and scalars are recursed into or returned as-is.
+        """
         if isinstance(d, dict):
             return SimpleNamespace(**{k: self.dict_to_namespace(v) for k, v in d.items()})
         elif isinstance(d, list):
@@ -54,6 +80,14 @@ class ArtusConfig:
             return d
 
     def check_and_print_robot_config(self, hand_type):
+        """Prints the configuration for the given hand if it is connected.
+
+        Args:
+            hand_type: Either 'left' or 'right'.
+
+        Raises:
+            ValueError: If hand_type is not 'left' or 'right'.
+        """
         # Get the robot config for the specified hand type (left or right)
         if hand_type == 'left':
             robot_config = self.config.robots.left_hand_robot
@@ -71,6 +105,14 @@ class ArtusConfig:
             print(f"//n{hand_type.capitalize()} hand robot is not connected.")
 
     def find_single_robot_type(self)->str:
+        """Determines the robot_type of whichever single hand is marked connected.
+
+        Returns:
+            The robot_type string of the connected hand.
+
+        Raises:
+            ValueError: If neither hand (or both hands) are connected.
+        """
         if self.config.robots.left_hand_robot.robot_connected == True and self.config.robots.right_hand_robot.robot_connected == False:
             return self.config.robots.left_hand_robot.robot_type
         elif self.config.robots.right_hand_robot.robot_connected == True and self.config.robots.left_hand_robot.robot_connected == False:
@@ -80,10 +122,20 @@ class ArtusConfig:
             return None
 
     def get_api(self, logger=None):
-        """
-        Returns an instance of the appropriate API (ArtusAPI or ArtusAPI_V2)
-        based on the connected robot. Only one robot can be connected at a time.
-        Checks the robot connected status and returns the appropriate API instance.
+        """Builds a configured ArtusAPI_V2 instance for whichever hand is connected.
+
+        Only one robot can be connected at a time. Runs pre-flight checks
+        (port availability, slave ID discovery) before instantiating the API.
+
+        Args:
+            logger: Optional logger passed through to the API instance and
+                used for pre-flight warnings instead of print().
+
+        Returns:
+            A configured ArtusAPI_V2 instance for the connected hand.
+
+        Raises:
+            ValueError: If no robot is connected, or more than one is.
         """
 
         # Figure out which robot is connected
@@ -104,8 +156,19 @@ class ArtusConfig:
     # ------------------------------------------------------------------
 
     def _preflight(self, robot_cfg, logger):
-        """Validate port and slave ID before instantiating the API, correcting
-        robot_cfg in place if either needs to be discovered."""
+        """Validates the port and slave ID before instantiating the API.
+
+        Corrects robot_cfg in place if either needs to be discovered. Skipped
+        for Modbus TCP configs, where serial port selection and slave ID
+        probing do not apply.
+
+        Args:
+            robot_cfg: SimpleNamespace of the connected robot's configuration.
+            logger: Optional logger for pre-flight messages.
+
+        Returns:
+            The (possibly corrected) robot_cfg.
+        """
         if getattr(robot_cfg, 'communication_method', 'RS485_RTU') == 'Modbus_TCP':
             # serial port selection and slave ID probing only apply to RS485
             return robot_cfg
@@ -114,8 +177,23 @@ class ArtusConfig:
         return robot_cfg
 
     def _validate_port_or_select(self, robot_cfg, logger):
-        """If the configured serial port is not available, list available ports
-        and prompt the user to pick one."""
+        """Ensures the configured serial port is available, prompting if not.
+
+        If the configured port is not available, auto-selects the only
+        available port, or prompts the user to choose from a list.
+
+        Args:
+            robot_cfg: SimpleNamespace of the connected robot's configuration.
+            logger: Optional logger (unused directly, kept for symmetry with
+                the other pre-flight helpers).
+
+        Returns:
+            robot_cfg with communication_channel_identifier updated to a
+            valid port if the configured one was unavailable.
+
+        Raises:
+            RuntimeError: If no serial ports are found at all.
+        """
         available_ports = serial.tools.list_ports.comports()
         available_devices = [p.device for p in available_ports]
 
@@ -152,8 +230,21 @@ class ArtusConfig:
                 print("Invalid input. Enter a number.")
 
     def _validate_slave_or_discover(self, robot_cfg, logger):
-        """Probe the configured Modbus slave ID. If it does not respond, scan
-        all known slave IDs and update robot_cfg with what is actually found."""
+        """Probes the configured Modbus slave ID, scanning all known IDs if it does not respond.
+
+        Args:
+            robot_cfg: SimpleNamespace of the connected robot's configuration.
+            logger: Optional logger used to warn when the discovered
+                robot_type/hand_type differs from the configured values.
+
+        Returns:
+            robot_cfg with robot_type/hand_type updated if the configured
+            slave ID did not respond but a different one was discovered.
+
+        Raises:
+            RuntimeError: If the serial port cannot be opened, or if no
+                ARTUS hand responds on any known slave ID.
+        """
         port = robot_cfg.communication_channel_identifier
         baudrate = getattr(robot_cfg, 'baudrate', 115200)
         configured_slave = expected_slave_id(robot_cfg.robot_type, robot_cfg.hand_type)
@@ -173,6 +264,14 @@ class ArtusConfig:
             raise RuntimeError(msg)
 
         def _probe(slave_id) -> bool:
+            """Attempts a single-register read against the given slave ID.
+
+            Args:
+                slave_id: Modbus slave/device ID to probe.
+
+            Returns:
+                True if the read succeeded without error, False otherwise.
+            """
             try:
                 result = client.read_holding_registers(status_reg, count=1, device_id=slave_id)
                 return not result.isError()
@@ -221,9 +320,14 @@ class ArtusConfig:
             client.close()
     
     def return_api(self,robot_cfg:dict=None,logger=None):
-        """
-        Return an instance of the appropriate API
-        :param: robot_cfg: dictionary of robot configuration
+        """Instantiates ArtusAPI_V2 from a robot configuration.
+
+        Args:
+            robot_cfg: SimpleNamespace of the connected robot's configuration.
+            logger: Optional logger passed through to the API instance.
+
+        Returns:
+            A configured ArtusAPI_V2 instance, or None if robot_cfg is None.
         """
         if robot_cfg is None:
             return None
@@ -249,8 +353,15 @@ class ArtusConfig:
             
 
     def get_robot_calibrate(self, hand_type:str=None) -> bool:
-        """
-        Returns True if the robot calibrate flag is set in config, False otherwise
+        """Reads the calibrate flag from config.
+
+        Args:
+            hand_type: 'left' or 'right' to check a specific hand; if None,
+                checks whichever hand is marked connected.
+
+        Returns:
+            True if the calibrate flag is set for the relevant hand, False
+            if it is not set or no hand is connected (when hand_type is None).
         """
         if hand_type is None:
             if self.config.robots.left_hand_robot.robot_connected:
@@ -265,8 +376,18 @@ class ArtusConfig:
             return self.config.robots.right_hand_robot.calibrate
 
     def get_robot_wake_up(self, hand_type:str=None) -> bool:
-        """
-        Returns True if the robot wake up flag is set in config, False otherwise
+        """Reads the start_robot (wake up) flag from config.
+
+        Args:
+            hand_type: 'left' or 'right' to check a specific hand; if None,
+                checks whichever hand is marked connected.
+
+        Returns:
+            True if the start_robot flag is set for the relevant hand, False
+            if it is not set or no hand is connected (when hand_type is None).
+
+        Raises:
+            ValueError: If hand_type is given but is not 'left' or 'right'.
         """
         if hand_type is None:
             if self.config.robots.left_hand_robot.robot_connected:

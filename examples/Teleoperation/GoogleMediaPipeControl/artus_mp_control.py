@@ -4,13 +4,22 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 
 Uses MediaPipe Tasks API (HandLandmarker). Requires: pip install mediapipe (>= 0.10.31).
 On first run, hand_landmarker.task is downloaded to this script's directory.
+"""
+
+"""Webcam-based teleoperation demo mapping MediaPipe hand landmarks to ARTUS joints.
+
+Captures webcam frames, runs MediaPipe's HandLandmarker to extract 3D hand
+landmarks, converts them to per-joint flexion angles (geometrically, with an
+optional IK-assisted refinement based on calibrated finger link lengths),
+smooths the angles with a per-joint Kalman filter, and streams the resulting
+joint commands to an ARTUS Lite hand via the ArtusAPI_V2 API.
 """
 
 import cv2
@@ -29,6 +38,7 @@ import sys
 import mediapipe as mp
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision
+from examples.config.configuration import ArtusConfig
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(
@@ -40,18 +50,22 @@ PROJECT_ROOT = os.path.dirname(
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
-# import ArtusAPI
-
-
 
 # ============================================================
 #  CAMERA AUTO-DETECTION
 # ============================================================
 
 def find_working_camera(max_tested=10):
-    """
-    Scans camera indices from 0 up to max_tested-1.
-    Returns the first index that opens successfully and produces frames.
+    """Scans camera indices to find the first working webcam.
+
+    Args:
+        max_tested: Number of camera indices to try, starting from 0.
+
+    Returns:
+        int: Index of the first camera that opens and produces a frame.
+
+    Raises:
+        RuntimeError: If no working camera is found within max_tested indices.
     """
     print("Scanning for available camera...")
     for i in range(max_tested):
@@ -80,7 +94,16 @@ HAND_LANDMARKER_MODEL_URL = (
 
 
 def get_hand_landmarker_model_path():
-    """Return path to hand_landmarker.task; download if missing."""
+    """Returns the local path to hand_landmarker.task, downloading it if missing.
+
+    Returns:
+        str: Absolute path to the hand_landmarker.task model file next to
+        this script.
+
+    Raises:
+        RuntimeError: If the model file is not already present and the
+            download from HAND_LANDMARKER_MODEL_URL fails.
+    """
     script_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(script_dir, "hand_landmarker.task")
     if os.path.isfile(model_path):
@@ -98,7 +121,12 @@ def get_hand_landmarker_model_path():
 
 
 def create_hand_landmarker():
-    """Create HandLandmarker in VIDEO mode for webcam."""
+    """Creates a MediaPipe HandLandmarker configured for webcam video input.
+
+    Returns:
+        vision.HandLandmarker: Detector instance running in VIDEO mode,
+        configured to track up to two hands.
+    """
     model_path = get_hand_landmarker_model_path()
     base_options = mp_tasks.BaseOptions(model_asset_path=model_path)
     options = vision.HandLandmarkerOptions(
@@ -113,23 +141,36 @@ def create_hand_landmarker():
 
 
 def rgb_frame_to_mp_image(rgb):
-    """Convert numpy RGB (H,W,3) uint8 to MediaPipe Image."""
+    """Converts a numpy RGB frame into a MediaPipe Image.
+
+    Args:
+        rgb: numpy array of shape (H, W, 3), dtype uint8, in RGB order.
+
+    Returns:
+        mp.Image: MediaPipe image wrapping the same pixel data.
+    """
     rgb = np.ascontiguousarray(rgb)
     return mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb)
 
 
 class MonotonicTimestampMS:
-    """
-    Generates strictly monotonically increasing timestamps in milliseconds.
+    """Generates strictly monotonically increasing timestamps in milliseconds.
 
     Uses a monotonic clock (perf_counter_ns) and clamps to +1ms if needed.
     This prevents MediaPipe Tasks VIDEO/LIVE_STREAM pipelines from throwing:
         "input timestamp must be monotonically increasing"
     """
     def __init__(self):
+        """Initializes the timestamp generator with no prior timestamp."""
         self._last = -1
 
     def next(self) -> int:
+        """Returns the next strictly increasing timestamp in milliseconds.
+
+        Returns:
+            int: Current monotonic time in milliseconds, guaranteed to be
+            at least 1ms greater than the previously returned value.
+        """
         ts = time.perf_counter_ns() // 1_000_000  # monotonic ms
         if ts <= self._last:
             ts = self._last + 1
@@ -138,7 +179,12 @@ class MonotonicTimestampMS:
 
 
 def draw_hand_landmarks_on_image(rgb_image, hand_landmarks):
-    """Draw hand landmarks on RGB image (mutates in place)."""
+    """Draws hand landmarks and connections onto an RGB image in place.
+
+    Args:
+        rgb_image: numpy RGB image array to draw on; mutated in place.
+        hand_landmarks: MediaPipe hand landmark list for a single hand.
+    """
     mp_drawing.draw_landmarks(
         rgb_image,
         hand_landmarks,
@@ -182,17 +228,22 @@ JOINT_ORDER = [
 ]
 
 def map_range(value, in_min, in_max, out_min, out_max, clamp=True):
-    """
-    Linearly map a value from one range to another.
+    """Linearly maps a value from one numeric range to another.
 
-    value   : number to transform
-    in_min  : lower bound of input range
-    in_max  : upper bound of input range
-    out_min : lower bound of output range
-    out_max : upper bound of output range
-    clamp   : if True, restrict output to [out_min, out_max]
+    Args:
+        value: Number to transform.
+        in_min: Lower bound of the input range.
+        in_max: Upper bound of the input range.
+        out_min: Lower bound of the output range.
+        out_max: Upper bound of the output range.
+        clamp: If True, restrict the output to [out_min, out_max]
+            (or [out_max, out_min] when out_min > out_max).
 
-    Returns a float.
+    Returns:
+        float: The value rescaled into the output range.
+
+    Raises:
+        ValueError: If in_min equals in_max.
     """
     if in_max - in_min == 0:
         raise ValueError("Input range cannot be zero.")
@@ -210,15 +261,20 @@ def map_range(value, in_min, in_max, out_min, out_max, clamp=True):
 
 
 def map_angle_for_artus(joint_name, flex_deg):
-    """
-    Map flexion angle (0–180°, where 0 = extended, 180 = flexed) into
-    Artus Lite joint command space with per-joint ROM:
+    """Maps a flexion angle into ARTUS Lite joint command space.
 
-        • thumb_cmc        →  -45°   to  +45°
-        • finger MCPs     →  -17°   to  +17°
-        • all other joints →   0°    to   90°
+    Input is a flexion angle in degrees (0 = extended, 180 = flexed), which
+    is rescaled per joint according to its range of motion:
+        - thumb_cmc: -45 deg to +45 deg
+        - finger MCPs (index/middle/ring/pinky): -17 deg to +17 deg
+        - all other joints: 0 deg to 90 deg
 
-    Returns an integer command value.
+    Args:
+        joint_name: Name of the joint, matching a key in JOINT_ORDER.
+        flex_deg: Flexion angle in degrees, clamped to [0, 180].
+
+    Returns:
+        int: Rounded ARTUS joint command value.
     """
     flex = max(0.0, min(180.0, float(flex_deg)))
 
@@ -251,8 +307,16 @@ FINGER_CHAINS = {
 # ============================================================
 
 def angle_between_3d(p1, p2, p3):
-    """
-    Compute geometric angle (deg) at p2 using 3D vectors.
+    """Computes the geometric angle at p2 formed by the segments p2-p1 and p2-p3.
+
+    Args:
+        p1: numpy array of shape (3,) for the first point.
+        p2: numpy array of shape (3,) for the vertex point.
+        p3: numpy array of shape (3,) for the third point.
+
+    Returns:
+        float: Angle at p2 in degrees, or 0.0 if either segment has
+        near-zero length.
     """
     v1 = p1 - p2
     v2 = p3 - p2
@@ -269,18 +333,30 @@ def angle_between_3d(p1, p2, p3):
 
 
 def geometric_to_flex(angle_deg):
-    """
-    Convert geometric angle to flexion angle:
-    0° = fully extended, increases with flexion.
+    """Converts a geometric joint angle into a flexion angle.
+
+    Args:
+        angle_deg: Geometric angle in degrees, as returned by
+            angle_between_3d (180 deg = straight/extended).
+
+    Returns:
+        float: Flexion angle in degrees, clamped to [0, 180], where 0 is
+        fully extended and higher values indicate more flexion.
     """
     flex = 180.0 - angle_deg
     return max(0, min(180, flex))
 
 
 def compute_hand_joint_angles_geometric(landmarks):
-    """
-    Compute flexion angles for all joints from MediaPipe's 3D points,
-    using the simple 3-point geometric method.
+    """Computes flexion angles for all joints using the 3-point geometric method.
+
+    Args:
+        landmarks: MediaPipe hand landmark list (21 points) with x, y, z
+            attributes per point.
+
+    Returns:
+        dict: Mapping of joint name (from JOINTS) to flexion angle in
+        degrees.
     """
     pts = np.array([[lm.x, lm.y, lm.z] for lm in landmarks])
 
@@ -297,12 +373,20 @@ def compute_hand_joint_angles_geometric(landmarks):
 # ============================================================
 
 class AngleKalmanFilter:
-    """
-    Constant-velocity Kalman filter for a single joint angle.
-    State x = [angle, angular_velocity]^T
+    """Constant-velocity Kalman filter for a single joint angle.
+
+    State x = [angle, angular_velocity]^T.
     """
 
     def __init__(self, process_var=20.0, measurement_var=50.0):
+        """Initializes the filter state and noise covariances.
+
+        Args:
+            process_var: Process noise variance; scales the state
+                transition noise covariance Q.
+            measurement_var: Measurement noise variance R for the angle
+                observation.
+        """
         self.x = np.array([[0.0],
                            [0.0]], dtype=np.float32)
         self.P = np.eye(2, dtype=np.float32) * 1000.0
@@ -314,6 +398,11 @@ class AngleKalmanFilter:
         self.initialized = False
 
     def predict(self, dt):
+        """Propagates the state estimate forward by one time step.
+
+        Args:
+            dt: Time elapsed since the previous update, in seconds.
+        """
         A = np.array([[1.0, dt],
                       [0.0, 1.0]], dtype=np.float32)
 
@@ -321,6 +410,18 @@ class AngleKalmanFilter:
         self.P = A @ self.P @ A.T + self.Q_base
 
     def update(self, z, dt):
+        """Updates the filter with a new angle measurement.
+
+        On the first call the filter is initialized directly from the
+        measurement instead of running a predict/correct cycle.
+
+        Args:
+            z: Measured joint angle.
+            dt: Time elapsed since the previous update, in seconds.
+
+        Returns:
+            float: Filtered (smoothed) angle estimate.
+        """
         z = float(z)
 
         if not self.initialized:
@@ -349,6 +450,14 @@ class AngleKalmanFilter:
 # ============================================================
 
 def draw_finger_angles(image, angles, origin=(10, 30)):
+    """Overlays joint flexion angles as text on an image, in place.
+
+    Args:
+        image: BGR image (numpy array) to draw on; mutated in place.
+        angles: Mapping of joint name to angle in degrees. Only keys
+            present in JOINT_ORDER are drawn, in that order.
+        origin: (x, y) pixel coordinates for the first line of text.
+    """
     x, y = origin
     dy = 20
 
@@ -369,6 +478,17 @@ def draw_finger_angles(image, angles, origin=(10, 30)):
 # ============================================================
 
 def compute_link_lengths_from_landmarks(landmarks):
+    """Computes per-segment lengths for each finger chain from hand landmarks.
+
+    Args:
+        landmarks: MediaPipe hand landmark list (21 points) with x, y, z
+            attributes per point.
+
+    Returns:
+        dict: Mapping of finger name (from FINGER_CHAINS) to a list of
+        Euclidean segment lengths between consecutive landmarks in that
+        finger's chain.
+    """
     pts = np.array([[lm.x, lm.y, lm.z] for lm in landmarks])
     finger_lengths = {}
 
@@ -382,6 +502,23 @@ def compute_link_lengths_from_landmarks(landmarks):
 
 
 def calibrate_finger_lengths(cap, detector, target_samples=50):
+    """Interactively calibrates finger link lengths from a flat right hand.
+
+    Displays the webcam feed and waits for the user to press 'c' to begin
+    sampling, then collects finger segment lengths (via
+    compute_link_lengths_from_landmarks) over successive frames until
+    target_samples are gathered, and averages them. Press 'q' or Esc to
+    abort.
+
+    Args:
+        cap: Opened cv2.VideoCapture instance to read frames from.
+        detector: MediaPipe HandLandmarker (VIDEO mode) used for detection.
+        target_samples: Number of samples to collect before finishing.
+
+    Returns:
+        dict | None: Mapping of finger name to a numpy array of averaged
+        segment lengths, or None if the user aborted calibration.
+    """
     print("\n=== CALIBRATION MODE ===")
     print("Hold your RIGHT hand flat, fingers extended, facing the camera.")
     print("Press 'c' to start capturing calibration samples.")
@@ -492,6 +629,25 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
 # ============================================================
 
 def compute_hand_joint_angles_with_ik(landmarks, finger_link_lengths):
+    """Computes joint flexion angles refined with a 2-link IK approximation.
+
+    Starts from the geometric angle estimate (compute_hand_joint_angles_geometric)
+    and, when calibrated finger link lengths are available, refines the PIP
+    and DIP flexion angles for index/middle/ring/pinky fingers using a
+    2-link planar IK solve based on wrist-to-fingertip distance.
+
+    Args:
+        landmarks: MediaPipe hand landmark list (21 points) with x, y, z
+            attributes per point.
+        finger_link_lengths: Mapping of finger name to segment lengths as
+            returned by calibrate_finger_lengths, or None to skip the IK
+            refinement and return the plain geometric angles.
+
+    Returns:
+        dict: Mapping of joint name to flexion angle in degrees, with PIP
+        and DIP entries for index/middle/ring/pinky replaced by the
+        IK-refined values when finger_link_lengths is provided.
+    """
     angles = compute_hand_joint_angles_geometric(landmarks)
     if finger_link_lengths is None:
         return angles
@@ -548,8 +704,14 @@ def compute_hand_joint_angles_with_ik(landmarks, finger_link_lengths):
 # ============================================================
 
 def main():
-    hand_joints = {i: '0' for i in range(16)}
+    """Runs the live webcam-to-ARTUS teleoperation loop.
 
+    Finds a working camera, connects to the ARTUS Lite hand, runs a
+    one-time finger-length calibration, then continuously tracks a hand,
+    computes IK-refined and Kalman-smoothed joint angles, maps them to
+    ARTUS command space, and streams them to the hand while displaying an
+    annotated video window. Exits when 'q' or Esc is pressed.
+    """
     cam_index = find_working_camera()
 
     cap = cv2.VideoCapture(cam_index)
@@ -557,18 +719,16 @@ def main():
         print("✗ Failed to open camera.")
         return
 
-    artus = ArtusAPI(
-        communication_method='UART',
-        communication_channel_identifier="/dev/ttyUSB0",  # @TODO EDIT ME
-        robot_type='artus_lite',                         # @TODO EDIT ME
-        hand_type='right',
-        reset_on_start=0,
-        communication_frequency=40,
-        stream=False
-    )
+    config = ArtusConfig()
+    artus = config.get_api()
 
-    # Need to uncomment to connect the hand
-    # artus.connect()
+    # ArtusAPI_V2 connects automatically on construction; wake the hand
+    # before sending joint commands.
+    artus.wake_up()
+
+    # Real ARTUS joint names, in the same order as JOINT_ORDER above, used
+    # to build the name-keyed dict ArtusAPI_V2.set_joint_angles expects.
+    joint_names = artus._robot_handler.robot.joint_names
 
     detector = create_hand_landmarker()
 
@@ -666,13 +826,13 @@ def main():
 
             joint_angles = angles_mapped
 
-            for i, angle in enumerate(joint_angles):
-                joint = {
-                    'index': i,
+            hand_joints = {
+                joint_names[i]: {
                     'target_angle': angle,
-                    'velocity': 60,
+                    'target_velocity': artus._robot_handler.robot.default_velocity,
                 }
-                hand_joints[i] = joint
+                for i, angle in enumerate(joint_angles)
+            }
 
             artus.set_joint_angles(hand_joints)
 

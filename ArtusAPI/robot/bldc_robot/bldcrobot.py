@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -12,7 +12,31 @@ See the LICENSE file in the repository for full details.
 
 import logging
 
+"""Base robot model shared by all ARTUS BLDC-actuated hand variants."""
+
 class BLDCRobot:
+    """Base class defining joint layout, limits, and the ``Joint`` data model.
+
+    Subclasses (ArtusTalos, ArtusLite, ArtusScorpion, ArtusDex, ...) extend
+    this with force sensor configuration and velocity/force defaults.
+
+    Attributes:
+        force_sensors: Dict of per-finger force sensor data, or None if the
+            variant has no force sensors.
+        joint_max_angles: List of maximum angle limits per joint.
+        joint_min_angles: List of minimum angle limits per joint.
+        joint_default_angles: List of default (home) angles per joint.
+        joint_rotation_directions: List of +1/-1 rotation direction
+            multipliers per joint.
+        joint_forces: List of per-joint force values (currently unused by
+            base construction).
+        joint_names: Ordered list of joint name strings.
+        number_of_joints: Total number of joints on the hand.
+        number_of_controllers: Number of actuator controllers (defaults to
+            ``number_of_joints`` if not given).
+        hand_joints: Dict mapping joint name to a ``Joint`` instance.
+        Joint: Inner class used to represent a single joint's state.
+    """
     def __init__(self,
                 joint_max_angles=[55,90,90,90,90,90],
                 joint_min_angles=[-55,0,0,0,0,0],
@@ -24,6 +48,23 @@ class BLDCRobot:
                 number_of_joints=6,
                 number_of_controllers=None,
                 logger=None):
+        """Initializes joint limits/defaults and builds the joint dictionary.
+
+        Args:
+            joint_max_angles: Maximum angle (or stroke) limit per joint.
+            joint_min_angles: Minimum angle (or stroke) limit per joint.
+            joint_default_angles: Default (home) angle per joint.
+            joint_rotation_directions: +1/-1 multiplier applied to target
+                angles per joint, used to mirror left/right hands.
+            joint_forces: Per-joint force values (unused by base
+                construction; freed after ``_create_hand``).
+            joint_names: Ordered joint name strings.
+            number_of_joints: Total number of joints on the hand.
+            number_of_controllers: Number of actuator controllers. Defaults
+                to ``number_of_joints`` if not provided.
+            logger: Optional logger instance; a module logger is created if
+                not provided.
+        """
 
         self.force_sensors = None
 
@@ -47,7 +88,21 @@ class BLDCRobot:
             self.number_of_controllers = number_of_controllers
 
         class Joint:
+            """Mutable state container for a single joint's targets and feedback."""
             def __init__(self, index, min_angle, max_angle, default_angle, target_angle, target_force, temperature, joint_rotation_direction):
+                """Initializes a joint's limits, targets, and feedback fields.
+
+                Args:
+                    index: Zero-based joint index, matching Modbus ordering.
+                    min_angle: Minimum allowed target angle (or stroke).
+                    max_angle: Maximum allowed target angle (or stroke).
+                    default_angle: Default (home) angle.
+                    target_angle: Initial target angle.
+                    target_force: Initial target force.
+                    temperature: Initial feedback temperature value.
+                    joint_rotation_direction: +1/-1 multiplier applied to
+                        target angles.
+                """
                 self.index = index
                 self.min_angle = min_angle
                 self.max_angle = max_angle
@@ -63,6 +118,7 @@ class BLDCRobot:
                 self.joint_rotation_direction = joint_rotation_direction
 
             def __str__(self):
+                """Returns a short human-readable summary of index and target angle."""
                 return "Index: " + str(self.index)+"Target Angle: " +str(self.target_angle)
 
         self.Joint = Joint
@@ -70,6 +126,13 @@ class BLDCRobot:
         self._create_hand()
 
     def _create_hand(self):
+        """Builds ``self.hand_joints`` from the configured per-joint limit lists.
+
+        Frees the now-unneeded configuration lists
+        (``joint_max_angles``, ``joint_min_angles``, ``joint_default_angles``,
+        ``joint_rotation_directions``, ``joint_forces``) after populating
+        ``hand_joints``.
+        """
         self.hand_joints = {}
         for joint_index,joint_name in enumerate(self.joint_names):
             self.hand_joints[joint_name] = self.Joint(index=joint_index,
@@ -87,7 +150,24 @@ class BLDCRobot:
 
 
     def set_joint_angles(self, joint_angles:dict):
-        # verify that items are in order of index 
+        """Sets target angle/velocity/force on joints, addressed by index.
+
+        Sorts the input by joint index (skipping the sort for a single-item
+        dict), applies each joint's rotation direction to target_angle, and
+        clamps the results to the configured joint limits.
+
+        Args:
+            joint_angles: Dict keyed by arbitrary key, each value a dict
+                containing an ``index`` and any combination of
+                ``target_angle``, ``target_velocity``, ``target_force``.
+                Entries whose index is out of range are skipped.
+
+        Returns:
+            Bitmask of which control types were set: bit 2 (0b100) for
+            target_angle, bit 1 (0b10) for target_velocity, bit 0 (0b1) for
+            target_force.
+        """
+        # verify that items are in order of index
         available_control = 0
         # INSERT_YOUR_CODE
         if len(joint_angles) == 1:
@@ -120,8 +200,21 @@ class BLDCRobot:
         return available_control
 
     def set_joint_angles_by_name(self, joint_angles:dict):
-        """
-        Set the joint angles of the hand by name
+        """Sets target angle/velocity/force on joints, addressed by name.
+
+        Applies each joint's rotation direction to target_angle and clamps
+        the results to the configured joint limits.
+
+        Args:
+            joint_angles: Dict keyed by joint name, each value a dict
+                containing any combination of ``target_angle``,
+                ``target_velocity``, ``target_force``. Names not in
+                ``self.joint_names`` are skipped.
+
+        Returns:
+            Bitmask of which control types were set: bit 2 (0b100) for
+            target_angle, bit 1 (0b10) for target_velocity, bit 0 (0b1) for
+            target_force.
         """
         available_control = 0
         # set values based on names
@@ -151,8 +244,16 @@ class BLDCRobot:
 
 
     def _check_joint_limits(self, joint_angles):
-        """
-        Check if the joint angles are within the limits
+        """Clamps each joint's target_angle to its configured min/max limits.
+
+        Args:
+            joint_angles: Dict mapping joint name to ``Joint`` instance
+                (typically ``self.hand_joints``); mutated in place. Note the
+                lookup for limits is keyed against ``self.hand_joints``
+                regardless of the ``joint_angles`` argument passed in.
+
+        Returns:
+            The same ``joint_angles`` dict, with target_angle clamped.
         """
         for name,joint in self.hand_joints.items():
             if joint_angles[name].target_angle > joint.max_angle:
@@ -166,8 +267,20 @@ class BLDCRobot:
         return joint_angles
 
     def _check_joint_forces(self, joint_angles):
-        """
-        Check if the joint velocities are within limits
+        """Clamps joint force values to each joint's max_force/min_force.
+
+        Note:
+            Iterates ``self.hand_joints`` as ``Joint`` objects but indexes
+            ``joint_angles`` positionally via ``joint.index`` and reads
+            ``joint.max_force``/``joint.min_force``, which are not set by
+            the base ``Joint`` class.
+
+        Args:
+            joint_angles: Indexable collection of force values, addressed by
+                ``joint.index``; mutated in place.
+
+        Returns:
+            The same ``joint_angles`` collection, with values clamped.
         """
         for joint in self.hand_joints:
             if joint_angles[joint.index] > joint.max_force:
@@ -179,18 +292,38 @@ class BLDCRobot:
         return joint_angles
 
     def set_home_position(self):
-        """
-        Set the hand to the home position at default velocity
+        """Builds a joint command dict targeting each joint's default angle.
+
+        Uses ``self.default_velocity`` (0 if not set by a subclass) as the
+        velocity for every joint.
+
+        Returns:
+            Result of ``self.set_joint_angles`` for the generated command.
         """
         default_velocity = getattr(self, 'default_velocity', 0)
         joint_angles = {key: {'index': value.index, 'target_angle': value.default_angle, 'target_velocity': default_velocity} for key, value in self.hand_joints.items()}
         return self.set_joint_angles(joint_angles)
     
     def get_joint_angles(self, feedback_package:list,modbus_key:str='feedback_position_start_reg'):
-        """
-        only named get_joint_angles for consistency with v1 api
-        Get the joint angles and feedback list data
-        and populate the feedback fields in the hand_joints dictionary
+        """Populates feedback fields in ``hand_joints`` from decoded data.
+
+        Only named ``get_joint_angles`` for consistency with the v1 API.
+
+        Args:
+            feedback_package: Decoded feedback values. For
+                ``feedback_force_sensor_start_reg`` this is a flat list of
+                x/y/z triples per force sensor; otherwise it is indexed per
+                joint via ``joint_data.index``.
+            modbus_key: Which feedback field to populate -- one of
+                'feedback_position_start_reg', 'feedback_force_start_reg',
+                'feedback_temperature_start_reg',
+                'feedback_velocity_start_reg', or
+                'feedback_force_sensor_start_reg'.
+
+        Returns:
+            The ``feedback_package`` passed in (allows reading control
+            registers too), or None if a TypeError or other exception
+            occurred while populating.
         """
         # TODO logging
         try:

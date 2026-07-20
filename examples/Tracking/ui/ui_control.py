@@ -4,11 +4,13 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
+
+"""Qt widget providing manual joint/force/speed control of the ARTUS hand."""
 
 import os
 import json
@@ -25,16 +27,31 @@ from examples.config.configuration import ArtusConfig
 from ArtusAPI.robot.robot import Robot
 
 class UIControl(QtWidgets.QWidget, ZMQPublisher):
-    """
-    This class is used to show the control elements in the UI for the robot
-    This includes:
-    * sliders and entry box for setting the joint angles
-    * buttons for sending the joint angles to the robot
-    * button for saving the joint angles to a file
-    * button for to continuously send the joint angles to the robot
-    ZMQPublisher is used on the backend to send the joint angles to the robot
+    """Qt widget exposing manual control elements for the connected robot hand.
+
+    Includes:
+
+    * Sliders and entry boxes for setting each joint's target angle.
+    * Sliders and entry boxes for force and speed.
+    * A button to send the current values to the robot.
+    * A button to save the current values as a named pose file.
+    * A button to continuously stream the current values to the robot.
+
+    ZMQPublisher is used on the backend to publish the joint/force/speed
+    values to the robot over ZMQ.
     """
     def __init__(self, win=None, zmq_sliderCommands_pubPort=5556):
+        """Initializes the ZMQ publisher, robot joint model, and widget layout.
+
+        Args:
+            win: Optional reference to a parent/owning window.
+            zmq_sliderCommands_pubPort: Port to publish joint/force/speed
+                target values on, bound as tcp://127.0.0.1:<port>.
+
+        Raises:
+            ValueError: If no robot is marked as connected in the ArtusConfig
+                configuration.
+        """
         QtWidgets.QWidget.__init__(self)
         ZMQPublisher.__init__(self, address=f"tcp://127.0.0.1:{zmq_sliderCommands_pubPort}")
         robot = None
@@ -66,6 +83,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.populate_load_dropdown()
 
     def _init_ui(self):
+        """Builds the joint/force/speed sliders, buttons, and load dropdown widgets."""
         self.layout = QtWidgets.QVBoxLayout()
 
         # Joint control group
@@ -176,21 +194,45 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.setLayout(self.layout)
 
     def update_joint_angle(self, name, value):
+        """Updates a joint's stored value and syncs its slider and text field.
+
+        Args:
+            name: Joint name to update.
+            value: New target angle for the joint.
+        """
         self.joint_values[name] = float(value)
         self.line_edit[name].setText(str(float(value)))
         self.sliders[name].setValue(int(value))
 
     def update_force(self, value):
+        """Updates the stored force value and syncs its slider and text field.
+
+        Args:
+            value: New target force value.
+        """
         self.force_value = float(value)
         self.force_line_edit.setText(str(float(value)))
         self.force_slider.setValue(int(value))
 
     def update_speed(self, value):
+        """Updates the stored speed value and syncs its slider and text field.
+
+        Args:
+            value: New target speed value.
+        """
         self.speed_value = float(value)
         self.speed_line_edit.setText(str(float(value)))
         self.speed_slider.setValue(int(value))
 
     def update_joint_angle_from_text(self, name, text):
+        """Updates a joint's value from manually entered text, syncing its slider.
+
+        Silently ignores input that cannot be parsed as a float.
+
+        Args:
+            name: Joint name to update.
+            text: Raw text entered by the user.
+        """
         try:
             value = float(text)
             self.joint_values[name] = value
@@ -199,14 +241,28 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
             pass # Handle invalid text input
 
     def update_force_from_text(self, text):
+        """Updates the force value from manually entered text, syncing its slider.
+
+        Silently ignores input that cannot be parsed as a float.
+
+        Args:
+            text: Raw text entered by the user.
+        """
         try:
             value = float(text)
             self.force_value = value
             self.force_slider.setValue(int(value))
         except ValueError:
             pass # Handle invalid text input
-    
+
     def update_speed_from_text(self, text):
+        """Updates the speed value from manually entered text, syncing its slider.
+
+        Silently ignores input that cannot be parsed as a float.
+
+        Args:
+            text: Raw text entered by the user.
+        """
         try:
             value = float(text)
             self.speed_value = value
@@ -215,6 +271,10 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
             pass # Handle invalid text input
 
     def send_data(self):
+        """Publishes the current joint, force, and speed values over ZMQ.
+
+        Sends a JSON-encoded payload under the "Target" topic.
+        """
         # This will send the current joint values via ZMQ
         # print(f"Sending data to ZMQ")
         data_to_send = {
@@ -225,6 +285,12 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.send(topic="Target", message=json.dumps(data_to_send))
 
     def save_data(self):
+        """Prompts for a filename and saves the current joint angles as a pose file.
+
+        Writes a JSON file to data/hand_poses containing each joint's
+        current target angle under a 'target_angle' key, then refreshes the
+        load dropdown. No-op if the user cancels or enters no filename.
+        """
         # Get filename from user using a QInputDialog
         filename, ok = QtWidgets.QInputDialog.getText(self, "Save Joint Angles", "Enter filename (e.g., my_pose.json):")
         if ok and filename:
@@ -251,6 +317,11 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
             print("Save operation cancelled or no filename entered.")
 
     def toggle_stream(self):
+        """Starts or stops the periodic streaming timer and updates the button state.
+
+        When streaming is enabled, send_data() is called every 50ms via
+        self.timer.
+        """
         if self.streaming:
             self.timer.stop()
             self.streaming = False
@@ -263,10 +334,16 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
             self.stream_button.setStyleSheet("background-color: red")
 
     def stream_data(self):
+        """Timer callback that publishes the current values while streaming is active."""
         self.send_data()
 
 
     def populate_load_dropdown(self):
+        """Refreshes the load dropdown with the pose JSON files found on disk.
+
+        Scans data/hand_poses (creating it if missing) and lists all
+        .json files, sorted alphabetically.
+        """
         save_directory = os.path.join(PROJECT_ROOT, "data", "hand_poses")
         os.makedirs(save_directory, exist_ok=True) # Ensure the directory exists
         self.load_dropdown.clear()
@@ -274,6 +351,12 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.load_dropdown.addItems(sorted(files))
 
     def load_data(self):
+        """Loads the pose file selected in the dropdown and applies it to the UI.
+
+        Reads the selected JSON pose file from data/hand_poses, extracts
+        each joint's 'target_angle', and updates the matching sliders/text
+        fields via update_joint_angle(). No-op if no file is selected.
+        """
         selected_file = self.load_dropdown.currentText()
         if selected_file:
             filepath = os.path.join(PROJECT_ROOT, "data", "hand_poses", selected_file)
@@ -295,6 +378,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
 
 
 def main():
+    """Creates the QApplication, shows the UIControl window, and starts the event loop."""
     app = QtWidgets.QApplication(sys.argv)
     ui_control_window = UIControl()
     ui_control_window.show()
