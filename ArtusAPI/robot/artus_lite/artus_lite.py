@@ -36,6 +36,7 @@ class ArtusLite(BLDCRobot):
                               'ring_spread', 'ring_flex', 'ring_d2',
                               'pinky_spread', 'pinky_flex', 'pinky_d2'],
                  number_of_joints=16,
+                 number_of_controllers=9,
                  logger=None):
         """Initializes the ARTUS Lite joint model and speed/force/pwm defaults.
 
@@ -58,6 +59,7 @@ class ArtusLite(BLDCRobot):
                          joint_forces=joint_forces,
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
+                         number_of_controllers=number_of_controllers,
                          logger=logger)
         
         # set sensors

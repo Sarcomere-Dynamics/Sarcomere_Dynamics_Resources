@@ -26,6 +26,7 @@ class ArtusTalos(BLDCRobot):
                 joint_names=['thumb_spread','thumb_flex','index_flex',
                             'middle_flex','ring_flex','pinky_flex'],
                 number_of_joints=6,
+                number_of_controllers=6,
                 logger=None):
         """Initializes the ARTUS Talos joint model, force sensors, and defaults.
 
@@ -48,6 +49,7 @@ class ArtusTalos(BLDCRobot):
                          joint_forces=joint_forces,
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
+                         number_of_controllers=number_of_controllers,
                          logger=logger)
 
         # force sensor init
