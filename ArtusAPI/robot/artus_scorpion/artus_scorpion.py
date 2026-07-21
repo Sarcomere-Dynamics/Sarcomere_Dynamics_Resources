@@ -22,6 +22,7 @@ class ArtusScorpion(BLDCRobot):
                 joint_forces=[],
                 joint_names=['gripper_joint'],
                 number_of_joints=1,
+                number_of_controllers=1,
                 logger=None):
         """Initializes the Scorpion gripper joint model and defaults.
 
@@ -43,6 +44,7 @@ class ArtusScorpion(BLDCRobot):
                          joint_forces=joint_forces,
                          joint_names=joint_names,
                          number_of_joints=number_of_joints,
+                         number_of_controllers=number_of_controllers,
                          logger=logger)
 
         # set sensors

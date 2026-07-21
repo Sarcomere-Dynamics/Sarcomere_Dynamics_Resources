@@ -33,7 +33,7 @@ Please contact the team if any issues arise through use of the API. See [Softwar
 
 For readers who already know their way around Python and just want the shortest path from clone to a moving joint:
 
-1. Install Python 3.10–3.13, then install the API: `pip install ArtusAPI` (see [1.2](#12-installing-the-python-api)).
+1. Install Python 3.10–3.13.
 2. Connect the hand's power harness and USB-C data cable (see [1.3](#13-hardware-requirements)).
 3. Set your hand model/port in [`examples/config/robot_config.yaml`](examples/config/README.md).
 4. Run [`examples/general_example/general_example.py`](examples/general_example/README.md) and follow the prompts.
@@ -88,13 +88,13 @@ The first step to working with an ARTUS hand is connecting to it and achieving j
 
 There are two ways to install, depending on whether you plan to modify the source.
 
-**Option A — Use as released (recommended for most users)**
+<!-- **Option A — Use as released (recommended for most users)**
 ```bash
 pip install ArtusAPI
 ```
-This is published on [PyPI](https://pypi.org/project/ArtusAPI/). Make sure you're on the latest version before filing an issue.
+This is published on [PyPI](https://pypi.org/project/ArtusAPI/). Make sure you're on the latest version before filing an issue. -->
 
-**Option B — Use the cloned repository (for contributors / source changes)**
+**Use the cloned repository (for contributors / source changes)**
 ```bash
 git clone <this-repo>
 cd Sarcomere_Dynamics_Resources

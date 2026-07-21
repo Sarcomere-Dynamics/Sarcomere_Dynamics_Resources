@@ -789,12 +789,12 @@ class ArtusAPI_V2:
 
         # get driver to flash
         if drivers_to_flash == None:
-            while drivers_to_flash is None or drivers_to_flash not in range(0, 7):
+            while drivers_to_flash is None or drivers_to_flash not in range(0, self._robot_handler.robot.number_of_controllers + 1):
                 drivers_to_flash = int(input(
                     f'''
                     Please Enter Drivers to Flash:
-                    0-5: Specific Actuator mapped to joint number
-                    6: All Actuators
+                    0-n: Specific Actuator mapped to joint number
+                    n+1: All Actuators
                     '''
                     ))
         
