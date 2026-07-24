@@ -761,6 +761,26 @@ class ArtusAPI_V2:
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")
+
+    def soft_reset(self,joints=None):
+        """Sends a reset command for the given number of joints.
+
+        Args:
+            joints: Number of joints to reset. If None, prompts on stdin for
+                a value between 0 and the robot's total joint count.
+        """
+        if joints is None:
+            joints = int(input(f"Enter number of joints to reset (0-{self._robot_handler.robot.number_of_joints}): "))
+        soft_reset_command = self._command_handler.get_soft_reset_command(joints)
+        self.wait_for_com_freq()
+        self._communication_handler.send_data(soft_reset_command)
+        self.last_time = time.perf_counter()
+        
+        # wait for hand state ready
+        if not self._communication_handler.wait_for_ready(vis=False):
+            self.logger.error("Hand timed out waiting for ready")
+        else:
+            self.logger.info("Hand ready")
     
     def update_firmware(self,file_location=None,drivers_to_flash=None):
         """Flashes new firmware to one or all actuator drivers on the hand.

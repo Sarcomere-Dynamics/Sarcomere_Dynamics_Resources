@@ -49,6 +49,7 @@ class NewCommands(ModbusMap):
             'sleep_command': 0x0F,
             'firmware_update_command': 0x11,
             'reset_command': 0x13,
+            'soft_reset_command': 0x35,
             'hard_close_command': 0x38,
             'target_command': 0x66,
             'get_feedback_command': 0x68,
@@ -133,6 +134,18 @@ class NewCommands(ModbusMap):
             The reset command opcode followed by the joint count.
         """
         return [self.commands['reset_command'],joints]
+
+    def get_soft_reset_command(self,joints=0):
+        """Builds the command to reset the given number of joints.
+
+        Args:
+            joints: Number of joints to reset.
+
+        Returns:
+            The reset command opcode followed by the joint count.
+        """
+        return [self.commands['soft_reset_command'],joints]
+
 
     def get_target_velocity_command(self,hand_joints:dict) -> list:
         """Packs target joint velocities into Modbus register words.

@@ -183,6 +183,8 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
             artusapi.clear_errors()
         case 'r':
             artusapi.reset()
+        case 'sr':
+            artusapi.soft_reset()
         case 'f':
             if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue") == 'e':
                 driver = int(input("Enter driver to flash: "))
