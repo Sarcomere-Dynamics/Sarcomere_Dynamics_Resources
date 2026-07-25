@@ -118,10 +118,10 @@ class NewCommands(ModbusMap):
             tmp_list.append(0)
         
         for i in range(0, len(tmp_list), 2):
-            command_list.append(tmp_list[i] << 8 | tmp_list[i+1])
+            command_list.append((tmp_list[i] & 0xFF) << 8 | (tmp_list[i+1] & 0xFF))
 
         # cast all elements to uint16_t
-        command_list = [int(x) & 0xFFFF for x in command_list]
+        command_list = [x & 0xFFFF for x in command_list]
         return command_list
 
     def get_reset_command(self,joints=0):

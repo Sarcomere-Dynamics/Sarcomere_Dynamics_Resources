@@ -746,11 +746,11 @@ class ArtusAPI_V2:
         """Sends a reset command for the given number of joints.
 
         Args:
-            joints: Number of joints to reset. If None, prompts on stdin for
+            joints: Joint # to reset. If None, prompts on stdin for
                 a value between 0 and the robot's total joint count.
         """
         if joints is None:
-            joints = int(input(f"Enter number of joints to reset (0-{self._robot_handler.robot.number_of_joints}): "))
+            joints = int(input(f"Enter joint # to reset (1-{self._robot_handler.robot.number_of_joints - 1}): "))
         reset_command = self._command_handler.get_reset_command(joints)
         self.wait_for_com_freq()
         self._communication_handler.send_data(reset_command)
@@ -770,7 +770,7 @@ class ArtusAPI_V2:
                 a value between 0 and the robot's total joint count.
         """
         if joints is None:
-            joints = int(input(f"Enter number of joints to reset (0-{self._robot_handler.robot.number_of_joints}): "))
+            joints = int(input(f"Enter joint # to soft reset (0 for all, 1-{self._robot_handler.robot.number_of_joints - 1} for specific joints): "))
         soft_reset_command = self._command_handler.get_soft_reset_command(joints)
         self.wait_for_com_freq()
         self._communication_handler.send_data(soft_reset_command)
