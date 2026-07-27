@@ -33,9 +33,10 @@ class TestModbusMap(unittest.TestCase):
         self.assertEqual(ActuatorState.ACTUATOR_IDLE.value, 1)
 
     def test_command_type_values(self):
-        """Verifies SETUP_COMMANDS and TARGET_COMMAND have the expected opcodes."""
+        """Verifies SETUP_COMMANDS, TARGET_COMMAND, and READ_WRITE_COMMAND opcodes."""
         self.assertEqual(CommandType.SETUP_COMMANDS.value, 6)
         self.assertEqual(CommandType.TARGET_COMMAND.value, 16)
+        self.assertEqual(CommandType.READ_WRITE_COMMAND.value, 23)
 
     def test_config_command_matches_update_config_opcode(self):
         """Verifies CONFIG_COMMAND (68) equals the 0x44 update_config_command opcode."""

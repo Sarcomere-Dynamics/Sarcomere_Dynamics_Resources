@@ -116,6 +116,16 @@ class TestNewCommands(unittest.TestCase):
         self.assertEqual(out[0], self.nc.modbus_reg_map["target_force_start_reg"])
         self.assertGreater(len(out), 2)
 
+    def test_fc17_feedback_word_counts(self):
+        """Verifies register counts used by FC 0x17 set_get pairings for 16 joints."""
+        # position/temp: 0.5 words/joint -> 8; velocity: 1 -> 16; force: 2 -> 32
+        m = self.nc.data_type_multiplier_map
+        n = self.nc.num_joints
+        import math
+        self.assertEqual(math.ceil(m["feedback_position_start_reg"] * n), 8)
+        self.assertEqual(math.ceil(m["feedback_velocity_start_reg"] * n), 16)
+        self.assertEqual(math.ceil(m["feedback_force_start_reg"] * n), 32)
+
     def test_update_config_command(self):
         """Verifies the update-config command payload and its 0x44 opcode."""
         self.assertEqual(

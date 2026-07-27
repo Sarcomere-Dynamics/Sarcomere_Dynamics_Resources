@@ -406,6 +406,110 @@ class ArtusAPI_V2:
             self.last_time = time.perf_counter()
         return True
 
+    def _feedback_register_count(self, feedback_reg_key: str) -> int:
+        """Computes how many holding registers to read for a feedback field.
+
+        Args:
+            feedback_reg_key: Key in ``ModbusMap.data_type_multiplier_map`` /
+                ``modbus_reg_map`` (e.g. ``feedback_position_start_reg``).
+
+        Returns:
+            Number of consecutive 16-bit registers to request.
+        """
+        return math.ceil(
+            ModbusMap().data_type_multiplier_map[feedback_reg_key]
+            * self._robot_handler.robot.number_of_joints
+        )
+
+    def _set_get_joint_field(self, joint_angles: dict, target_packer, feedback_reg_key: str):
+        """Shared FC 0x17 path: write one target field and read matching feedback.
+
+        Args:
+            joint_angles: Joint dict consumed by ``Robot.set_joint_angles``.
+            target_packer: ``NewCommands`` method that packs
+                ``[start_reg, *values]`` for the target field.
+            feedback_reg_key: ModbusMap key for the feedback start register.
+
+        Returns:
+            Dict mapping joint name to decoded feedback, False if no valid
+            joint data, or None if the hand is not awake.
+        """
+        if not self._check_awake():
+            return
+
+        available_control = self._robot_handler.set_joint_angles(joint_angles, name=True)
+        if available_control == 0:
+            self.logger.warning("No valid data in joint dictionary to send")
+            return False
+
+        write_cmd = target_packer(self._robot_handler.robot.hand_joints)
+        write_start = write_cmd[0]
+        write_values = write_cmd[1:]
+        read_start = ModbusMap().modbus_reg_map[feedback_reg_key]
+        read_count = self._feedback_register_count(feedback_reg_key)
+
+        self.wait_for_com_freq()
+        feedback_data = self._communication_handler.send_receive_data(
+            read_start, read_count, write_start, write_values
+        )
+        self.last_time = time.perf_counter()
+
+        decoded = self._command_handler.get_decoded_feedback_data(
+            feedback_data, modbus_key=feedback_reg_key
+        )
+        self.logger.info(
+            f'{feedback_reg_key}:{self._robot_handler.get_joint_angles(decoded, feedback_type=feedback_reg_key)}'
+        )
+        return self.helper_fill_dict_from_feedback_data(decoded)
+
+    def set_get_joint_angles(self, joint_angles: dict):
+        """Writes target positions and reads feedback positions in one FC 0x17.
+
+        Args:
+            joint_angles: Dictionary of joint targets (must include angles).
+
+        Returns:
+            Dict mapping joint name to feedback position, False if no valid
+            data, or None if the hand is not awake.
+        """
+        return self._set_get_joint_field(
+            joint_angles,
+            self._command_handler.get_target_position_command,
+            'feedback_position_start_reg',
+        )
+
+    def set_get_joint_speeds(self, joint_angles: dict):
+        """Writes target velocities and reads feedback velocities in one FC 0x17.
+
+        Args:
+            joint_angles: Dictionary of joint targets (must include velocities).
+
+        Returns:
+            Dict mapping joint name to feedback velocity, False if no valid
+            data, or None if the hand is not awake.
+        """
+        return self._set_get_joint_field(
+            joint_angles,
+            self._command_handler.get_target_velocity_command,
+            'feedback_velocity_start_reg',
+        )
+
+    def set_get_joint_forces(self, joint_angles: dict):
+        """Writes target forces and reads feedback forces in one FC 0x17.
+
+        Args:
+            joint_angles: Dictionary of joint targets (must include forces).
+
+        Returns:
+            Dict mapping joint name to feedback force, False if no valid
+            data, or None if the hand is not awake.
+        """
+        return self._set_get_joint_field(
+            joint_angles,
+            self._command_handler.get_target_force_command,
+            'feedback_force_start_reg',
+        )
+
     def _check_communication_frequency(self,last_time:float):
         """Checks whether enough time has passed since the last command.
 

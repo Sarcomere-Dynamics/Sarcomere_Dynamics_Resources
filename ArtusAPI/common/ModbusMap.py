@@ -117,5 +117,6 @@ class CommandType(Enum):
 
     SETUP_COMMANDS = 6
     TARGET_COMMAND = 16
+    READ_WRITE_COMMAND = 23  # FC 0x17 Read/Write Multiple Registers
     FIRMWARE_COMMAND = 33 # actual data being sent
     CONFIG_COMMAND = 68 # onboard config write (e.g. WiFi SSID/password), same opcode as update_config_command

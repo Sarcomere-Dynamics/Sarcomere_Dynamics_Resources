@@ -241,6 +241,63 @@ class RS485_RTU:
 
         return None
 
+    def send_receive(self, read_start: int, read_count: int, write_start: int, values: list,
+                     max_retries=3, retry_delay=0.1):
+        """Atomically writes registers then reads registers via Modbus FC 0x17.
+
+        Uses pymodbus ``readwrite_registers`` (Read/Write Multiple Registers).
+        Firmware applies the write first, then returns the read data.
+
+        Args:
+            read_start: Starting holding-register address to read.
+            read_count: Number of registers to read.
+            write_start: Starting holding-register address to write.
+            values: List of uint16 register values to write.
+            max_retries: Number of times to retry on exception.
+            retry_delay: Delay in seconds between retries.
+
+        Returns:
+            A single int if one register was read, a list of ints if more
+            than one was read, or None if ``max_retries`` is 0.
+
+        Raises:
+            ModbusIOException: If the final retry attempt still receives an
+                error response.
+            ConnectionException: If the final retry attempt still fails.
+        """
+        for attempt in range(max_retries):
+            try:
+                result = self.client.readwrite_registers(
+                    read_address=read_start,
+                    read_count=read_count,
+                    write_address=write_start,
+                    values=values,
+                    device_id=self.slave_address,
+                )
+                if result.isError():
+                    raise ModbusIOException(f"Modbus error response: {result}")
+
+                registers = result.registers
+                if len(registers) == 1:
+                    return registers[0]
+                return registers
+
+            except (ModbusIOException, ConnectionException) as e:
+                self.logger.warning(
+                    f"Modbus exception on send_receive attempt {attempt + 1}/{max_retries}: {e}"
+                )
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay)
+                else:
+                    self.logger.error(f"Failed to send_receive after {max_retries} attempts")
+                    raise
+
+            except Exception as e:
+                self.logger.error(f"Unexpected error during send_receive: {e}")
+                raise
+
+        return None
+
     def close(self):
         """Closes the serial connection, if one is open. Errors are suppressed."""
         client = getattr(self, "client", None)

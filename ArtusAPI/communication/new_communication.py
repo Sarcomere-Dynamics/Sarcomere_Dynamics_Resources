@@ -115,6 +115,20 @@ class NewCommunication:
         #self.logger.info(f"data received is {self.communicator.receive([start,amount_dat])}")
         return self.communicator.receive([start,amount_dat])
 
+    def send_receive_data(self, read_start: int, read_count: int, write_start: int, values: list):
+        """Writes target registers and reads feedback in one Modbus FC 0x17 transaction.
+
+        Args:
+            read_start: Starting holding-register address to read.
+            read_count: Number of registers to read.
+            write_start: Starting holding-register address to write.
+            values: List of uint16 register values to write (no leading address).
+
+        Returns:
+            A single int if one register was read, otherwise a list of ints.
+        """
+        return self.communicator.send_receive(read_start, read_count, write_start, values)
+
     def close_connection(self):
         """Closes the underlying transport connection."""
         self.communicator.close()

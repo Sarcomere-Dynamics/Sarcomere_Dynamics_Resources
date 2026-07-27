@@ -262,6 +262,82 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
             with patch.object(api, "get_fingertip_forces", return_value={}):
                 self.assertTrue(api.get_hand_feedback_data())
 
+    def test_set_get_joint_angles_sends_fc17_request(self):
+        """Verifies set_get_joint_angles issues one send_receive_data call with matching read/write args."""
+        comm = MagicMock()
+        n = 16
+        comm.send_receive_data.return_value = [0] * 8  # position: 0.5 word/joint * 16 -> 8
+        api, comm = build_api(communication_mock=comm)
+        api.awake = True
+        api.last_time = 0.0
+        with patch("ArtusAPI.artus_api_new.time.perf_counter", return_value=10.0):
+            out = api.set_get_joint_angles({"thumb_spread": {"target_angle": 5}})
+        comm.send_receive_data.assert_called_once()
+        read_start, read_count, write_start, values = comm.send_receive_data.call_args[0]
+        self.assertEqual(read_start, ModbusMap().modbus_reg_map["feedback_position_start_reg"])
+        self.assertEqual(read_count, 8)
+        self.assertEqual(write_start, ModbusMap().modbus_reg_map["target_position_start_reg"])
+        self.assertEqual(len(values), n // 2)
+        self.assertIsInstance(out, dict)
+        self.assertEqual(len(out), n)
+
+    def test_set_get_joint_speeds_read_count(self):
+        """Verifies set_get_joint_speeds requests one register per joint."""
+        comm = MagicMock()
+        comm.send_receive_data.return_value = [0] * 16  # velocity: 1 word/joint * 16
+        api, comm = build_api(communication_mock=comm)
+        api.awake = True
+        api.last_time = 0.0
+        with patch("ArtusAPI.artus_api_new.time.perf_counter", return_value=10.0):
+            api.set_get_joint_speeds({"thumb_spread": {"target_velocity": 100}})
+        _, read_count, _, _ = comm.send_receive_data.call_args[0]
+        self.assertEqual(read_count, 16)
+
+    def test_set_get_joint_forces_read_count(self):
+        """Verifies set_get_joint_forces requests two registers per joint (float feedback)."""
+        comm = MagicMock()
+        comm.send_receive_data.return_value = [0] * 32  # force: 2 words/joint * 16
+        api, comm = build_api(communication_mock=comm)
+        api.awake = True
+        api.last_time = 0.0
+        with patch("ArtusAPI.artus_api_new.time.perf_counter", return_value=10.0):
+            out = api.set_get_joint_forces({"thumb_spread": {"target_force": 1.5}})
+        _, read_count, _, _ = comm.send_receive_data.call_args[0]
+        self.assertEqual(read_count, 32)
+        self.assertEqual(len(out), 16)
+
+    def test_set_get_joint_angles_partial_dict_still_sends_full_command(self):
+        """Verifies a single-joint update still packs/writes all joints (unset joints default to 0),
+        matching the behavior of the existing write-only set_joint_angles path."""
+        comm = MagicMock()
+        comm.send_receive_data.return_value = [0] * 8
+        api, comm = build_api(communication_mock=comm)
+        api.awake = True
+        api.last_time = 0.0
+        with patch("ArtusAPI.artus_api_new.time.perf_counter", return_value=10.0):
+            api.set_get_joint_angles({"thumb_spread": {"target_angle": 5}})
+        _, _, _, values = comm.send_receive_data.call_args[0]
+        # thumb_spread is joint index 0, packed high-byte in the first word alongside
+        # thumb_flex (index 1, untouched -> defaults to 0, low byte of the same word).
+        self.assertEqual(values[0] & 0xFF, 0)
+        self.assertNotEqual(values[0] >> 8, 0)
+
+    def test_set_get_joint_angles_no_valid_data_returns_false(self):
+        """Verifies set_get_joint_angles returns False and does not touch the wire when the dict has no usable data."""
+        comm = MagicMock()
+        api, comm = build_api(communication_mock=comm)
+        api.awake = True
+        self.assertFalse(api.set_get_joint_angles({}))
+        comm.send_receive_data.assert_not_called()
+
+    def test_set_get_joint_angles_not_awake_returns_none(self):
+        """Verifies set_get_joint_angles short-circuits and does not touch the wire when the hand is not awake."""
+        comm = MagicMock()
+        api, comm = build_api(communication_mock=comm)
+        with patch.object(api, "_check_awake", return_value=False):
+            self.assertIsNone(api.set_get_joint_angles({"thumb_spread": {"target_angle": 5}}))
+        comm.send_receive_data.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

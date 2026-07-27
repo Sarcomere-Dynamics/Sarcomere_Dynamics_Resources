@@ -24,6 +24,7 @@ def make_communication_mock() -> mock.MagicMock:
     m.close_connection = mock.Mock()
     m.send_data = mock.Mock(return_value=True)
     m.receive_data = mock.Mock(return_value=0)
+    m.send_receive_data = mock.Mock(return_value=0)
     m.wait_for_ready = mock.Mock(return_value=ActuatorState.ACTUATOR_IDLE.value)
     m._check_robot_state = mock.Mock(return_value=ActuatorState.ACTUATOR_IDLE.value)
     return m

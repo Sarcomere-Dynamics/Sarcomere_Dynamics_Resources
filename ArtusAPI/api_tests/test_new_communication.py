@@ -57,6 +57,19 @@ class TestNewCommunicationMocked(unittest.TestCase):
         self.assertEqual(ret, 0x0102)
         inst.receive.assert_called_once()
 
+    def test_send_receive_data_delegates(self):
+        """Verifies send_receive_data delegates to the transport's FC 0x17 path."""
+        inst = MagicMock()
+        inst.send_receive.return_value = [0x0100, 0x0200]
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        read_start = ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+        write_start = ModbusMap().modbus_reg_map["target_position_start_reg"]
+        values = [0x1E3C]
+        ret = nc.send_receive_data(read_start, 8, write_start, values)
+        self.assertEqual(ret, [0x0100, 0x0200])
+        inst.send_receive.assert_called_once_with(read_start, 8, write_start, values)
+
     def test_check_robot_state_low_nibble(self):
         """Verifies _check_robot_state extracts the low nibble of the raw status word."""
         inst = MagicMock()
