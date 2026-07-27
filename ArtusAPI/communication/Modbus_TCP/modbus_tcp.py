@@ -13,6 +13,7 @@ See the LICENSE file in the repository for full details.
 from pymodbus.client import ModbusTcpClient
 from pymodbus.exceptions import ModbusIOException, ConnectionException
 import logging
+import socket
 import time
 from ...common.ModbusMap import CommandType
 
@@ -87,6 +88,9 @@ class ModbusTCP:
                 raise ConnectionError(
                     f"Could not open Modbus TCP connection to {self.host}:{self.port}"
                 )
+            # Disable Nagle's algorithm so small register writes go out immediately
+            # instead of being buffered/delayed, which otherwise caps send frequency.
+            self.client.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             self.logger.info(f"Opened TCP connection to {self.host}:{self.port}")
         except Exception as e:
             self.logger.error(e)
