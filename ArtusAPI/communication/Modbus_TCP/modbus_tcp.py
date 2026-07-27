@@ -90,7 +90,12 @@ class ModbusTCP:
                 )
             # Disable Nagle's algorithm so small register writes go out immediately
             # instead of being buffered/delayed, which otherwise caps send frequency.
-            self.client.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            if getattr(self.client, 'socket', None) is not None:
+                try:
+                    self.client.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    self.logger.debug("Disabled Nagle's algorithm (TCP_NODELAY=1)")
+                except Exception as e:
+                    self.logger.warning(f"Could not set TCP_NODELAY socket option: {e}")
             self.logger.info(f"Opened TCP connection to {self.host}:{self.port}")
         except Exception as e:
             self.logger.error(e)
