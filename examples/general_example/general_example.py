@@ -141,7 +141,11 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
         case '4':
             artusapi.sleep()
         case '5':
-            artusapi.calibrate()
+            n = int(input("Enter joint to calibrate:"))
+            if n not in range(0,artusapi._robot_handler.robot.number_of_joints+1): # because not inclusive range
+                logger.error(f"Invalid joint number, please try again")
+                return
+            artusapi.calibrate(n)
         case '6':
             with open(os.path.join(hand_poses_path ,'grasp_example.json'),'r') as file:
                 grasp_example_dict = json.load(file)
