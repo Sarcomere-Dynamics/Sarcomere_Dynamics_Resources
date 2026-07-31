@@ -4,10 +4,25 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2025, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
+"""
+
+"""Lifetime cycle test + full-telemetry logging for the Scorpion hand.
+
+Connection, wake/sleep, calibration, and pose commands are delegated to the
+known-good general_example.handle_command() so this script shares one proven
+control path with the standard CLI. What it adds on top:
+
+  17 -> Lifetime cycle test: alternates the grasp_example / grasp_open poses
+        lifetime_test_count times, logging all hand feedback to CSV throughout.
+  18 -> Standalone full-telemetry logging (no motion commanded).
+
+Both use HandTelemetryLogger, which records every feedback getter the API
+exposes as raw values (no unit conversion). Everything else falls through to
+handle_command() unchanged.
 """
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
@@ -22,30 +37,118 @@ import sys
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
+# this script's own directory, so the known-good general_example is importable
+# as a sibling module regardless of the examples package name
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # import the configuration file
 from examples.config.configuration import ArtusConfig
 
-# new version of ArtusAPI use local version
-from ArtusAPI.artus_api_new import ArtusAPI_V2
 from ArtusAPI.common import ModbusMap
+
+# Reuse the proven command dispatch + logger setup rather than keeping a second
+# copy here — the divergent copy was a failure point during hand connection issues.
+from general_example import handle_command, setup_logger
+
+import logging
 
 # ------------------------------------------------------------------------------
 # ---------------------------- Life Cycle Testing ------------------------------
 # ------------------------------------------------------------------------------
 
-lifetime_test_count = 1000 #100k
-cycle_dwell_s = 2.5          # hold time at each pose
+lifetime_test_count = 500 #100k
+cycle_dwell_s = 2           # hold time at each pose
 
 # ------------------------------------------------------------------------------
 # ------------------------------ Telemetry Logging -----------------------------
 # ------------------------------------------------------------------------------
 
-TELEMETRY_INTERVAL_S = 1.0      # seconds between full telemetry samples
+TELEMETRY_INTERVAL_S = 0.5      # seconds between full telemetry samples
 TELEMETRY_LOG_DIR = os.path.join(PROJECT_ROOT, 'logs', 'telemetry')
 # roll over to a new file before hitting Excel's 1,048,576-row ceiling; a full
 # 100k-cycle run at 2 Hz is ~1.2M rows, which would not open in one sheet
 TELEMETRY_MAX_ROWS = 500000
+
+# ------------------------------------------------------------------------------
+# --------------------------- Motor Error Decoding -----------------------------
+# ------------------------------------------------------------------------------
+# error_e bitmask mirrored from the firmware's bldcmotor.h. The hand returns each
+# joint's error_report as a decimal integer that is really a bitwise-OR of these
+# flags, so a single reported number can mean several faults at once. Keep this in
+# sync with bldcmotor.h if the firmware's enum changes.
+MOTOR_ERROR_FLAGS = {
+    0x1:        "INITIALIZING",
+    0x2:        "SYSTEM_LEVEL",
+    0x4:        "TIMING_ERROR",
+    0x8:        "MISSING_ESTIMATE",
+    0x10:       "BAD_CONFIG",
+    0x20:       "DRV_FAULT",
+    0x40:       "MISSING_INPUT",
+    0x100:      "DC_BUS_OVER_VOLTAGE",
+    0x200:      "DC_BUS_UNDER_VOLTAGE",
+    0x400:      "DC_BUS_OVER_CURRENT",
+    0x800:      "DC_BUS_OVER_REGEN_CURRENT",
+    0x1000:     "CURRENT_LIMIT_VIOLATION",
+    0x2000:     "MOTOR_OVER_TEMP",
+    0x4000:     "INVERTER_OVER_TEMP",
+    0x8000:     "VELOCITY_LIMIT_VIOLATION",
+    0x10000:    "POSITION_LIMIT_VIOLATION",
+    0x1000000:  "WATCHDOG_TIMER_EXPIRED",
+    0x2000000:  "ESTOP_REQUESTED",
+    0x4000000:  "SPINOUT_DETECTED",
+    0x8000000:  "BRAKE_RESISTOR_DISARMED",
+    0x10000000: "THERMISTOR_DISCONNECTED",
+    0x40000000: "CALIBRATION_ERROR",
+}
+
+
+def decode_motor_error(code):
+    """Decode a decimal motor error_report into (hex_str, [flag names]).
+
+    Returns None if `code` isn't an integer value. A code of 0 gives ("0x0", []).
+    Any bits not present in MOTOR_ERROR_FLAGS are reported as UNKNOWN(0x..) rather
+    than dropped, so a firmware/header mismatch stays visible instead of silently
+    decoding to fewer faults than were actually raised.
+    """
+    try:
+        code = int(code)
+    except (TypeError, ValueError):
+        return None
+
+    names = []
+    covered = 0
+    for bit, name in MOTOR_ERROR_FLAGS.items():
+        if code & bit:
+            names.append(name)
+            covered |= bit
+    leftover = code & ~covered
+    if leftover:
+        names.append(f"UNKNOWN({hex(leftover)})")
+    return hex(code), names
+
+
+def format_motor_error(code):
+    """One-line 'hex: FLAG_A | FLAG_B' string, or '' for a zero/undecodable code."""
+    decoded = decode_motor_error(code)
+    if decoded is None:
+        return ""
+    hex_str, names = decoded
+    return f"{hex_str}: {' | '.join(names)}" if names else ""
+
+
+def print_error_report(report, logger):
+    """Pretty-print a joint->error_report dict with plain-text flag names."""
+    if not isinstance(report, dict):
+        logger.error(f"error report unavailable: {report!r}")
+        return
+    active = False
+    for joint, code in report.items():
+        text = format_motor_error(code)
+        if text:
+            active = True
+            print(f"  {joint}: {text}")
+    if not active:
+        print("  no active errors")
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------
@@ -53,9 +156,9 @@ TELEMETRY_MAX_ROWS = 500000
 def main_menu():
     return input(
     """
-    ╔══════════════════════════════════════════════════════════════════╗
+    ╔════════════════════════════════════════════════════════════════╗
     ║                          Artus API 2.0                           ║
-    ╠══════════════════════════════════════════════════════════════════╣
+    ╠════════════════════════════════════════════════════════════════╣
     ║ Command Options:                                                 ║
     ║                                                                  ║
     ║   1 -> Start connection to hand                                  ║
@@ -77,41 +180,11 @@ def main_menu():
     ║   17 -> Perform Lifetime Cycle Test (logs all feedback to CSV)   ║
     ║   18 -> Log All Feedback to CSV                                  ║
     ║                                                                  ║
-    ╚══════════════════════════════════════════════════════════════════╝
+    ╚════════════════════════════════════════════════════════════════╝
     >> Input Command Code (1-18): """
-    
     )
 
-# ------------------------------------------------------------------------------
-# -------------------------------- Logger Setup --------------------------------
-# ------------------------------------------------------------------------------
-import logging
 
-def setup_logger(level='ERROR',format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):
-    """
-    Set up a logger for the ArtusAPI with proper formatting
-    """
-    logger = logging.getLogger('ArtusAPI_Example')
-    logger.setLevel(level)
-    
-    # Create console handler with formatting
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(level)
-    
-    # Create formatter
-    formatter = logging.Formatter(format)
-    console_handler.setFormatter(formatter)
-    
-    # Add handler to logger if not already added
-    if not logger.handlers:
-        logger.addHandler(console_handler)
-    
-    return logger
-
-
-# -------------------------------------------------------------------------------
-# ----------------------------- Telemetry CSV Logger ----------------------------
-# -------------------------------------------------------------------------------
 class HandTelemetryLogger:
     """
     Polls every feedback getter the Artus API exposes and writes one wide CSV row
@@ -168,6 +241,9 @@ class HandTelemetryLogger:
         self._file = None
         self._writer = None
         self._start = None
+        # last error code seen per joint, so a persistent fault is announced once
+        # (on change) instead of every telemetry tick
+        self._last_error = {}
 
     def _build_columns(self):
         cols = ['timestamp', 'elapsed_s', 'cycle', 'phase',
@@ -176,6 +252,7 @@ class HandTelemetryLogger:
             cols += [f"{prefix}_{joint}" for joint in self.joint_names]
         for finger in self.force_sensors:
             cols += [f"fingertip_{finger}_{axis}" for axis in ('x', 'y', 'z')]
+        cols += ['error_flags']   # consolidated plain-text decode of any active faults
         return cols
 
     # -- file handling ---------------------------------------------------------
@@ -251,6 +328,8 @@ class HandTelemetryLogger:
                 for joint in self.joint_names:
                     if joint in data:
                         values[f"{prefix}_{joint}"] = data[joint]
+                        if prefix == 'error':
+                            self._note_error(joint, data[joint])
 
         if self.force_sensors:
             ft = self._safe(self.artusapi.get_fingertip_forces)
@@ -263,6 +342,27 @@ class HandTelemetryLogger:
 
         return values
 
+    def _note_error(self, joint, code):
+        """Log a joint's decoded error in plain text, but only when it changes,
+        so a fault that persists across many ticks is announced once rather than
+        spamming the console for the rest of the run."""
+        try:
+            code = int(code)
+        except (TypeError, ValueError):
+            return
+        prev = self._last_error.get(joint, 0)
+        if code == prev:
+            return
+        self._last_error[joint] = code
+        if code:
+            hex_str, names = decode_motor_error(code)
+            text = " | ".join(names) if names else "no known flags"
+            self.logger.error(f"{joint} error {hex_str}: {text}")
+            print(f"  !! {joint} error {hex_str}: {text}")
+        elif prev:
+            self.logger.info(f"{joint} error cleared (was {hex(prev)})")
+            print(f"  -- {joint} error cleared")
+
     def sample(self, cycle=0, phase=''):
         """Read all feedback once and write a row."""
         self._rotate_if_needed()
@@ -272,6 +372,16 @@ class HandTelemetryLogger:
         values['elapsed_s'] = round(time.monotonic() - self._start, 3)
         values['cycle'] = cycle
         values['phase'] = phase
+
+        # consolidated plain-text error column: "joint=FLAG_A|FLAG_B; ..." across
+        # any joints with an active fault this tick, so the CSV is self-describing
+        # without having to decode the numeric error_ columns by hand afterward
+        active = []
+        for joint in self.joint_names:
+            decoded = decode_motor_error(values.get(f"error_{joint}", 0))
+            if decoded is not None and decoded[1]:
+                active.append(f"{joint}=" + "|".join(decoded[1]))
+        values['error_flags'] = "; ".join(active)
 
         # a row counts as a sample unless every device column came back empty
         device_cols = len(self.columns) - 4  # minus timestamp/elapsed/cycle/phase
@@ -349,154 +459,94 @@ def log_all_feedback(artusapi, logger, interval_s=TELEMETRY_INTERVAL_S, duration
     return telem.paths
 
 
+
+# -------------------------------------------------------------------------------
+# ----------------------------- Lifetime Cycle Test -----------------------------
+# -------------------------------------------------------------------------------
+def run_lifetime_cycle_test(artusapi, logger, hand_poses_path):
+    """
+    Alternate the grasp_example (close) and grasp_open poses lifetime_test_count
+    times, logging all hand feedback to CSV throughout.
+
+    Pose commands go through general_example.handle_command('6'/'8') — the exact
+    same path as menu options 6 and 8 — so the cycle test can't drift from the
+    known-good pose-send behaviour. Sampling replaces the dwell between poses:
+    telem.run(cycle_dwell_s) consumes the same wall time a time.sleep() would,
+    but records data while it waits.
+    """
+    telem = HandTelemetryLogger(
+        artusapi, logger,
+        interval_s=TELEMETRY_INTERVAL_S,
+        title='lifetime_cycle',
+        print_every=12,   # ~one console line per cycle
+    )
+    telem.open()
+    x = 0
+    try:
+        for x in range(lifetime_test_count):
+            logger.info(f"Cycle {x}: closing to grasp_example")
+            handle_command(artusapi, '6', logger, hand_poses_path)
+            telem.run(cycle_dwell_s, cycle=x, phase='close')
+
+            logger.info(f"Cycle {x}: opening to grasp_open")
+            handle_command(artusapi, '8', logger, hand_poses_path)
+            telem.run(cycle_dwell_s, cycle=x, phase='open')
+    except KeyboardInterrupt:
+        print()
+        logger.info(f"Lifetime cycle test stopped by user after {x} cycles")
+    finally:
+        telem.close()
+
+
 # -------------------------------------------------------------------------------
 # --------------------------------- Example -------------------------------------
 # -------------------------------------------------------------------------------
 def example():
+    """Interactive menu loop.
+
+    Options 17 (lifetime cycle test) and 18 (standalone telemetry) are handled
+    here; everything else is delegated to general_example.handle_command(), the
+    same dispatch the standard CLI uses.
+    """
     # Load the configuration file
     config = ArtusConfig()
 
     artusapi = None
-    hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
-    logger = setup_logger(level=config.config.logging.level,format=config.config.logging.format)
+    hand_poses_path = os.path.join(PROJECT_ROOT, 'data', 'hand_poses')
+    logger = setup_logger(level=config.config.logging.level, format=config.config.logging.format)
     # new api
     artusapi = config.get_api(logger=logger)
 
-    # while True:
-    #     artusapi.get_fingertip_forces()
-    #     time.sleep(0.5)
-    
-    
     # Main loop (example)
     while True:
         try:
             user_input = main_menu()
 
-            match user_input:
-                case '1':
-                    artusapi.connect()
-                case '2':
-                    artusapi.disconnect()
-                case '3':
-                    if isinstance(artusapi, ArtusAPI_V2):
-                        control_type = int(input("Enter control type (1: torque, 2: velocity, 3: position): "))
-                        if control_type not in [1,2,3]:
-                            logger.warning("Invalid control type, defaulting to position control")
-                            control_type = 3
-                        artusapi.wake_up(control_type=control_type)
-                    else:
-                        artusapi.wake_up()
-                case '4':
-                    artusapi.sleep()
-                case '5':
-                    artusapi.calibrate()
-                case '6':
-                    with open(os.path.join(hand_poses_path ,'grasp_example.json'),'r') as file:
-                        grasp_example_dict = json.load(file)
-                    # logger.info(f"Setting joint angles to: {grasp_example_dict} and setting velocity and force to defaults")
-                    # for key,value in grasp_example_dict.items():
-                    #     grasp_example_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
-                    #     grasp_example_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
-                    artusapi.set_joint_angles(grasp_example_dict)
-                case '7':
-                    logger.info(artusapi.get_robot_status())
-                case '8':
-                    with open(os.path.join(hand_poses_path ,'grasp_open.json'),'r') as file:
-                        grasp_dict = json.load(file)
-                    # logger.info(f"Setting joint angles to: {grasp_dict} and setting velocity and force to defaults")
-                    # for key,value in grasp_dict.items():
-                    #     grasp_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
-                    #     grasp_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
-                    artusapi.set_joint_angles(grasp_dict)
-                case '9':
-                    artusapi.get_joint_angles()
-                case '10':
-                    artusapi.get_joint_speeds()
-                case '11':
-                    artusapi.get_joint_forces()
-                case '12':
-                    if artusapi._robot_handler.robot.force_sensors is not None:
-                        artusapi.get_fingertip_forces()
-                    else:
-                        logger.error("Fingertip forces are not supported for this robot")
-                case '13':
-                    artusapi.get_voltage()
-                case '14':
-                    artusapi.get_avg_temperature()
-                case '15':
-                    artusapi.get_joint_temperatures()
-                case '16':
-                    artusapi.get_error_report()
-                case'17': # loop between open and close 100k times, logging all feedback throughout.
-                    # poses are read once here rather than per cycle — 100k reruns of
-                    # json.load() buys nothing and the dicts are rebuilt below anyway
-                    with open(os.path.join(hand_poses_path ,'grasp_example.json'),'r') as file:
-                        grasp_example_dict = json.load(file)
-                    with open(os.path.join(hand_poses_path ,'grasp_open.json'),'r') as file:
-                        grasp_dict = json.load(file)
-                    # for pose in (grasp_example_dict, grasp_dict):
-                    #     for key,value in pose.items():
-                    #         pose[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
-                    #         pose[key]['target_force'] = artusapi._robot_handler.robot.default_force
-
-                    telem = HandTelemetryLogger(
-                        artusapi, logger,
-                        interval_s=TELEMETRY_INTERVAL_S,
-                        title='lifetime_cycle',
-                        print_every=12,   # ~one console line per cycle
-                    )
-                    telem.open()
-                    try:
-                        for x in range(lifetime_test_count):
-                            logger.info(f"Cycle {x}: closing to grasp_example")
-                            artusapi.set_joint_angles(grasp_example_dict)
-                            # sampling replaces the dwell — same 3 s, now with data
-                            telem.run(cycle_dwell_s, cycle=x, phase='close')
-
-                            logger.info(f"Cycle {x}: opening to grasp_open")
-                            artusapi.set_joint_angles(grasp_dict)
-                            telem.run(cycle_dwell_s, cycle=x, phase='open')
-                    except KeyboardInterrupt:
-                        print()
-                        logger.info(f"Lifetime cycle test stopped by user after {x} cycles")
-                    finally:
-                        telem.close()
-                case '18':
-                    duration_input = input(
-                        "Log duration in seconds (blank = until Ctrl+C): "
-                    ).strip()
-                    log_all_feedback(
-                        artusapi,
-                        logger,
-                        interval_s=TELEMETRY_INTERVAL_S,
-                        duration_s=float(duration_input) if duration_input else None,
-                    )
-                case 'c':
-                    artusapi.clear_errors()
-                case 'r':
-                    artusapi.reset()
-                case 'f':
-                    if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue") == 'e':
-                        driver = int(input("Enter driver to flash: "))
-                        if (driver > artusapi._robot_handler.robot.number_of_controllers or driver < 0):
-                            logger.error(f"Invalid driver number, please try again")
-                        else:
-                            file_location_ = input(f'enter file location of driver: ')
-                            artusapi.update_firmware(file_location=file_location_,drivers_to_flash=driver)
-                            logger.info(f"Firmware flashed successfully")
+            if user_input == '17':
+                run_lifetime_cycle_test(artusapi, logger, hand_poses_path)
+            elif user_input == '18':
+                duration_input = input(
+                    "Log duration in seconds (blank = until Ctrl+C): "
+                ).strip()
+                log_all_feedback(
+                    artusapi,
+                    logger,
+                    interval_s=TELEMETRY_INTERVAL_S,
+                    duration_s=float(duration_input) if duration_input else None,
+                )
+            elif user_input == '16':
+                # decode the error report into plain text instead of the raw
+                # decimal bitmask handle_command() would otherwise just log
+                print_error_report(artusapi.get_error_report(), logger)
+            else:
+                handle_command(artusapi, user_input, logger, hand_poses_path)
         except Exception as e:
             logger.error(f"Error: {e}")
             pass
+
+
 # ----------------------------------------------------------------------------------
 # ---------------------------------- Main ------------------------------------------
 # ----------------------------------------------------------------------------------
 if __name__ == '__main__':
     example()
-    # import serial
-    # x = serial.Serial(port='COM13',baudrate=250000, timeout= 1)
-    
-    # n = bytearray([0x33])*139
-    
-    # while True:
-    #     x.write(n)
-    #     time.sleep(1)

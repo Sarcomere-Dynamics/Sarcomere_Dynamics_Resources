@@ -2,8 +2,8 @@
     "thumb_spread":
     {
         "target_angle": 10,
-        "target_force": 30,
-        "target_velocity": 50,
+        "target_force": 50,
+        "target_velocity": 70,
         "index": 0
     },
     "thumb_flex":

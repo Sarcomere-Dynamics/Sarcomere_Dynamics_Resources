@@ -1,0 +1,5 @@
+timestamp,elapsed_s,cycle,phase,actuator_state,trajectory_return,voltage,avg_temperature,position_gripper_joint,velocity_gripper_joint,force_gripper_joint,temperature_gripper_joint,error_gripper_joint,fingertip_gripper_join_left_x,fingertip_gripper_join_left_y,fingertip_gripper_join_left_z,fingertip_gripper_join_right_x,fingertip_gripper_join_right_y,fingertip_gripper_join_right_z
+2026-07-28T17:38:49.391,0.14,0,close,ACTUATOR_SLEEP,TRAJECTORY_RUNNING,24.0,47,8,-9,-3.6,47,0,0.0,0.0,0.0,0.26,0.04,0.44
+2026-07-28T17:38:50.387,1.14,0,close,ACTUATOR_SLEEP,TRAJECTORY_RUNNING,24.0,47,8,-9,-3.6,47,0,0.0,0.0,0.0,0.26,0.04,0.44
+2026-07-28T17:38:51.499,2.25,0,open,ACTUATOR_SLEEP,TRAJECTORY_RUNNING,24.0,47,8,-9,-3.6,47,0,0.0,0.0,0.0,0.26,0.04,0.44
+2026-07-28T17:38:52.495,3.25,0,open,ACTUATOR_SLEEP,TRAJECTORY_RUNNING,24.0,47,8,-9,-3.6,47,0,0.0,0.0,0.0,0.26,0.04,0.44
