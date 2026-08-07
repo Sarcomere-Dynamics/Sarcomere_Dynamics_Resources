@@ -190,7 +190,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
         case 'sr':
             artusapi.soft_reset()
         case 'f':
-            if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue") == 'e':
+            if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue: ") == 'e':
                 driver = int(input("Enter driver to flash: "))
                 if (driver > artusapi._robot_handler.robot.number_of_controllers or driver < 0):
                     logger.error(f"Invalid driver number, please try again")
