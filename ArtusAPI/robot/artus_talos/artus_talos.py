@@ -10,7 +10,6 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from curses import has_key
 from ...sensors import ForceSensor
 from ..bldc_robot.bldcrobot import BLDCRobot
 import logging

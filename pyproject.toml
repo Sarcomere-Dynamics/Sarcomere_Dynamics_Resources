@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "artusapi"
+version = "2.0.0"
+description = "API to control Artus Family of Robots by Sarcomere Dynamics Inc"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10"
+keywords = ["robotics", "artus", "sarcomere dynamics", "control"]
+authors = [
+    { name = "Sarcomere Dynamics Inc.", email = "support@sarcomeredynamics.com" },
+]
+dependencies = [
+    # Core runtime dependencies of the ArtusAPI package itself.
+    # Kept in sync with requirements_v2.txt; extras below cover the
+    # examples/ tree, which is not shipped in the distribution.
+    "pymodbus>=3.5",
+    "pyserial",
+    "tqdm",
+    "esptool",
+    'windows-curses; sys_platform == "win32"',
+]
+
+[project.optional-dependencies]
+# Dependencies of examples/ (teleoperation, tracking, config loader).
+examples = [
+    "numpy",
+    "PyYAML",
+]
+# Dependencies of the Qt feedback/control UI under examples/Tracking/ui.
+gui = [
+    "PySide6",
+    "PySide6_Essentials",
+    "PySide6_Addons",
+    "shiboken6",
+    "pyqtgraph",
+    "pyzmq",
+]
+all = [
+    "artusapi[examples,gui]",
+]
+
+[project.urls]
+Homepage = "https://sarcomeredynamics.com/home"
+Source = "https://github.com/Sarcomere-Dynamics/Sarcomere_Dynamics_Resources"
+
+[tool.setuptools.packages.find]
+# Ship only the ArtusAPI package; data/, examples/, urdf/, test_workspace/,
+# changelog/ and gripper_force_demo/ stay out of the distribution.
+include = ["ArtusAPI*"]
+namespaces = false
