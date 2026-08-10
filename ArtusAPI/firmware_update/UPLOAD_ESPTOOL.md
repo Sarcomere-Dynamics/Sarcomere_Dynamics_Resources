@@ -14,7 +14,22 @@ pip install esptool
 ```
 
 * A merged firmware binary (`*merged*.bin`). The script rejects any file that is not a `.bin` with `merged` in its name.
-* The masterboard connected over USB and its serial port identified (e.g. `/dev/ttyUSB0` on Linux, `/dev/tty.usbserial-*` on macOS, `COM3` on Windows).
+* The masterboard _in boot mode_ connected over USB and its serial port identified (e.g. `/dev/ttyUSB0` on Linux, `/dev/tty.usbserial-*` on macOS, `COM3` on Windows).
+
+> [!IMPORTANT]
+> The system must be in boot mode before powering on to allow the firmware update to take place. The LED will remain blue when the system is in boot mode.
+
+### Entering Boot Mode for the Master
+#### Tactile Button 
+There is a button protected by silicone located between the two nano M8 connectors. Hold the button down while powering on the device. 
+#### SW Button
+
+1. Take off the 3x bolts on both sides of the base plate shown in the image below. (Requires a 2.5mm Hex bit)
+<img src='../../data/images/baseplate_bolts.jpg'>
+2. Locate SW2 and toggle the switch.
+
+<img src='../../data/images/boot_toggle.jpg'>
+3. Power on the device
 
 ## Usage
 
