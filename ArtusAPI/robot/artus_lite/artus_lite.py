@@ -71,9 +71,9 @@ class ArtusLite(BLDCRobot):
         self.default_velocity = 150
 
         # forces (N)
-        self.max_force = 20
+        self.max_force = 150
         self.min_force = 0
-        self.default_force = 10
+        self.default_force = 57
 
         # pwm (legacy)
         self.max_pwm = 100
