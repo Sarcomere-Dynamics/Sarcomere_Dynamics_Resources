@@ -101,14 +101,14 @@ The bottleneck for controlling multiple systems is their MODBUS ID which is curr
 
 Beyond joint control and feedback, `ArtusAPI_V2` exposes:
 
-| Method | Purpose |
-|---|---|
-| `set_control_type(control_type)` | Switch the hand's active control type (position/velocity/torque) without a full `wake_up()`. |
-| `set_home_position()` | Moves the hand to its home position at the default velocity. |
-| `get_robot_status()` | Reads and decodes the hand's current actuator and trajectory state. |
-| `get_fingertip_forces()` | Reads fingertip force feedback (on hands with force sensors). |
-| `get_avg_temperature()` | Reads the hand's average temperature feedback. |
-| `get_error_report()` | Reads the per-joint actuator error bitfield report. |
-| `clear_errors()` | Explicitly clears latched actuator errors. |
-| `get_config(wifi_name, wifi_pass)` | Writes new WiFi credentials to the hand and reads back its assigned IP. |
+| Method                                                       | Purpose                                                                                                                           |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `set_control_type(control_type)`                             | Switch the hand's active control type (position/velocity/torque) without a full `wake_up()`.                                      |
+| `set_home_position()`                                        | Moves the hand to its home position at the default velocity.                                                                      |
+| `get_robot_status()`                                         | Reads and decodes the hand's current actuator and trajectory state.                                                               |
+| `get_fingertip_forces()`                                     | Reads fingertip force feedback (on hands with force sensors).                                                                     |
+| `get_avg_temperature()`                                      | Reads the hand's average temperature feedback.                                                                                    |
+| `get_error_report()`                                         | Reads the per-joint actuator error bitfield report.                                                                               |
+| `clear_errors()`                                             | Explicitly clears latched actuator errors.                                                                                        |
+| `get_config(wifi_name, wifi_pass)`                           | Writes new WiFi credentials to the hand and reads back its assigned IP.                                                           |
 | `update_firmware(file_location=None, drivers_to_flash=None)` | Flashes new firmware to one or all actuator drivers on the hand. See [`docs/COMPATIBILITY.md`](COMPATIBILITY.md) before updating. |

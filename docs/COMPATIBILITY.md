@@ -14,28 +14,28 @@ Rows are sorted newest-first, same convention as Revision Control.
 
 ## Artus Lite / Lite+
 
-| Firmware version | Compatible API version(s) | Notes |
-|---|---|---|
-| v9.x | v1.x | legacy api |
-| v10.x | v2.1 | v2, pos, vel and force control |
+| Firmware version | Compatible API version(s) | Notes                          |
+| ---------------- | ------------------------- | ------------------------------ |
+| v9.x             | v1.x                      | legacy api                     |
+| v10.x            | v2.1                      | v2, pos, vel and force control |
 
 ## Artus Talos
 
-| Firmware version | Compatible API version(s) | Notes |
-|---|---|---|
-| TBD | TBD | TBD — requires `calibrate()`; see [ARTUS_TALOS.MD](/ArtusAPI/robot/artus_talos/ARTUS_TALOS.MD) |
+| Firmware version | Compatible API version(s) | Notes                                                                                          |
+| ---------------- | ------------------------- | ---------------------------------------------------------------------------------------------- |
+| TBD              | TBD                       | TBD — requires `calibrate()`; see [ARTUS_TALOS.MD](/ArtusAPI/robot/artus_talos/ARTUS_TALOS.MD) |
 
 ## Artus Scorpion
 
-| Firmware version | Compatible API version(s) | Notes |
-|---|---|---|
-| TBD | TBD | TBD — requires `calibrate()`; see [ARTUS_SCORPION.md](/ArtusAPI/robot/artus_scorpion/ARTUS_SCORPION.md) |
+| Firmware version | Compatible API version(s) | Notes                                                                                                   |
+| ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------- |
+| TBD              | TBD                       | TBD — requires `calibrate()`; see [ARTUS_SCORPION.md](/ArtusAPI/robot/artus_scorpion/ARTUS_SCORPION.md) |
 
 ## Artus Dex
 
 | Firmware version | Compatible API version(s) | Notes |
-|---|---|---|
-| TBD | TBD | TBD |
+| ---------------- | ------------------------- | ----- |
+| TBD              | TBD                       | TBD   |
 
 ## Keeping this page up to date
 
