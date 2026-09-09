@@ -1,0 +1,87 @@
+"""
+Shared mocks for ArtusAPI tests (no hardware).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Generator
+from contextlib import contextmanager
+from typing import Any
+from unittest import mock
+
+from artusapi.communication.communication_handler import ActuatorState
+
+
+def make_communication_mock() -> mock.MagicMock:
+    """Builds a MagicMock standing in for CommunicationHandler.
+
+    Returns:
+        A MagicMock with the CommunicationHandler methods used by ArtusAPI
+        (open_connection, close_connection, send_data, receive_data,
+        wait_for_ready, _check_robot_state) pre-configured with sane defaults.
+    """
+    m = mock.MagicMock()
+    m.open_connection = mock.Mock()
+    m.close_connection = mock.Mock()
+    m.send_data = mock.Mock(return_value=True)
+    m.receive_data = mock.Mock(return_value=0)
+    m.send_receive_data = mock.Mock(return_value=0)
+    m.wait_for_ready = mock.Mock(return_value=ActuatorState.ACTUATOR_IDLE.value)
+    m._check_robot_state = mock.Mock(return_value=ActuatorState.ACTUATOR_IDLE.value)
+    return m
+
+
+@contextmanager
+def patched_artus_api_v2_constructor(
+    communication_mock: mock.MagicMock | None = None,
+) -> Generator[tuple[type, mock.MagicMock], None, None]:
+    """Patches CommunicationHandler, time.sleep, and signal.signal while constructing ArtusAPI.
+
+    Args:
+        communication_mock: Mock to substitute for the real CommunicationHandler
+            instance. If None, one is created via make_communication_mock().
+
+    Yields:
+        A tuple of (ArtusAPI class, communication mock instance returned
+        to the API).
+    """
+    if communication_mock is None:
+        communication_mock = make_communication_mock()
+
+    import ArtusAPI.artus_api_new as api_mod
+
+    with mock.patch.object(api_mod, "CommunicationHandler", autospec=True) as nc_cls:
+        nc_cls.return_value = communication_mock
+        with mock.patch.object(api_mod.time, "sleep"):
+            with mock.patch.object(api_mod.signal, "signal"):
+                yield api_mod.ArtusAPI, communication_mock
+
+
+def build_api(
+    robot_type: str = "artus_lite",
+    hand_type: str = "left",
+    communication_mock: mock.MagicMock | None = None,
+    **kwargs: Any,
+):
+    """Constructs ArtusAPI with communication fully mocked.
+
+    Args:
+        robot_type: Robot type string passed to ArtusAPI (e.g. "artus_lite").
+        hand_type: Hand type string passed to ArtusAPI (e.g. "left").
+        communication_mock: Mock to substitute for the real CommunicationHandler
+            instance. If None, one is created via make_communication_mock().
+        **kwargs: Additional keyword arguments forwarded to ArtusAPI.
+
+    Returns:
+        A tuple of (ArtusAPI instance, communication mock instance).
+    """
+    comm = communication_mock or make_communication_mock()
+    with patched_artus_api_v2_constructor(comm) as (Cls, _):
+        api = Cls(
+            robot_type=robot_type,
+            hand_type=hand_type,
+            communication_method="ModbusRTU",
+            communication_channel_identifier="MOCK",
+            **kwargs,
+        )
+    return api, comm

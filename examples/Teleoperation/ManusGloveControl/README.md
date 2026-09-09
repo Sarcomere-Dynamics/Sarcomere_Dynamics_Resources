@@ -1,10 +1,10 @@
-# Artus Lite Manus Gloves Control
+# ARTUS Lite Manus Gloves Control
 
-This guide provides instructions on how to use the GUI to control the Artus Lite hand robot.
+This guide provides instructions on how to use the GUI to control the ARTUS Lite hand robot.
 
 ## Table of Contents
 
-- [Artus Lite Manus Gloves Control](#artus-lite-manus-gloves-control)
+- [ARTUS Lite Manus Gloves Control](#artus-lite-manus-gloves-control)
   - [Table of Contents](#table-of-contents)
   - [Requirements](#requirements)
   - [Installation](#installation)
@@ -15,7 +15,7 @@ This guide provides instructions on how to use the GUI to control the Artus Lite
 
 - Python >= 3.10
 - Requirements: Manus Glove SDK 
-- Artus Lite hand robot
+- ARTUS Lite hand robot
 - Windows OS
 - Visual Studio
 
@@ -62,11 +62,11 @@ This guide provides instructions on how to use the GUI to control the Artus Lite
    
 ## Configuration
 
-Before running the GUI, ensure that the configuration file is updated with the correct settings for your Artus Lite hand robot. The configuration file is located at `Sarcomere_Dynamics_Resources/Control/configuration/robot_config.yaml`.
+Before running the GUI, ensure that the configuration file is updated with the correct settings for your ARTUS Lite hand robot. The configuration file is located at `Sarcomere_Dynamics_Resources/Control/configuration/robot_config.yaml`.
 
 ## Running the Control
 
-To start the Manus Glove control for controlling the Artus Lite hand robot, follow these steps:
+To start the Manus Glove control for controlling the ARTUS Lite hand robot, follow these steps:
 
 1. Navigate to the directory containing the python script:
     ```sh
@@ -82,7 +82,7 @@ To start the Manus Glove control for controlling the Artus Lite hand robot, foll
 
 ## Troubleshooting
 
-Increase the value of 'TCP_DATA_RATE' (10 - 500) in the **SDKClient.cpp** and build the project again if you laggy behavior during control of Artus Lite hand using Manus Data Gloves
+Increase the value of 'TCP_DATA_RATE' (10 - 500) in the **SDKClient.cpp** and build the project again if you laggy behavior during control of ARTUS Lite hand using Manus Data Gloves
 ```
 #define TCP_DATA_RATE 50
 ```

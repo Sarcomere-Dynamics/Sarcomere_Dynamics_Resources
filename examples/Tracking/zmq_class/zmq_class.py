@@ -1,19 +1,19 @@
-"""
-Sarcomere Dynamics Software License Notice
-------------------------------------------
-This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
-including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
-
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
-
-Licensed under the Sarcomere Dynamics Software License.
-See the LICENSE file in the repository for full details.
-"""
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
 
 """Thin ZMQ PUB/SUB wrappers used for topic-based messaging between components."""
 
-import zmq
 import time
+
+import zmq
+
 
 class ZMQPublisher:
     """Wraps a ZMQ PUB socket for non-blocking, topic-prefixed message broadcast."""
@@ -50,6 +50,7 @@ class ZMQPublisher:
         self.socket.close()
         self.context.term()
 
+
 class ZMQSubscriber:
     """Wraps a ZMQ SUB socket configured to keep only the most recent message.
 
@@ -71,7 +72,7 @@ class ZMQSubscriber:
         # Initialize ZMQ context and SUB socket
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
-        self.socket.setsockopt(zmq.CONFLATE, 1) # Only keep the most recent message
+        self.socket.setsockopt(zmq.CONFLATE, 1)  # Only keep the most recent message
         if connect:
             self.socket.connect(address)
         else:
@@ -94,7 +95,7 @@ class ZMQSubscriber:
         try:
             message = self.socket.recv_string(zmq.NOBLOCK)
             # split data into topic and message
-            parts = message.split(' ', 1)
+            parts = message.split(" ", 1)
             result = [parts[0], parts[1] if len(parts) > 1 else ""]
             # print(f"ZMQ receive: topic={result[0]}, message={result[1]}")
             return result[1]
@@ -106,7 +107,6 @@ class ZMQSubscriber:
         """Closes the socket and terminates the ZMQ context."""
         self.socket.close()
         self.context.term()
-
 
 
 # Example usage
@@ -122,6 +122,7 @@ def publisher_example():
 
     # Cleanup
     publisher.close()
+
 
 def subscriber_example():
     """Demonstrates ZMQSubscriber by polling for messages on "topic1" in a loop."""
@@ -140,6 +141,7 @@ def subscriber_example():
 
     # Cleanup
     subscriber.close()
+
 
 if __name__ == "__main__":
     # publisher_example()

@@ -1,0 +1,140 @@
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
+
+# Artus Lite Hands
+# Artus Dex
+from .artus_dex.artus_dex_left import ArtusDex_Left
+from .artus_dex.artus_dex_right import ArtusDex_Right
+from .artus_lite.artus_lite_left import ArtusLiteLeft
+from .artus_lite.artus_lite_plus_left import ArtusLitePlusLeft
+from .artus_lite.artus_lite_plus_right import ArtusLitePlusRight
+from .artus_lite.artus_lite_right import ArtusLiteRight
+
+# Artus Scorpion
+from .artus_scorpion.artus_scorpion import ArtusScorpion
+
+# Artus Talos
+from .artus_talos.artus_talos_left import ArtusTalosLeft
+from .artus_talos.artus_talos_right import ArtusTalosRight
+
+"""Factory that instantiates the correct robot model from robot/hand type strings."""
+
+ROBOT_DICT = {
+    "artus_lite": {
+        "left": ArtusLiteLeft,
+        "right": ArtusLiteRight,
+    },
+    "artus_lite_plus": {
+        "left": ArtusLitePlusLeft,
+        "right": ArtusLitePlusRight,
+    },
+    "artus_talos": {
+        "left": ArtusTalosLeft,
+        "right": ArtusTalosRight,
+    },
+    "artus_dex": {
+        "left": ArtusDex_Left,
+        "right": ArtusDex_Right,
+    },
+}
+
+
+class Robot:
+    """Factory/facade that instantiates and wraps a specific hand model.
+
+    Attributes:
+        robot_type: Robot variant string (e.g. 'artus_talos', 'artus_lite').
+        hand_type: Hand side string (e.g. 'left', 'right').
+        robot: The instantiated hand model (subclass of ``ArtusBase``).
+    """
+
+    def __init__(self, robot_type="artus_lite", hand_type="left", logger=None):
+        """Initializes the factory and builds the concrete robot instance.
+
+        Args:
+            robot_type: Robot variant, e.g. 'artus_lite', 'artus_lite_plus',
+                'artus_talos', 'artus_scorpion', 'artus_dex'.
+            hand_type: Hand side, e.g. 'left' or 'right' (ignored for
+                'artus_scorpion').
+            logger: Optional logger passed through to the robot model.
+        """
+        # initialize robot
+        self.robot_type = robot_type
+        self.hand_type = hand_type
+        self.logger = logger
+
+        # setup robot
+        self.robot = None
+        self._setup_robot()
+
+    def _setup_robot(self):
+        """Instantiates ``self.robot`` based on ``self.robot_type`` and ``self.hand_type``.
+
+        Raises:
+            ValueError: If ``robot_type`` is unrecognized, or if
+                ``hand_type`` is unrecognized for a robot type that requires
+                a left/right hand.
+        """
+
+        if self.robot_type == "artus_scorpion":
+            robot_class = ArtusScorpion
+        else:
+            try:
+                robot_class = ROBOT_DICT[self.robot_type][self.hand_type]
+            except KeyError:
+                raise ValueError(f"Unknown robot: {self.robot_type}/{self.hand_type}")
+
+        self.robot = robot_class(logger=self.logger)
+
+    def set_joint_targets(self, joints: dict, name: bool):
+        """Sets the joint angles of the hand.
+
+        Args:
+            joints: Dictionary of target joint data, keyed by joint
+                name or index depending on ``name``.
+            name: If True, dispatches by joint name (used for hands with
+                named joints, e.g. Scorpion which has a single unnamed
+                joint). If False, dispatches by joint index.
+
+        Returns:
+            Bitmask of available control types that were set (see
+            ``ArtusBase.set_joint_targets``).
+        """
+        if name:  # scorpion has no name for joints because just 1 joint
+            return self.robot.set_joint_targets_by_name(joints)
+        else:
+            return self.robot.set_joint_targets(joints)
+
+    def set_home_position(self):
+        """Moves the hand to its home position.
+
+        Returns:
+            Result of the underlying robot's ``set_home_position`` call.
+        """
+        return self.robot.set_home_position()
+
+    def get_feedback_data(self, joints, feedback_type=None):
+        """Populates the robot's joint feedback fields from decoded data.
+
+        Args:
+            joints: Decoded feedback data (list).
+            feedback_type: Modbus key string (e.g.
+                'feedback_position_start_reg'). Defaults to
+                'feedback_position_start_reg' if not provided.
+
+        Returns:
+            Result of the underlying robot's ``get_joint_angles`` call.
+        """
+        modbus_key = (
+            feedback_type
+            if feedback_type is not None
+            else "feedback_position_start_reg"
+        )
+        return self.robot.get_feedback_data(joints, modbus_key=modbus_key)
