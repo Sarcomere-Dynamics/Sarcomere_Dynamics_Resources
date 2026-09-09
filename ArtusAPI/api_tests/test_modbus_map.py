@@ -55,6 +55,37 @@ class TestModbusMap(unittest.TestCase):
         self.assertEqual(TrajectoryReturn.TRAJECTORY_STOPPED.value, 1)
         self.assertEqual(TrajectoryReturn.TRAJECTORY_COMPLETE.value, 2)
 
+    def test_scalar_feedback_keys_are_in_the_register_map(self):
+        """Verifies every scalar feedback key has a register address and multiplier."""
+        for key in ModbusMap.SCALAR_FEEDBACK_KEYS:
+            self.assertIn(key, self.m.modbus_reg_map)
+            self.assertIn(key, self.m.data_type_multiplier_map)
+
+    def test_fingertip_axes_match_names(self):
+        """Verifies FINGERTIP_AXES matches the named axis tuple."""
+        self.assertEqual(ModbusMap.FINGERTIP_AXES, len(ModbusMap.FINGERTIP_AXIS_NAMES))
+        self.assertIn(ModbusMap.FINGERTIP_FEEDBACK_KEY, self.m.modbus_reg_map)
+
+    def test_feedback_register_count_scalar_ignores_joint_count(self):
+        """Verifies whole-hand scalar fields use the multiplier as a fixed register count."""
+        self.assertEqual(self.m.feedback_register_count("feedback_voltage_start_reg", 16), 2)
+        self.assertEqual(self.m.feedback_register_count("feedback_avg_temperature_start_reg", 16), 1)
+        self.assertEqual(self.m.feedback_register_count("slave_id_reg", 16), 1)
+
+    def test_feedback_register_count_per_joint(self):
+        """Verifies per-joint fields scale by the multiplier and joint count."""
+        self.assertEqual(self.m.feedback_register_count("feedback_velocity_start_reg", 16), 16)
+        self.assertEqual(self.m.feedback_register_count("feedback_force_start_reg", 16), 32)
+
+    def test_feedback_register_count_fingertip(self):
+        """Verifies fingertip fields scale by sensor count and axes, not joint count."""
+        self.assertEqual(
+            self.m.feedback_register_count(
+                ModbusMap.FINGERTIP_FEEDBACK_KEY, 16, number_of_sensors=5
+            ),
+            5 * ModbusMap.FINGERTIP_AXES * 2,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

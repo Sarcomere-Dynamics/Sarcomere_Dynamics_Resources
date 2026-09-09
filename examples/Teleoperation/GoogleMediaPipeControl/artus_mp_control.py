@@ -38,7 +38,7 @@ import sys
 import mediapipe as mp
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(

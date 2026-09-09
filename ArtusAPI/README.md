@@ -6,20 +6,21 @@ The hardware still needs correct **power, cabling, and safety practices**. Softw
 
 ## What you actually import
 
-The package exports **`ArtusAPI_V2`** from [`__init__.py`](__init__.py). Implementation lives in [`artus_api_new.py`](artus_api_new.py).
+The package exports **`ArtusAPI_V2`** and **`ArtusConfig`** from [`__init__.py`](__init__.py). Implementation lives in [`artus_api_new.py`](artus_api_new.py); the YAML loader is [`configuration.py`](configuration.py).
 
 The legacy module **`artus_api.py` is no longer in this repository.** Older tutorials that used `from ArtusAPI.artus_api import ArtusAPI` should be updated to `ArtusAPI_V2` and the constructor / communication options that match your hardware. `ArtusAPI_V2` is the only supported entry point — there is no v1 code path left to fall back to.
 
 ```python
-from ArtusAPI import ArtusAPI_V2
+from ArtusAPI import ArtusAPI_V2, ArtusConfig
 ```
 
-Your application chooses parameters such as **robot type**, **left or right hand**, and **how the PC talks to the device** (for example RS485). Those details are set when you construct the API object or via a config helper—see [examples/config/README.md](../examples/config/README.md).
+Your application chooses parameters such as **robot type**, **left or right hand**, and **how the PC talks to the device** (for example RS485). Those details are set when you construct the API object, or via `ArtusConfig` and a `robot_config.yaml` — see [examples/config/README.md](../examples/config/README.md).
 
 ## How the code is organized
 
 | Folder | Role in plain terms |
 |--------|---------------------|
+| [`configuration.py`](configuration.py) | YAML loader (`ArtusConfig`) that builds a configured `ArtusAPI_V2`. Ships `robot_config.yaml` as the packaged default. |
 | [`robot/`](robot/) | Descriptions of each supported hand: joint counts, names, limits, and model-specific behavior. Start with [robot/README.md](robot/README.md). |
 | [`communication/`](communication/) | Transports — RS485 RTU and Modbus TCP live here. This is where bytes move between your PC and the hand's electronics. |
 | [`commands/`](commands/) | Building and encoding the low-level Modbus command streams the firmware understands. |

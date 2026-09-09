@@ -43,6 +43,71 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertEqual(api.robot_type, "artus_talos")
         self.assertEqual(api.hand_type, "right")
 
+    def test_loads_config_file_before_building_handlers(self):
+        """Verifies ArtusAPI_V2 reads robot_type/hand_type from the config file first."""
+        import tempfile
+        from pathlib import Path
+
+        import ArtusAPI.artus_api_new as api_mod
+
+        yaml_text = """
+robots:
+  left_hand_robot:
+    robot_connected: true
+    robot_type: artus_scorpion
+    communication_method: RS485_RTU
+    baudrate: 115200
+    communication_channel_identifier: /dev/ttyUSB0
+    hand_type: left
+    start_robot: true
+    reset_on_start: 0
+    streaming_frequency: 20
+    calibrate: false
+  right_hand_robot:
+    robot_connected: false
+    robot_type: artus_lite
+    communication_method: RS485_RTU
+    baudrate: 115200
+    communication_channel_identifier: /dev/ttyUSB1
+    hand_type: right
+    start_robot: false
+    reset_on_start: 0
+    streaming_frequency: 30
+    calibrate: false
+logging:
+  level: INFO
+  format: '%(message)s'
+"""
+        comm = MagicMock()
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg_path = Path(tmp) / "robot_config.yaml"
+            cfg_path.write_text(yaml_text, encoding="utf-8")
+            with patched_artus_api_v2_constructor(comm):
+                api = api_mod.ArtusAPI_V2(
+                    config_file=str(cfg_path),
+                    communication_channel_identifier="MOCK",
+                )
+        self.assertEqual(api.robot_type, "artus_scorpion")
+        self.assertEqual(api.hand_type, "left")
+        self.assertIsNotNone(api.config)
+        self.assertIsNotNone(api.logger)
+        self.assertFalse(api.get_robot_calibrate())
+        self.assertTrue(api.get_robot_wake_up())
+        self.assertFalse(api.get_robot_calibrate("right"))
+        self.assertFalse(api.get_robot_wake_up("right"))
+
+    def test_copy_default_config(self):
+        """Verifies ArtusAPI_V2.copy_default_config writes the packaged YAML template."""
+        import tempfile
+
+        import ArtusAPI.artus_api_new as api_mod
+
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = api_mod.ArtusAPI_V2.copy_default_config(tmp)
+            self.assertTrue(dest.is_file())
+            self.assertEqual(dest.name, "robot_config.yaml")
+            self.assertGreater(dest.stat().st_size, 0)
+
     def test_set_control_type_valid(self):
         """Verifies set_control_type accepts a valid control type and updates state."""
         api, _ = build_api()
@@ -112,14 +177,14 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertIsInstance(v, float)
         self.assertAlmostEqual(v, 12.5, places=4)
 
-    def test_get_joint_angles_slave_id_path(self):
-        """Verifies get_joint_angles returns the raw slave ID when reading the slave_id_reg register."""
+    def test_get_feedback_data_slave_id_path(self):
+        """Verifies get_feedback_data returns the raw slave ID when reading the slave_id_reg register."""
         comm = MagicMock()
         comm.receive_data.return_value = 0x0003
         api, comm = build_api(robot_type="artus_lite_plus", hand_type="left", communication_mock=comm)
         api.awake = True
         reg = ModbusMap().modbus_reg_map["slave_id_reg"]
-        sid = api.get_joint_angles(start_reg=reg)
+        sid = api.get_feedback_data(start_reg=reg)
         self.assertEqual(sid, 3)
 
     def test_helper_fill_dict_from_feedback(self):
@@ -223,10 +288,10 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         comm.send_data.assert_called()
 
     def test_get_hand_feedback_data_patched(self):
-        """Verifies get_hand_feedback_data succeeds with get_joint_angles patched, for a lite hand."""
+        """Verifies get_hand_feedback_data succeeds with get_feedback_data patched, for a lite hand."""
         api, _ = build_api(robot_type="artus_lite", hand_type="left")
         api.awake = True
-        with patch.object(api, "get_joint_angles", return_value={}):
+        with patch.object(api, "get_feedback_data", return_value={}):
             self.assertTrue(api.get_hand_feedback_data())
 
     def test_get_config_writes_wifi_and_reads_ip(self):
@@ -258,7 +323,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         """Verifies get_hand_feedback_data succeeds for a talos hand with angles and fingertip forces patched."""
         api, _ = build_api(robot_type="artus_talos", hand_type="left")
         api.awake = True
-        with patch.object(api, "get_joint_angles", return_value={}):
+        with patch.object(api, "get_feedback_data", return_value={}):
             with patch.object(api, "get_fingertip_forces", return_value={}):
                 self.assertTrue(api.get_hand_feedback_data())
 
@@ -337,6 +402,113 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         with patch.object(api, "_check_awake", return_value=False):
             self.assertIsNone(api.set_get_joint_angles({"thumb_spread": {"target_angle": 5}}))
         comm.send_receive_data.assert_not_called()
+
+    # --- unified feedback read path (get_feedback_data) ---
+
+    def test_feedback_register_count_scalar_fields(self):
+        """Verifies whole-hand scalar fields read a fixed count, not one sample per joint."""
+        api, _ = build_api(robot_type="artus_lite", hand_type="left")
+        self.assertEqual(api._feedback_register_count("feedback_voltage_start_reg"), 2)
+        self.assertEqual(api._feedback_register_count("feedback_avg_temperature_start_reg"), 1)
+        self.assertEqual(api._feedback_register_count("slave_id_reg"), 1)
+
+    def test_feedback_register_count_per_joint_fields(self):
+        """Verifies per-joint fields scale their read count by the multiplier and joint count."""
+        api, _ = build_api(robot_type="artus_lite", hand_type="left")
+        joints = api._robot_handler.robot.number_of_joints
+        self.assertEqual(api._feedback_register_count("feedback_velocity_start_reg"), joints)
+        self.assertEqual(api._feedback_register_count("feedback_force_start_reg"), joints * 2)
+
+    def test_feedback_register_count_fingertip_uses_sensor_count(self):
+        """Verifies fingertip forces size the read from the robot's sensor count, not a hardcoded 5."""
+        api, _ = build_api(robot_type="artus_lite_plus", hand_type="left")
+        sensors = len(api._robot_handler.robot.force_sensors)
+        self.assertEqual(
+            api._feedback_register_count(ModbusMap.FINGERTIP_FEEDBACK_KEY),
+            sensors * ModbusMap.FINGERTIP_AXES * 2,
+        )
+
+    def test_get_avg_temperature_reads_one_register(self):
+        """Verifies average temperature reads a single register and returns a scalar, not a per-joint dict."""
+        comm = MagicMock()
+        comm.receive_data.return_value = [37]
+        api, comm = build_api(communication_mock=comm)
+        api.awake = True
+        t = api.get_avg_temperature()
+        self.assertEqual(t, 37)
+        self.assertEqual(comm.receive_data.call_args.kwargs["amount_dat"], 1)
+
+    def test_get_feedback_data_by_key_matches_getter(self):
+        """Verifies get_feedback_data accepts a ModbusMap key name as well as a register address."""
+        comm = MagicMock()
+        comm.receive_data.return_value = [37]
+        api, comm = build_api(communication_mock=comm)
+        api.awake = True
+        by_key = api.get_feedback_data("feedback_avg_temperature_start_reg")
+        by_addr = api.get_feedback_data(
+            ModbusMap().modbus_reg_map["feedback_avg_temperature_start_reg"]
+        )
+        self.assertEqual(by_key, by_addr)
+
+    def test_get_feedback_data_unknown_register_raises(self):
+        """Verifies an unrecognized register address or key raises ValueError rather than KeyError."""
+        api, _ = build_api()
+        api.awake = True
+        with self.assertRaises(ValueError):
+            api.get_feedback_data(start_reg=9999)
+        with self.assertRaises(ValueError):
+            api.get_feedback_data(start_reg="not_a_register")
+
+    def test_get_feedback_data_fingertip_returns_per_finger_dict(self):
+        """Verifies the fingertip key returns a per-finger x/y/z dict through the generic path."""
+        api, comm = build_api(robot_type="artus_lite_plus", hand_type="left")
+        sensors = list(api._robot_handler.robot.force_sensors)
+        words = []
+        for i in range(len(sensors) * ModbusMap.FINGERTIP_AXES):
+            words.extend(struct.unpack("<HH", struct.pack("<f", float(i))))
+        comm.receive_data.return_value = words
+        api.awake = True
+        out = api.get_feedback_data(ModbusMap.FINGERTIP_FEEDBACK_KEY)
+        self.assertEqual(set(out), set(sensors))
+        self.assertEqual(out[sensors[0]], {"x": 0.0, "y": 1.0, "z": 2.0})
+
+    def test_get_hand_feedback_data_covers_every_available_type(self):
+        """Verifies get_hand_feedback_data issues one read per available feedback type."""
+        api, comm = build_api(robot_type="artus_lite_plus", hand_type="left")
+        api.awake = True
+        with patch.object(api, "get_feedback_data") as gfd:
+            self.assertTrue(api.get_hand_feedback_data())
+        called = [c.args[0] for c in gfd.call_args_list]
+        self.assertEqual(called, list(api._robot_handler.robot.available_feedback_types))
+
+    def test_get_joint_angles_alias_delegates(self):
+        """Verifies the deprecated get_joint_angles alias forwards to get_feedback_data."""
+        api, _ = build_api()
+        api.awake = True
+        reg = ModbusMap().modbus_reg_map["feedback_velocity_start_reg"]
+        with patch.object(api, "get_feedback_data", return_value={"ok": 1}) as gfd:
+            self.assertEqual(api.get_joint_angles(reg), {"ok": 1})
+        gfd.assert_called_once_with(reg)
+
+    def test_get_joint_angles_alias_defaults_to_position(self):
+        """Verifies the alias keeps the old default of reading feedback position."""
+        api, _ = build_api()
+        api.awake = True
+        with patch.object(api, "get_feedback_data", return_value={}) as gfd:
+            api.get_joint_angles()
+        gfd.assert_called_once_with(
+            ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+        )
+
+    def test_get_joint_angles_alias_warns_once(self):
+        """Verifies the deprecation notice is logged once per instance, not per call."""
+        api, _ = build_api()
+        api.awake = True
+        with patch.object(api, "get_feedback_data", return_value={}):
+            with patch.object(api.logger, "warning") as warn:
+                api.get_joint_angles()
+                api.get_joint_angles()
+        warn.assert_called_once()
 
 
 if __name__ == "__main__":

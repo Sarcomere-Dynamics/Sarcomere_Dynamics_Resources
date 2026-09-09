@@ -15,12 +15,14 @@ Example:
 import argparse
 import sys
 from pathlib import Path
-
+import logging
 import esptool
 
 DEFAULT_CHIP = "esp32s3"
 DEFAULT_BAUD = 921600
 MERGED_BIN_ADDR = "0x0"
+
+logger = logging.getLogger(__name__)
 
 
 def build_write_flash_args(args, merged_bin: Path):
@@ -68,7 +70,7 @@ def main():
         )
 
     flash_args = build_write_flash_args(args, merged_bin)
-    print("esptool " + " ".join(flash_args))
+    logger.info("esptool " + " ".join(flash_args))
     esptool.main(flash_args)
 
 

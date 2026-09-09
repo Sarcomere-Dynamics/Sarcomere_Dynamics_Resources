@@ -31,7 +31,7 @@ print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # import the configuration file
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 
 # new version of ArtusAPI use local version
 from ArtusAPI.common import ModbusMap
@@ -165,7 +165,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
                 grasp_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
             artusapi.set_joint_angles(grasp_dict)
         case '9':
-            artusapi.get_joint_angles()
+            artusapi.get_feedback_data()
         case '10':
             artusapi.get_joint_speeds()
         case '11':
@@ -210,14 +210,13 @@ def example():
     Runs until interrupted; per-iteration exceptions are logged and the
     loop continues.
     """
-    # Load the configuration file
+    # Load the configuration file (logger comes from the YAML logging section)
     config = ArtusConfig()
 
     artusapi = None
     hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
-    logger = setup_logger(level=config.config.logging.level,format=config.config.logging.format)
-    # new api
-    artusapi = config.get_api(logger=logger)
+    logger = config.logger
+    artusapi = config.get_api()
 
     # while True:
     #     artusapi.get_fingertip_forces()

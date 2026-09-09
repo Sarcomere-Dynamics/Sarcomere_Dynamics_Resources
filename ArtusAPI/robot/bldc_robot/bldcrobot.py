@@ -12,6 +12,8 @@ See the LICENSE file in the repository for full details.
 
 import logging
 
+from ...common.ModbusMap import ModbusMap
+
 """Base robot model shared by all ARTUS BLDC-actuated hand variants."""
 
 class BLDCRobot:
@@ -304,21 +306,18 @@ class BLDCRobot:
         joint_angles = {key: {'index': value.index, 'target_angle': value.default_angle, 'target_velocity': default_velocity} for key, value in self.hand_joints.items()}
         return self.set_joint_angles(joint_angles)
     
-    def get_joint_angles(self, feedback_package:list,modbus_key:str='feedback_position_start_reg'):
+    def get_feedback_data(self, feedback_package:list,modbus_key:str='feedback_position_start_reg'):
         """Populates feedback fields in ``hand_joints`` from decoded data.
 
         Only named ``get_joint_angles`` for consistency with the v1 API.
 
         Args:
             feedback_package: Decoded feedback values. For
-                ``feedback_force_sensor_start_reg`` this is a flat list of
+                ``ModbusMap.FINGERTIP_FEEDBACK_KEY`` this is a flat list of
                 x/y/z triples per force sensor; otherwise it is indexed per
                 joint via ``joint_data.index``.
-            modbus_key: Which feedback field to populate -- one of
-                'feedback_position_start_reg', 'feedback_force_start_reg',
-                'feedback_temperature_start_reg',
-                'feedback_velocity_start_reg', or
-                'feedback_force_sensor_start_reg'.
+            modbus_key: Which feedback field to populate -- a key from
+                ``ModbusMap.modbus_reg_map``.
 
         Returns:
             The ``feedback_package`` passed in (allows reading control
@@ -328,14 +327,14 @@ class BLDCRobot:
         # TODO logging
         try:
 
-            if modbus_key == 'feedback_force_sensor_start_reg':
-                # force sensor data is special, so we need to loop through the force sensors
+            if modbus_key == ModbusMap.FINGERTIP_FEEDBACK_KEY:
                 i = 0
-                for key,value in self.force_sensors.items():
-                    value['data'].x = feedback_package[i]
-                    value['data'].y = feedback_package[i+1]
-                    value['data'].z = feedback_package[i+2]
-                    i+=3
+                axes = ModbusMap.FINGERTIP_AXIS_NAMES
+                n_axes = ModbusMap.FINGERTIP_AXES
+                for key, value in self.force_sensors.items():
+                    for j, name in enumerate(axes):
+                        setattr(value['data'], name, feedback_package[i + j])
+                    i += n_axes
             else:
                 # normal loop through joint data and populate feedback fields
                 for name,joint_data in self.hand_joints.items():
@@ -354,5 +353,5 @@ class BLDCRobot:
             # TODO logging
             return None
         except Exception as e:
-            print(e)
+            self.logger.error(f'Error getting joint angles: {e}')
             return None

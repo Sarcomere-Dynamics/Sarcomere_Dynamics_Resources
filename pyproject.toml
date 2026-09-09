@@ -20,11 +20,12 @@ dependencies = [
     "pyserial",
     "tqdm",
     "esptool",
+    "PyYAML",
     'windows-curses; sys_platform == "win32"',
 ]
 
 [project.optional-dependencies]
-# Dependencies of examples/ (teleoperation, tracking, config loader).
+# Dependencies of examples/ (teleoperation, tracking).
 examples = [
     "numpy",
     "PyYAML",
@@ -51,3 +52,6 @@ Source = "https://github.com/Sarcomere-Dynamics/Sarcomere_Dynamics_Resources"
 # changelog/ and gripper_force_demo/ stay out of the distribution.
 include = ["ArtusAPI*"]
 namespaces = false
+
+[tool.setuptools.package-data]
+ArtusAPI = ["robot_config.yaml"]

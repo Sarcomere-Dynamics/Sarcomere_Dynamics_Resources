@@ -30,7 +30,7 @@ logger.propagate = True  # Ensure logs propagate to parent loggers
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logger.info(f"Project Root: {PROJECT_ROOT}")
 sys.path.append(PROJECT_ROOT)
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 from examples.Tracking.zmq_class.zmq_class import ZMQPublisher, ZMQSubscriber
 from ArtusAPI.artus_api_new import ArtusAPI_V2
 

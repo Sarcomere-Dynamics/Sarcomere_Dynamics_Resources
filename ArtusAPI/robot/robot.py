@@ -129,7 +129,7 @@ class Robot:
         """
         return self.robot.set_home_position()
 
-    def get_joint_angles(self, joint_angles, feedback_type=None):
+    def get_feedback_data(self, joint_angles, feedback_type=None):
         """Populates the robot's joint feedback fields from decoded data.
 
         Args:
@@ -142,7 +142,7 @@ class Robot:
             Result of the underlying robot's ``get_joint_angles`` call.
         """
         modbus_key = feedback_type if feedback_type is not None else 'feedback_position_start_reg'
-        return self.robot.get_joint_angles(joint_angles, modbus_key=modbus_key)
+        return self.robot.get_feedback_data(joint_angles, modbus_key=modbus_key)
 
 
 def main():

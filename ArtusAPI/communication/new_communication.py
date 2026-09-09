@@ -207,7 +207,6 @@ class NewCommunication:
                     time.sleep(0.3)
                     start_time = time.perf_counter()
                 # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
-                # print(f"Roundtrip time: {self.ntrips/timeout} trips per second")
         else:
             while 1:
                 raw_state = self._check_robot_state()
@@ -227,4 +226,3 @@ class NewCommunication:
         if result == ActuatorState.ACTUATOR_BUSY.value:
             self.logger.error(f"Robot Busy")
             # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
-            # print(f"Roundtrip time: {self.ntrips/timeout} trips per second")

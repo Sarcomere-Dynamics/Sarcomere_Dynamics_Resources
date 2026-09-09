@@ -33,7 +33,7 @@ hand.wake_up(control_type=3)  # position control
 ```
 
 ## Interacting with the API
-To get the most out of the Artus hands, the functions you will call often are `set_joint_angles(joint_angles: dict)` and `get_joint_angles()`. Joint count and key names depend on **`robot_type`** (for example ARTUS Lite uses many joints; Talos or Scorpion differ). See [`data/hand_poses/grasp_example.json`](../data/hand_poses/grasp_example.json) for a sample pose dictionary and the [Artus Lite joint documentation](../ArtusAPI/robot/artus_lite/ARTUS_LITE.md) for mapping on Lite-class hands.
+To get the most out of the Artus hands, the functions you will call often are `set_joint_angles(joint_angles: dict)` and `get_feedback_data()`. Joint count and key names depend on **`robot_type`** (for example ARTUS Lite uses many joints; Talos or Scorpion differ). See [`data/hand_poses/grasp_example.json`](../data/hand_poses/grasp_example.json) for a sample pose dictionary and the [Artus Lite joint documentation](../ArtusAPI/robot/artus_lite/ARTUS_LITE.md) for mapping on Lite-class hands.
 
 e.g. 
 ```python
@@ -73,9 +73,18 @@ Notice that the above example does not include the `"target_velocity"` or `"targ
 
 ### Getting feedback
 
-With **`ArtusAPI_V2`**, request feedback with explicit getters such as `get_joint_angles()`, `get_joint_speeds()`, `get_joint_forces()`, and `get_joint_temperatures()`. The older “streaming vs request” toggle from legacy `ArtusAPI` does not apply the same way; `get_streamed_joint_angles()` is not implemented in V2 and will log an error if called.
+With **`ArtusAPI_V2`**, request feedback with explicit getters such as `get_feedback_data()`, `get_joint_speeds()`, `get_joint_forces()`, and `get_joint_temperatures()`. The older “streaming vs request” toggle from legacy `ArtusAPI` does not apply the same way; `get_streamed_joint_angles()` is not implemented in V2 and will log an error if called.
 
-After reads complete, updated values are reflected under `hand._robot_handler.robot.hand_joints` (field names depend on the robot model).
+Every getter is a thin wrapper around `get_feedback_data(start_reg)`, which is the single entry point for all feedback fields. It accepts either a `ModbusMap` key name or its register address:
+
+```python
+hand.get_joint_forces()                              # same as
+hand.get_feedback_data('feedback_force_start_reg')   # ...this
+```
+
+The return shape depends on the field: whole-hand scalars (`feedback_voltage_start_reg`, `feedback_avg_temperature_start_reg`, `slave_id_reg`) return a single value, `feedback_force_sensor_start_reg` returns a dict keyed by finger name with `x`/`y`/`z` values, and every other field returns a dict keyed by joint name. An unrecognized key or address raises `ValueError`.
+
+After reads complete, updated values are reflected under `hand._robot_handler.robot.hand_joints` (field names depend on the robot model), and fingertip readings under `robot.force_sensors`.
 
 ### SD Card Interactions
 
@@ -109,6 +118,9 @@ Beyond joint control and feedback, `ArtusAPI_V2` exposes:
 | `get_fingertip_forces()` | Reads fingertip force feedback (on hands with force sensors). |
 | `get_avg_temperature()` | Reads the hand's average temperature feedback. |
 | `get_error_report()` | Reads the per-joint actuator error bitfield report. |
+| `get_feedback_data(start_reg)` | Generic feedback read by `ModbusMap` key name or register address; every getter above delegates to it. |
+| `get_hand_feedback_data()` | Reads every feedback type the connected robot supports. |
+| `get_joint_angles(start_reg)` | **Deprecated** alias for `get_feedback_data()`, kept for backwards compatibility. Logs a warning on first use. |
 | `clear_errors()` | Explicitly clears latched actuator errors. |
 | `get_config(wifi_name, wifi_pass)` | Writes new WiFi credentials to the hand and reads back its assigned IP. |
 | `update_firmware(file_location=None, drivers_to_flash=None)` | Flashes new firmware to one or all actuator drivers on the hand. See [`docs/COMPATIBILITY.md`](COMPATIBILITY.md) before updating. |

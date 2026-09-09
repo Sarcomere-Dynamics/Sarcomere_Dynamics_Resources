@@ -1,20 +1,21 @@
 # Configuration Example
 
-This folder shows how to drive the Artus API from a YAML config file. The main entry point is `configuration.py`, which loads `robot_config.yaml`, converts it into a `SimpleNamespace`, and returns an **`ArtusAPI_V2`** instance for the connected robot.
+This folder holds the working `robot_config.yaml` used when you run examples from a repository checkout. The loader itself lives in the package as `ArtusAPI.configuration.ArtusConfig` and ships with the PyPI distribution.
 
 ## Files
 
-- `configuration.py`: Loads config, selects the connected robot, and returns `ArtusAPI_V2`.
-- `robot_config.yaml`: Example configuration for left/right hand robots and logging.
+- `robot_config.yaml`: Example configuration for left/right hand robots and logging. Edit this file when running examples from this repo.
+- `configuration.py`: Thin re-export of `ArtusConfig` for older `from examples.config.configuration import ArtusConfig` imports.
 
 ## How it works
 
 1. `ArtusConfig` loads the YAML file into a nested `SimpleNamespace`.
+2. In a checkout it prefers this folder's `robot_config.yaml`. After `pip install artusapi`, pass a path, set `ARTUS_CONFIG`, put `robot_config.yaml` in the working directory, or copy the packaged template with `copy_default_config()`.
 
 ## Typical usage
 
 ```python
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 
 config = ArtusConfig()
 api = config.get_api()
@@ -45,6 +46,5 @@ Edit [`robot_config.yaml`](robot_config.yaml) and set the fields for each robot.
 
 ## Notes
 
-- The default config path is `examples/config/robot_config.yaml`.
-- `configuration.py` prints the detected project root on import.
+- In this repo the default config path is `examples/config/robot_config.yaml`.
 - `check_and_print_robot_config()` is a quick helper to print per-hand settings.

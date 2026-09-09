@@ -28,7 +28,7 @@ import logging
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 from examples.Tracking.hand_tracking_data import HandTrackingData
 
 # set up logger

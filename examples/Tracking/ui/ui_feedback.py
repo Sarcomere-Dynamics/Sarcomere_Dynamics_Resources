@@ -25,7 +25,7 @@ sys.path.append(PROJECT_ROOT)
 
 # dependencies
 from examples.Tracking.zmq_class.zmq_class import ZMQSubscriber
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 from ArtusAPI.robot.robot import Robot
 
 class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):

@@ -38,7 +38,7 @@ except ImportError as e:
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(PROJECT_ROOT)
 
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_config
 
 def setup_logger(level='ERROR', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):

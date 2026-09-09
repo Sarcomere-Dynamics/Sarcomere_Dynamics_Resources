@@ -23,7 +23,7 @@ sys.path.append(PROJECT_ROOT)
 
 # dependencies
 from examples.Tracking.zmq_class.zmq_class import ZMQPublisher
-from examples.config.configuration import ArtusConfig
+from ArtusAPI import ArtusConfig
 from ArtusAPI.robot.robot import Robot
 
 class UIControl(QtWidgets.QWidget, ZMQPublisher):

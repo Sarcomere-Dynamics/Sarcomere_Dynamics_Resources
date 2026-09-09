@@ -15,7 +15,6 @@ See the LICENSE file in the repository for full details.
 import time
 import logging
 import signal
-import math
 from enum import Enum
 from tracemalloc import start
 from .common.ModbusMap import ModbusMap,TrajectoryReturn
@@ -35,32 +34,63 @@ class ArtusAPI_V2:
     (physical bus I/O).
     """
     def __init__(self,
-                # communication method
-                communication_method='RS485_RTU',
-                communication_channel_identifier='COM9',
-                # robot
-                robot_type='artus_talos',
-                hand_type='left',
-                communication_frequency = 50, # hz
-                logger = None,
-                baudrate = 115200): #115200 for RS485, 250000 for UART
-        """Initializes the robot, command, and communication handlers and connects.
+                config_file=None,
+                config=None,
+                logger=None,
+                # optional overrides of the loaded configuration
+                communication_method=None,
+                communication_channel_identifier=None,
+                robot_type=None,
+                hand_type=None,
+                communication_frequency=None,
+                baudrate=None):
+        """Initializes from the robot configuration, then builds handlers and connects.
+
+        The configuration file is loaded first (an explicit *config_file* or
+        *config*, otherwise the packaged default). Robot-specific objects
+        (``_robot_handler``, communication, commands) are built only after
+        those settings are resolved. Keyword arguments override the file.
 
         Args:
-            communication_method: Transport to use, e.g. 'RS485_RTU' or 'Modbus_TCP'.
-            communication_channel_identifier: Serial port (e.g. 'COM9') or other
-                channel identifier for the chosen communication method.
-            robot_type: Robot variant, e.g. 'artus_talos', 'artus_lite',
-                'artus_lite_plus', 'artus_scorpion', 'artus_dex'.
-            hand_type: Hand side, e.g. 'left' or 'right'.
+            config_file: Path to the user's ``robot_config.yaml``. Ignored
+                when *config* is given. When both are omitted, see
+                :func:`ArtusAPI.configuration.resolve_config_file`.
+            config: An already-loaded :class:`~ArtusAPI.configuration.ArtusConfig`.
+            logger: Optional logger instance shared across handlers. When
+                omitted, the logger created by the configuration is used.
+            communication_method: Transport override, e.g. 'RS485_RTU' or
+                'Modbus_TCP'. Passing this does not skip port discovery
+                unless *communication_channel_identifier* is also set.
+            communication_channel_identifier: Serial port override (e.g.
+                'COM9'). When given, automatic port/robot discovery is
+                skipped.
+            robot_type: Robot variant override, e.g. 'artus_talos',
+                'artus_lite', 'artus_lite_plus', 'artus_scorpion',
+                'artus_dex'.
+            hand_type: Hand side override, e.g. 'left' or 'right'.
             communication_frequency: Maximum command send frequency in Hz.
-            logger: Optional logger instance shared across handlers; a module
-                logger is created if not provided.
-            baudrate: Serial baudrate (115200 for RS485, 250000 for UART).
+            baudrate: Serial baudrate override (115200 for RS485, 250000
+                for UART).
         """
+        from .configuration import ArtusConfig
 
-        self.robot_type = robot_type
-        self.hand_type = hand_type
+        self.config = config if config is not None else ArtusConfig(
+            config_file=config_file,
+            logger=logger,
+        )
+        self.logger = logger or self.config.logger
+
+        settings = self._resolve_settings(
+            communication_method=communication_method,
+            communication_channel_identifier=communication_channel_identifier,
+            robot_type=robot_type,
+            hand_type=hand_type,
+            communication_frequency=communication_frequency,
+            baudrate=baudrate,
+        )
+
+        self.robot_type = settings["robot_type"]
+        self.hand_type = settings["hand_type"]
 
         self.control_types = {
             'position': 3,
@@ -71,29 +101,161 @@ class ArtusAPI_V2:
 
         self.control_type = self.control_types['position']
 
-        self._communication_handler = NewCommunication(communication_method=communication_method,
-                                                    logger=logger, port=communication_channel_identifier,
-                                                    baudrate=baudrate, slave_address=expected_slave_id(robot_type, hand_type))
-        self._robot_handler = Robot(robot_type=robot_type,hand_type=hand_type,logger=logger)
-        self._command_handler = NewCommands(num_joints=len(self._robot_handler.robot.hand_joints),logger=logger)
-
-        if not logger:
-            self.logger = logging.getLogger(__name__)
-        else:
-            self.logger = logger
+        self._communication_handler = NewCommunication(
+            communication_method=settings["communication_method"],
+            logger=self.logger,
+            port=settings["communication_channel_identifier"],
+            baudrate=settings["baudrate"],
+            slave_address=expected_slave_id(self.robot_type, self.hand_type),
+        )
+        self._robot_handler = Robot(
+            robot_type=self.robot_type,
+            hand_type=self.hand_type,
+            logger=self.logger,
+        )
+        self._command_handler = NewCommands(
+            num_joints=len(self._robot_handler.robot.hand_joints),
+            logger=self.logger,
+        )
 
         self.state = ActuatorState.ACTUATOR_INITIALIZING.value
 
-        self._communication_period = 1 / communication_frequency
+        self._communication_period = 1 / settings["communication_frequency"]
         self.last_time = time.perf_counter()
 
         self.awake = False
+
+        # one-shot so the deprecation notice does not spam a control loop
+        self._warned_get_joint_angles = False
 
         # set up sigint handler
         self.original_sigint_handler = signal.getsignal(signal.SIGINT)
         signal.signal(signal.SIGINT, self._sigint_handler)
 
         self.connect()
+
+    def _resolve_settings(
+        self,
+        communication_method,
+        communication_channel_identifier,
+        robot_type,
+        hand_type,
+        communication_frequency,
+        baudrate,
+    ):
+        """Resolves constructor overrides against the loaded configuration.
+
+        Reads the connected-hand block from ``self.config`` first. When no
+        explicit port is given, runs automatic port/robot discovery so
+        ``robot_type`` / ``hand_type`` / the channel identifier are known
+        before handlers are constructed.
+
+        Args:
+            communication_method: Optional transport override.
+            communication_channel_identifier: Optional port override. When
+                set, pre-flight discovery is skipped.
+            robot_type: Optional robot variant override.
+            hand_type: Optional hand-side override.
+            communication_frequency: Optional send-frequency override.
+            baudrate: Optional serial baudrate override.
+
+        Returns:
+            Dict of resolved ``robot_type``, ``hand_type``,
+            ``communication_method``, ``communication_channel_identifier``,
+            ``baudrate``, and ``communication_frequency``.
+
+        Raises:
+            ValueError: If no connected robot is in the config and
+                ``robot_type`` / ``hand_type`` were not provided.
+        """
+        try:
+            robot_cfg = self.config.get_connected_robot()
+        except ValueError:
+            robot_cfg = None
+
+        skip_preflight = (
+            communication_channel_identifier is not None
+            or communication_method == "Modbus_TCP"
+            or (
+                robot_cfg is not None
+                and getattr(robot_cfg, "communication_method", "RS485_RTU") == "Modbus_TCP"
+            )
+        )
+        if robot_cfg is not None and not skip_preflight:
+            robot_cfg = self.config._preflight(robot_cfg, self.logger)
+
+        def pick(override, attr, default):
+            if override is not None:
+                return override
+            if robot_cfg is not None and hasattr(robot_cfg, attr):
+                return getattr(robot_cfg, attr)
+            return default
+
+        resolved_robot_type = pick(robot_type, "robot_type", None)
+        resolved_hand_type = pick(hand_type, "hand_type", None)
+        if resolved_robot_type is None or resolved_hand_type is None:
+            raise ValueError(
+                "No connected robot in the configuration file and "
+                "robot_type/hand_type were not provided."
+            )
+
+        return {
+            "robot_type": resolved_robot_type,
+            "hand_type": resolved_hand_type,
+            "communication_method": pick(communication_method, "communication_method", "RS485_RTU"),
+            "communication_channel_identifier": pick(
+                communication_channel_identifier,
+                "communication_channel_identifier",
+                "COM9",
+            ),
+            "baudrate": pick(baudrate, "baudrate", 115200),
+            "communication_frequency": (
+                communication_frequency
+                if communication_frequency is not None
+                else getattr(robot_cfg, "streaming_frequency", 50) if robot_cfg is not None else 50
+            ),
+        }
+
+    def get_robot_calibrate(self, hand_type: str = None) -> bool:
+        """Reads the calibrate flag from the loaded configuration.
+
+        Args:
+            hand_type: ``'left'`` or ``'right'``. Defaults to this
+                instance's ``hand_type``.
+
+        Returns:
+            True if the calibrate flag is set for that hand.
+        """
+        return self.config.get_robot_calibrate(hand_type or self.hand_type)
+
+    def get_robot_wake_up(self, hand_type: str = None) -> bool:
+        """Reads the start_robot (wake up) flag from the loaded configuration.
+
+        Args:
+            hand_type: ``'left'`` or ``'right'``. Defaults to this
+                instance's ``hand_type``.
+
+        Returns:
+            True if the start_robot flag is set for that hand.
+
+        Raises:
+            ValueError: If hand_type is given but is not 'left' or 'right'.
+        """
+        return self.config.get_robot_wake_up(hand_type or self.hand_type)
+
+    @staticmethod
+    def copy_default_config(dest):
+        """Writes the packaged robot_config.yaml template to *dest*.
+
+        Args:
+            dest: File path, or a directory (writes ``robot_config.yaml``
+                inside it).
+
+        Returns:
+            The Path of the written file.
+        """
+        from .configuration import copy_default_config as _copy_default_config
+        return _copy_default_config(dest)
 
     def _sigint_handler(self, signum, frame):
         """Handles SIGINT by putting the hand to sleep before disconnecting.
@@ -409,6 +571,10 @@ class ArtusAPI_V2:
     def _feedback_register_count(self, feedback_reg_key: str) -> int:
         """Computes how many holding registers to read for a feedback field.
 
+        Delegates layout (scalar vs per-joint vs fingertip) to
+        ``ModbusMap.feedback_register_count``; this wrapper supplies the
+        connected robot's joint and force-sensor counts.
+
         Args:
             feedback_reg_key: Key in ``ModbusMap.data_type_multiplier_map`` /
                 ``modbus_reg_map`` (e.g. ``feedback_position_start_reg``).
@@ -416,10 +582,93 @@ class ArtusAPI_V2:
         Returns:
             Number of consecutive 16-bit registers to request.
         """
-        return math.ceil(
-            ModbusMap().data_type_multiplier_map[feedback_reg_key]
-            * self._robot_handler.robot.number_of_joints
+        sensors = self._robot_handler.robot.force_sensors or {}
+        return ModbusMap().feedback_register_count(
+            feedback_reg_key,
+            self._robot_handler.robot.number_of_joints,
+            len(sensors),
         )
+
+    def _resolve_feedback_key(self, start_reg) -> str:
+        """Resolves a feedback field name or register address to a ModbusMap key.
+
+        Args:
+            start_reg: Either a ModbusMap key name (e.g.
+                ``'feedback_force_start_reg'``) or its Modbus register address.
+
+        Returns:
+            The matching key in ``ModbusMap().modbus_reg_map``.
+
+        Raises:
+            ValueError: If the name or address is not in the register map.
+        """
+        reg_map = ModbusMap().modbus_reg_map
+        if isinstance(start_reg, str):
+            if start_reg in reg_map:
+                return start_reg
+        else:
+            for key, value in reg_map.items():
+                if value == start_reg:
+                    return key
+        raise ValueError(
+            f'Start Register {start_reg} is not recognized -- see ModbusMap.pdf in robot/$robot$/data'
+        )
+
+    def _read_feedback(self, feedback_reg_key: str) -> list:
+        """Reads and decodes one feedback field off the bus.
+
+        Args:
+            feedback_reg_key: ModbusMap key for the feedback start register.
+
+        Returns:
+            List of decoded values, in bus order.
+        """
+        feedback_data = self._communication_handler.receive_data(
+            amount_dat=self._feedback_register_count(feedback_reg_key),
+            start=ModbusMap().modbus_reg_map[feedback_reg_key],
+        )
+        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(
+            feedback_data, modbus_key=feedback_reg_key
+        )
+        self._record_feedback(feedback_reg_key, decoded_feedback_data)
+        return decoded_feedback_data
+
+    def _record_feedback(self, feedback_reg_key: str, decoded_feedback_data: list):
+        """Stores decoded feedback on the robot model and logs it.
+
+        Per-joint and fingertip fields go through the robot handler, which
+        populates ``hand_joints``/``force_sensors`` for object-style access.
+        Scalar fields are logged directly -- the robot handler indexes its
+        argument per joint and cannot consume them.
+
+        Args:
+            feedback_reg_key: ModbusMap key for the feedback start register.
+            decoded_feedback_data: Decoded values from ``_read_feedback``.
+        """
+        if feedback_reg_key in ModbusMap.SCALAR_FEEDBACK_KEYS:
+            label = ModbusMap.SCALAR_FEEDBACK_KEYS[feedback_reg_key]
+            self.logger.info(f'{label}: {decoded_feedback_data[0]}')
+            return
+        self.logger.info(
+            f'{feedback_reg_key}:{self._robot_handler.get_feedback_data(decoded_feedback_data, feedback_type=feedback_reg_key)}'
+        )
+
+    def _shape_feedback(self, feedback_reg_key: str, decoded_feedback_data: list):
+        """Shapes decoded feedback into the return type for its field.
+
+        Args:
+            feedback_reg_key: ModbusMap key for the feedback start register.
+            decoded_feedback_data: Decoded values from ``_read_feedback``.
+
+        Returns:
+            The single value for scalar fields, a dict keyed by finger for
+            fingertip forces, or a dict keyed by joint name otherwise.
+        """
+        if feedback_reg_key in ModbusMap.SCALAR_FEEDBACK_KEYS:
+            return decoded_feedback_data[0]
+        if feedback_reg_key == ModbusMap.FINGERTIP_FEEDBACK_KEY:
+            return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
+        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
     def _set_get_joint_field(self, joint_angles: dict, target_packer, feedback_reg_key: str):
         """Shared FC 0x17 path: write one target field and read matching feedback.
@@ -457,10 +706,8 @@ class ArtusAPI_V2:
         decoded = self._command_handler.get_decoded_feedback_data(
             feedback_data, modbus_key=feedback_reg_key
         )
-        self.logger.info(
-            f'{feedback_reg_key}:{self._robot_handler.get_joint_angles(decoded, feedback_type=feedback_reg_key)}'
-        )
-        return self.helper_fill_dict_from_feedback_data(decoded)
+        self._record_feedback(feedback_reg_key, decoded)
+        return self._shape_feedback(feedback_reg_key, decoded)
 
     def set_get_joint_angles(self, joint_angles: dict):
         """Writes target positions and reads feedback positions in one FC 0x17.
@@ -559,73 +806,61 @@ class ArtusAPI_V2:
         Returns:
             Decoded voltage as a float, or None if the hand is not awake.
         """
-        if not self._check_awake():
-            return
+        return self.get_feedback_data('feedback_voltage_start_reg')
 
-        start_reg = ModbusMap().modbus_reg_map['feedback_voltage_start_reg']
-        start_reg_key = 'feedback_voltage_start_reg'
 
-        amount_data = 2 # 1 float 
-
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
-
-        self.logger.info(f"Voltage: {decoded_feedback_data[0]}")
-        return decoded_feedback_data[0]
-    
-    def get_joint_angles(self,start_reg=ModbusMap().modbus_reg_map['feedback_position_start_reg']):
+    def get_feedback_data(self,start_reg=ModbusMap().modbus_reg_map['feedback_position_start_reg']):
         """Reads feedback data for a given feedback register range.
 
-        Named ``get_joint_angles`` for consistency with the v1 API; actually
-        should be ``get_feedback``. Covers all feedback types -- position,
-        torque, velocity, temperature -- based on the ``start_reg``
-        parameter.
+        Single entry point for every feedback field -- position, force,
+        velocity, temperature, fingertip forces, voltage, error report. The
+        public ``get_*`` methods are thin wrappers around this.
 
         Args:
-            start_reg: Starting Modbus register address, as defined in
-                ``ModbusMap().modbus_reg_map``.
+            start_reg: Either a ModbusMap key name (e.g.
+                ``'feedback_force_start_reg'``) or its starting Modbus
+                register address, as defined in
+                ``ModbusMap().modbus_reg_map``. Defaults to feedback
+                position.
 
         Returns:
-            For ``slave_id_reg`` or ``feedback_voltage_start_reg``, the
-            single decoded value. Otherwise, a dict mapping joint name to its
-            decoded feedback value. None if the hand is not awake.
+            For whole-hand scalar fields (``slave_id_reg``,
+            ``feedback_voltage_start_reg``,
+            ``feedback_avg_temperature_start_reg``), the single decoded
+            value. For ``feedback_force_sensor_start_reg``, a dict keyed by
+            finger name. Otherwise, a dict mapping joint name to its decoded
+            feedback value. None if the hand is not awake.
 
         Raises:
-            ValueError: If ``start_reg`` does not match a known key in
-                ``ModbusMap().modbus_reg_map``.
+            ValueError: If ``start_reg`` does not match a known key or
+                address in ``ModbusMap().modbus_reg_map``.
         """
         if not self._check_awake():
             return
-        # check starting reg
-        start_reg_confirmed = False
-        for key,value in ModbusMap().modbus_reg_map.items():
-            if value == start_reg:
-                start_reg_confirmed = key
-                break
 
-        if start_reg_confirmed is not None:
-            amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_confirmed] * self._robot_handler.robot.number_of_joints)
-            if start_reg_confirmed == 'feedback_voltage_start_reg':
-                amount_data = 2 # 1 float for voltage
-            elif start_reg_confirmed == 'slave_id_reg':
-                amount_data = 1
-            elif start_reg_confirmed == 'feedback_force_sensor_start_reg':
-                amount_data = 5 * 3 * 2 # 5 fingers, 3 axes per finger, 2 registers per float
-        else:
-            raise ValueError('Start Register is not recognized -- see ModbusMap.pdf in robot/$robot$/data')
+        feedback_reg_key = self._resolve_feedback_key(start_reg)
+        decoded_feedback_data = self._read_feedback(feedback_reg_key)
+        return self._shape_feedback(feedback_reg_key, decoded_feedback_data)
 
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_confirmed)
+    def get_joint_angles(self,start_reg=ModbusMap().modbus_reg_map['feedback_position_start_reg']):
+        """Deprecated alias for :meth:`get_feedback_data`.
 
-        if start_reg_confirmed == 'slave_id_reg':
-            self.logger.info('slave_id_reg: %s', decoded_feedback_data[0])
-            return decoded_feedback_data[0]
+        Kept so code written against the previous release keeps working. The
+        name was misleading -- this reads any feedback field, not just
+        angles. Prefer ``get_feedback_data``.
 
-        # populate hand joint dict based on robot
-        self.logger.info(f'{start_reg_confirmed}:{self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_confirmed)}')
-        if start_reg_confirmed == 'feedback_voltage_start_reg':
-            return decoded_feedback_data[0]
-        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+        Args:
+            start_reg: Same as :meth:`get_feedback_data`.
+
+        Returns:
+            Same as :meth:`get_feedback_data`.
+        """
+        if not self._warned_get_joint_angles and start_reg != ModbusMap().modbus_reg_map['feedback_position_start_reg']:
+            self.logger.warning(
+                "get_joint_angles() is deprecated and will be removed in a future release -- use get_feedback_data() instead"
+            )
+            self._warned_get_joint_angles = True
+        return self.get_feedback_data(start_reg)
 
     def helper_fill_dict_from_feedback_data(self,feedback_data:list):
         """Maps a decoded feedback list to a dict keyed by joint name.
@@ -648,12 +883,13 @@ class ArtusAPI_V2:
     def helper_fill_dict_from_fingertip_forces(self, feedback_data: list) -> dict:
         """Maps decoded fingertip feedback to a dict keyed by finger name.
 
-        Fingertip feedback is 5 fingers x 3 axes = 15 floats. Order matches
+        Fingertip feedback is one x/y/z sample per force sensor. Axis
+        count and names come from ``ModbusMap``. Order matches
         Modbus/firmware and ``robot.force_sensors`` iteration order.
 
         Args:
-            feedback_data: Flat list of 15 decoded force values (x, y, z per
-                finger, in finger order).
+            feedback_data: Flat list of decoded force values (one triple
+                per finger, in finger order).
 
         Returns:
             Dict mapping finger name to ``{'x': float, 'y': float, 'z':
@@ -662,16 +898,16 @@ class ArtusAPI_V2:
         fs = self._robot_handler.robot.force_sensors
         if not fs:
             return {}
+        axes = ModbusMap.FINGERTIP_AXIS_NAMES
+        n_axes = ModbusMap.FINGERTIP_AXES
         out = {}
         i = 0
         for finger in fs:
-            if i + 2 < len(feedback_data):
+            if i + n_axes - 1 < len(feedback_data):
                 out[finger] = {
-                    'x': feedback_data[i],
-                    'y': feedback_data[i + 1],
-                    'z': feedback_data[i + 2],
+                    name: feedback_data[i + j] for j, name in enumerate(axes)
                 }
-            i += 3
+            i += n_axes
         return out
 
     def get_joint_forces(self):
@@ -681,25 +917,12 @@ class ArtusAPI_V2:
             Dict mapping joint name to feedback force value, or None if the
             hand is not awake.
         """
-        if not self._check_awake():
-            return
-
-        start_reg = ModbusMap().modbus_reg_map['feedback_force_start_reg']
-        start_reg_key = 'feedback_force_start_reg'
-
-        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints)
-
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
-
-        # populate hand joint dict based on robot
-        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+        return self.get_feedback_data('feedback_force_start_reg')
 
     def get_fingertip_forces(self):
         """Reads the fingertip forces from the hand.
 
-        This matches the 15 decoded samples from the bus;
+        This matches the decoded x/y/z samples from the bus;
         ``robot.force_sensors`` is updated in parallel for object access.
 
         Returns:
@@ -707,20 +930,9 @@ class ArtusAPI_V2:
             ``{'x': float, 'y': float, 'z': float}``. None if the hand is not
             awake.
         """
-        if not self._check_awake():
-            return
+        return self.get_feedback_data(ModbusMap.FINGERTIP_FEEDBACK_KEY)
 
-        start_reg = ModbusMap().modbus_reg_map['feedback_force_sensor_start_reg']
-        start_reg_key = 'feedback_force_sensor_start_reg'
 
-        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * len(self._robot_handler.robot.force_sensors) * 3) # 5 fingers, 3 axes per finger
-
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
-
-        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-        return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
-    
     def get_joint_speeds(self):
         """Reads joint velocity feedback from the hand.
 
@@ -728,20 +940,7 @@ class ArtusAPI_V2:
             Dict mapping joint name to feedback velocity value, or None if
             the hand is not awake.
         """
-        if not self._check_awake():
-            return
-
-        start_reg = ModbusMap().modbus_reg_map['feedback_velocity_start_reg']
-        start_reg_key = 'feedback_velocity_start_reg'
-
-        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints)
-
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
-
-        # populate hand joint dict based on robot
-        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+        return self.get_feedback_data('feedback_velocity_start_reg')
 
     ### NOT IMPLEMENTED YET ###
     def get_joint_temperatures(self):
@@ -751,20 +950,7 @@ class ArtusAPI_V2:
             Dict mapping joint name to feedback temperature value, or None
             if the hand is not awake.
         """
-        if not self._check_awake():
-            return
-
-        start_reg = ModbusMap().modbus_reg_map['feedback_temperature_start_reg']
-        start_reg_key = 'feedback_temperature_start_reg'
-
-        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints) 
-
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
-
-        # populate hand joint dict based on robot
-        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+        return self.get_feedback_data('feedback_temperature_start_reg')
 
     def get_avg_temperature(self):
         """Reads the hand's average temperature feedback.
@@ -773,27 +959,15 @@ class ArtusAPI_V2:
             Decoded average temperature as a float, or None if the hand is
             not awake.
         """
-        if not self._check_awake():
-            return
+        return self.get_feedback_data('feedback_avg_temperature_start_reg')
 
-        start_reg = ModbusMap().modbus_reg_map['feedback_avg_temperature_start_reg']
-        start_reg_key = 'feedback_avg_temperature_start_reg'
 
-        amount_data = 1 # only 1 value
-
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
-
-        self.logger.info(f"Average temperature: {decoded_feedback_data[0]}")
-
-        return decoded_feedback_data[0]
-        
     def get_hand_feedback_data(self) -> bool:
         """Reads all feedback types supported by the connected robot.
 
         Iterates ``self._robot_handler.robot.available_feedback_types`` and
-        fetches each one, routing fingertip force sensor data through
-        ``get_fingertip_forces``.
+        fetches each one through ``get_feedback_data``, which handles the
+        per-field read size and return shape.
 
         Returns:
             True once all available feedback types have been read, or None
@@ -803,10 +977,7 @@ class ArtusAPI_V2:
             return
 
         for feedback_type in self._robot_handler.robot.available_feedback_types:
-            if feedback_type == 'feedback_force_sensor_start_reg':
-                self.get_fingertip_forces()
-            else:
-                self.get_joint_angles(start_reg=ModbusMap().modbus_reg_map[feedback_type])
+            self.get_feedback_data(feedback_type)
         return True
 
     def get_error_report(self):
@@ -816,21 +987,9 @@ class ArtusAPI_V2:
             Dict mapping joint name to its decoded error report value, or
             None if the hand is not awake.
         """
-        if not self._check_awake():
-            return
+        return self.get_feedback_data('feedback_actuator_error_reg')
 
-        start_reg = ModbusMap().modbus_reg_map['feedback_actuator_error_reg']
-        start_reg_key = 'feedback_actuator_error_reg'
 
-        amount_data = math.ceil(ModbusMap().data_type_multiplier_map[start_reg_key] * self._robot_handler.robot.number_of_joints)
-
-        feedback_data = self._communication_handler.receive_data(amount_dat=amount_data,start=start_reg)
-        decoded_feedback_data = self._command_handler.get_decoded_feedback_data(feedback_data,modbus_key=start_reg_key)
-
-        # populate hand joint dict based on robot
-        self.logger.info(self._robot_handler.get_joint_angles(decoded_feedback_data,feedback_type=start_reg_key))
-        return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
-        
 
     # for compatibility
     def get_streamed_joint_angles(self,dat_type=0):
@@ -853,8 +1012,9 @@ class ArtusAPI_V2:
             joints: Joint # to reset. If None, prompts on stdin for
                 a value between 0 and the robot's total joint count.
         """
-        if joints is None:
-            joints = int(input(f"Enter joint # to reset (1-{self._robot_handler.robot.number_of_joints - 1}): "))
+        if joints is None or joints < 0 or joints > self._robot_handler.robot.number_of_joints - 1:
+            self.logger.error(f'Invalid joint number: {joints}')
+            return
         reset_command = self._command_handler.get_reset_command(joints)
         self.wait_for_com_freq()
         self._communication_handler.send_data(reset_command)
@@ -873,8 +1033,9 @@ class ArtusAPI_V2:
             joints: Number of joints to reset. If None, prompts on stdin for
                 a value between 0 and the robot's total joint count.
         """
-        if joints is None:
-            joints = int(input(f"Enter joint # to soft reset (0 for all, 1-{self._robot_handler.robot.number_of_joints - 1} for specific joints): "))
+        if joints is None or joints < 0 or joints > self._robot_handler.robot.number_of_joints - 1:
+            self.logger.error(f'Invalid joint number: {joints}')
+            return        
         soft_reset_command = self._command_handler.get_soft_reset_command(joints)
         self.wait_for_com_freq()
         self._communication_handler.send_data(soft_reset_command)
@@ -886,7 +1047,7 @@ class ArtusAPI_V2:
         else:
             self.logger.info("Hand ready")
     
-    def update_firmware(self,file_location=None,drivers_to_flash=None):
+    def update_firmware(self,file_location=None,drivers_to_flash=0):
         """Flashes new firmware to one or all actuator drivers on the hand.
 
         Prompts on stdin for any missing arguments (binary file path and/or
@@ -901,8 +1062,9 @@ class ArtusAPI_V2:
                 None, prompted for on stdin.
         """
 
-        if file_location is None or (isinstance(file_location, str) and not file_location.endswith('.bin')):
-            file_location = input('Please enter absolute filepath of binary file: ')
+        if file_location is None or not file_location.endswith('.bin'):
+            self.logger.error(f'Invalid file location: {file_location}')
+            return
 
         self._firmware_updater = FirmwareUpdaterNew(communication_handler=self._communication_handler,
                                                     command_handler=self._command_handler,
@@ -912,15 +1074,9 @@ class ArtusAPI_V2:
         fw_size = self._firmware_updater.get_bin_file_info()
 
         # get driver to flash
-        if drivers_to_flash == None:
-            while drivers_to_flash is None or drivers_to_flash not in range(0, self._robot_handler.robot.number_of_controllers + 1):
-                drivers_to_flash = int(input(
-                    f'''
-                    Please Enter Drivers to Flash:
-                    0-n: Specific Actuator mapped to joint number
-                    n+1: All Actuators
-                    '''
-                    ))
+        if drivers_to_flash == None or drivers_to_flash < 0 or drivers_to_flash > self._robot_handler.robot.number_of_controllers:
+            self.logger.error(f'Invalid driver number: {drivers_to_flash}')
+            return
         
         # send commmand
         firmware_cmd = self._command_handler.get_firmware_command(drivers_to_flash)
