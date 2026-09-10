@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -38,7 +38,7 @@ except ImportError as e:
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(PROJECT_ROOT)
 
-from ArtusAPI import ArtusConfig
+from artusapi import ArtusConfig
 from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_config
 
 def setup_logger(level='ERROR', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):

@@ -31,10 +31,10 @@ print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # import the configuration file
-from ArtusAPI import ArtusConfig
+from artusapi import ArtusConfig
 
 # new version of ArtusAPI use local version
-from ArtusAPI.artus_api_new import ArtusAPI
+from artusapi.artus_api_new import ArtusAPI
 
 # import ArtusAPIPortForwarder
 from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForwarder

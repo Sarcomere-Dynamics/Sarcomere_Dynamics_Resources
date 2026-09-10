@@ -2,7 +2,7 @@
 
 import unittest
 
-from ArtusAPI.common.ModbusMap import ModbusMap, ActuatorState, CommandType, TrajectoryReturn
+from artusapi.common.ModbusMap import ModbusMap, ActuatorState, CommandType, TrajectoryReturn
 
 
 class TestModbusMap(unittest.TestCase):

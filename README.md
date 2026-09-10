@@ -33,7 +33,7 @@ Please contact the team if any issues arise through use of the API. See [Softwar
 
 For readers who already know their way around Python and just want the shortest path from clone to a moving joint:
 
-1. Install Python 3.10–3.13.
+1. Install Python 3.10-3.13.
 2. Connect the hand's power harness and USB-C data cable (see [1.3](#13-hardware-requirements)).
 3. Set your hand model/port in [`examples/config/robot_config.yaml`](examples/config/README.md).
 4. Run [`examples/general_example/general_example.py`](examples/general_example/README.md) and follow the prompts.
@@ -78,7 +78,7 @@ Short guides for navigating the tree — useful if you are new to robotics or to
 The first step to working with an ARTUS hand is connecting to it and achieving joint control and feedback. It is highly recommended that this be done for the first time via the [general example program](#24-running-general_examplepy). The sections below walk through everything needed to get there.
 
 ### 1.1 Software Requirements
-* **Python 3.10–3.13** — [download here](https://www.python.org/downloads/). On Windows, enable "disable PATH length limit" during setup.
+* **Python 3.10-3.13** — [download here](https://www.python.org/downloads/). On Windows, enable "disable PATH length limit" during setup.
 * **FTDI USB driver (Windows only)** — required for the hand to be recognized as a USB device over USB-C. [Download here](https://ftdichip.com/drivers/vcp-drivers/).
 
 >[!NOTE]

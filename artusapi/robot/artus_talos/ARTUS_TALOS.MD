@@ -59,8 +59,8 @@ Below is a joint index guide mapped to a normal human hand, with the naming conv
 
 | Parameter | Default | Range | Units |
 |---|---|---|---|
-| Velocity | 200 | 0 – 300 | degrees/second |
-| Force | 16 | 2 – 40 | Newtons (N) |
+| Velocity | 200 | 0 - 300 | degrees/second |
+| Force | 16 | 2 - 40 | Newtons (N) |
 
 They live as attributes on the robot model, not as hardcoded constants in the API:
 ```python

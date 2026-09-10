@@ -2,7 +2,7 @@
 
 import unittest
 
-from ArtusAPI.robot import Robot
+from artusapi.robot import Robot
 
 
 class TestRobotModels(unittest.TestCase):

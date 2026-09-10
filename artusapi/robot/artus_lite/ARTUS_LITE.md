@@ -59,8 +59,8 @@ Below is a joint index guide mapped to a normal human hand, with the naming conv
 
 | Parameter | Default | Range | Units |
 |---|---|---|---|
-| Velocity | 150 | 0 – 300 | degrees/second |
-| Force | 10 | 0 – 20 | Newtons (N) |
+| Velocity | 150 | 0 - 300 | degrees/second |
+| Force | 10 | 0 - 20 | Newtons (N) |
 
 These apply to both **ARTUS Lite** and **ARTUS Lite+** — Lite+ inherits them unchanged from the base Lite model.
 

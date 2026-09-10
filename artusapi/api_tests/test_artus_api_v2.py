@@ -6,10 +6,10 @@ import struct
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ArtusAPI.api_tests.mocks import build_api, make_communication_mock, patched_artus_api_v2_constructor
-from ArtusAPI.common.ModbusMap import ModbusMap
-from ArtusAPI.common.SlaveIDMap import expected_slave_id
-from ArtusAPI.communication.new_communication import ActuatorState, CommandType
+from artusapi.api_tests.mocks import build_api, make_communication_mock, patched_artus_api_v2_constructor
+from artusapi.common.ModbusMap import ModbusMap
+from artusapi.common.SlaveIDMap import expected_slave_id
+from artusapi.communication.new_communication import ActuatorState, CommandType
 
 
 class TestArtusAPIV2Mocked(unittest.TestCase):

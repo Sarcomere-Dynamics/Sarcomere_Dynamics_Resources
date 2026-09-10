@@ -31,10 +31,10 @@ print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # import the configuration file
-from ArtusAPI import ArtusConfig
+from artusapi import ArtusConfig
 
 # new version of ArtusAPI use local version
-from ArtusAPI.common import ModbusMap
+from artusapi.common import ModbusMap
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------

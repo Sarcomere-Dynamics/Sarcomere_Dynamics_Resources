@@ -53,8 +53,8 @@ The starting position is 100mm wide (fully open, position 0). Since it is a sing
 
 | Parameter | Default | Range | Units |
 |---|---|---|---|
-| Velocity | 50 | 0 – 70 | mm/second |
-| Force | 20 | 0 – 100 | Newtons (N) |
+| Velocity | 50 | 0 - 70 | mm/second |
+| Force | 20 | 0 - 100 | Newtons (N) |
 
 They live as attributes on the robot model, not as hardcoded constants in the API:
 ```python

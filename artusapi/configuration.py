@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -32,18 +32,18 @@ from .common.SlaveIDMap import (
 from .communication.RS485_RTU.rs485_rtu import find_port_holders
 
 CONFIG_ENV_VAR = "ARTUS_CONFIG"
-PACKAGED_CONFIG_NAME = "robot_config.yaml"
+PACKAGED_CONFIG_NAME = "robot_config_default.yaml"
 DEFAULT_LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 LOGGER_NAME = "ArtusAPI"
 
 _PACKAGE_DIR = Path(__file__).resolve().parent
 _REPO_EXAMPLE_CONFIG = (
-    _PACKAGE_DIR.parent / "examples" / "config" / "robot_config.yaml"
+    _PACKAGE_DIR.parent / "examples" / "config" / "robot_config_example.yaml"
 )
 
 
 def packaged_config_source():
-    """Returns the packaged default robot_config.yaml resource."""
+    """Returns the packaged default robot_config_default.yaml resource."""
     return files("ArtusAPI").joinpath(PACKAGED_CONFIG_NAME)
 
 
@@ -53,7 +53,7 @@ def resolve_config_file(config_file=None):
     An explicit *config_file* (the user's described path) is always used
     as-is. When omitted, search order is:
     1. ``ARTUS_CONFIG`` environment variable
-    2. ``examples/config/robot_config.yaml`` in an editable/repo checkout
+    2. ``examples/config/robot_config_example.yaml`` in an editable/repo checkout
     3. ``robot_config.yaml`` in the current working directory
     4. The packaged default shipped with ArtusAPI (returned as None)
 
@@ -376,7 +376,7 @@ class ArtusConfig:
         logger = logger or self.logger
         robot_cfg = self.get_connected_robot()
         logger.info("%s hand robot connected", robot_cfg.hand_type.capitalize())
-        from .artus_api_new import ArtusAPI
+        from .artusapi import ArtusAPI
         return ArtusAPI(config=self, logger=logger)
 
     def _preflight(self, robot_cfg, logger):

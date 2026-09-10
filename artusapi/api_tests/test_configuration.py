@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 
 import yaml
 
-from ArtusAPI.configuration import (
+from artusapi.configuration import (
     CONFIG_ENV_VAR,
     ArtusConfig,
     copy_default_config,

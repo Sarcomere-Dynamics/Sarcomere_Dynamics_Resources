@@ -2,7 +2,7 @@
 
 import unittest
 
-from ArtusAPI.common.SlaveIDMap import (
+from artusapi.common.SlaveIDMap import (
     SLAVE_ID_BY_ROBOT_HAND,
     expected_slave_id,
     normalize_robot_hand_key,

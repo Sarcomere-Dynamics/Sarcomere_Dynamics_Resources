@@ -3,8 +3,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from ArtusAPI.communication.new_communication import NewCommunication, ActuatorState
-from ArtusAPI.common.ModbusMap import ModbusMap, TrajectoryReturn
+from artusapi.communication.new_communication import NewCommunication, ActuatorState
+from artusapi.common.ModbusMap import ModbusMap, TrajectoryReturn
 
 
 class TestNewCommunicationMocked(unittest.TestCase):

@@ -8,7 +8,7 @@ import unittest.mock as mock
 from contextlib import contextmanager
 from typing import Any, Generator, Tuple, Type
 
-from ArtusAPI.communication.new_communication import ActuatorState
+from artusapi.communication.new_communication import ActuatorState
 
 
 def make_communication_mock() -> mock.MagicMock:

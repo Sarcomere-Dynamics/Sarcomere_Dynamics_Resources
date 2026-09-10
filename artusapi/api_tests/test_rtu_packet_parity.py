@@ -22,7 +22,7 @@ from pymodbus.pdu.register_message import (
     WriteSingleRegisterRequest,
 )
 
-from ArtusAPI.common.ModbusMap import CommandType
+from artusapi.common.ModbusMap import CommandType
 
 try:
     import minimalmodbus  # noqa: F401  archived baseline, no longer a runtime dep
@@ -93,7 +93,7 @@ class MinimalmodbusCallCapture:
 
     def __init__(self):
         """Builds the archived minimalmodbus RS485_RTU with its Instrument mocked out."""
-        from ArtusAPI.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
+        from artusapi.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
 
         self.instrument = MagicMock()
         with patch(
@@ -146,7 +146,7 @@ class PymodbusCallCapture:
 
     def __init__(self):
         """Builds the pymodbus-backed RS485_RTU with its ModbusSerialClient mocked out."""
-        from ArtusAPI.communication.RS485_RTU.rs485_rtu import RS485_RTU
+        from artusapi.communication.RS485_RTU.rs485_rtu import RS485_RTU
 
         self.client = MagicMock()
         self.client.connect.return_value = True
@@ -323,7 +323,7 @@ class TestWireFrameParity(unittest.TestCase):
         """
         import minimalmodbus
 
-        from ArtusAPI.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
+        from artusapi.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
 
         written = []
         mock_serial = MagicMock()

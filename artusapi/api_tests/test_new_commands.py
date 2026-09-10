@@ -4,7 +4,7 @@ import logging
 import struct
 import unittest
 from types import SimpleNamespace
-from ArtusAPI.commands.new_commands import NewCommands
+from artusapi.commands.new_commands import NewCommands
 
 
 class TestNewCommands(unittest.TestCase):

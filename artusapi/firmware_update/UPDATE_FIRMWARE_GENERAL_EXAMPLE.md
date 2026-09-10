@@ -23,22 +23,22 @@ cd examples/general_example
 python3 general_example.py
 ```
 
-2. Connect to the hand — enter `1` at the menu.
+1. Connect to the hand — enter `1` at the menu.
 
-3. Start the firmware update — enter `f` at the menu.
+2. Start the firmware update — enter `f` at the menu.
 
-4. Confirm the safety prompt by entering `e` when asked. Any other input cancels.
+3. Confirm the safety prompt by entering `e` when asked. Any other input cancels.
 
-5. Enter the **driver to flash** when prompted:
+4. Enter the **driver to flash** when prompted:
 
 | Value | Meaning |
-|---|---|
-| `1`–`<number of controllers>` | A specific actuator, mapped to its joint number |
+| --- | --- |
+| `1`-`<number of controllers>` | A specific actuator, mapped to its joint number |
 | `0` | All actuators |
 
    The value is validated against the robot model's `number_of_controllers`; an out-of-range value is rejected and you can try again.
 
-6. Enter the **absolute path** to the firmware `.bin` file when prompted (e.g. `/home/user/firmware/driver.bin`).
+1. Enter the **absolute path** to the firmware `.bin` file when prompted (e.g. `/home/user/firmware/driver.bin`).
 
 The upload then begins. A progress bar (`Uploading Actuator Firmware`) shows pages as they are written, and the tool waits for the hand to acknowledge the flash. When the hand leaves the `ACTUATOR_FLASHING` state the update is complete and `Firmware flashed successfully` is logged.
 

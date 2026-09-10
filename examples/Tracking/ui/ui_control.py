@@ -4,7 +4,7 @@ Sarcomere Dynamics Software License Notice
 This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
 including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
 
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
+Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
 
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
@@ -23,8 +23,8 @@ sys.path.append(PROJECT_ROOT)
 
 # dependencies
 from examples.Tracking.zmq_class.zmq_class import ZMQPublisher
-from ArtusAPI import ArtusConfig
-from ArtusAPI.robot.robot import Robot
+from artusapi import ArtusConfig
+from artusapi.robot.robot import Robot
 
 class UIControl(QtWidgets.QWidget, ZMQPublisher):
     """Qt widget exposing manual control elements for the connected robot hand.

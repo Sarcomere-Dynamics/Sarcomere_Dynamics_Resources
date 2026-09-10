@@ -1,17 +1,13 @@
-[build-system]
-requires = ["setuptools>=64", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "artusapi"
 version = "2.0.0"
 description = "API to control Artus Family of Robots by Sarcomere Dynamics Inc"
-readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.10"
+readme = "README.md"
 keywords = ["robotics", "artus", "sarcomere dynamics", "control"]
 authors = [
     { name = "Sarcomere Dynamics Inc.", email = "support@sarcomeredynamics.com" },
 ]
+requires-python = ">=3.10"
 dependencies = [
     # Core runtime dependencies of the ArtusAPI package itself.
     # Kept in sync with requirements_v2.txt; extras below cover the
@@ -23,6 +19,10 @@ dependencies = [
     "PyYAML",
     'windows-curses; sys_platform == "win32"',
 ]
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
 
 [project.optional-dependencies]
 # Dependencies of examples/ (teleoperation, tracking).
@@ -46,6 +46,9 @@ all = [
 [project.urls]
 Homepage = "https://sarcomeredynamics.com/home"
 Source = "https://github.com/Sarcomere-Dynamics/Sarcomere_Dynamics_Resources"
+
+[tool.uv.build-backend]
+module-root = ""
 
 [tool.setuptools.packages.find]
 # Ship only the ArtusAPI package; data/, examples/, urdf/, test_workspace/,
