@@ -24,7 +24,7 @@ from .communication.new_communication import NewCommunication,ActuatorState,Comm
 from .robot import Robot
 from .firmware_update import FirmwareUpdaterNew
 
-class ArtusAPI_V2:
+class ArtusAPI:
     """Newer, single user-facing entry point for controlling an ARTUS hand.
 
     Redesigned to accommodate a more robust communication process as well as
@@ -1000,7 +1000,7 @@ class ArtusAPI_V2:
 
         Returns:
             None. Always logs an error since this is not implemented in
-            ArtusAPI_V2.
+            ArtusAPI.
         """
         self.logger.error(f"get_streamed_joint_angles is not implemented in ArtusAPIv2")
         return None

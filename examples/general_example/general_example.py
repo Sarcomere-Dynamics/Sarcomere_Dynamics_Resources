@@ -10,7 +10,7 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-"""Interactive CLI demo for exercising the ArtusAPI_V2 hand interface.
+"""Interactive CLI demo for exercising the ArtusAPI hand interface.
 
 Loads the robot configuration, connects to the configured ARTUS hand, and
 presents a numbered menu for connecting/disconnecting, waking/sleeping,
@@ -114,14 +114,14 @@ def setup_logger(level='ERROR',format='%(asctime)s - %(name)s - %(levelname)s - 
 # ------------------------------ Command Dispatch --------------------------------
 # -------------------------------------------------------------------------------
 def handle_command(artusapi, user_input, logger, hand_poses_path):
-    """Dispatches a single main_menu() selection against an ArtusAPI_V2 instance.
+    """Dispatches a single main_menu() selection against an ArtusAPI instance.
 
     Shared between general_example.py and any other example (e.g.
     urarm_rs485_example.py) that presents main_menu() and drives an
-    ArtusAPI_V2-connected hand, regardless of the underlying transport.
+    ArtusAPI-connected hand, regardless of the underlying transport.
 
     Args:
-        artusapi: Connected ArtusAPI_V2 instance to operate on.
+        artusapi: Connected ArtusAPI instance to operate on.
         user_input: Raw menu selection string returned by main_menu().
         logger: Logger used for status/error output.
         hand_poses_path: Directory containing the saved hand pose JSON

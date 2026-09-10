@@ -118,12 +118,12 @@ Connect power and data using the supplied cables. Please see robot's exact docum
 
 ## 2. Basic Usage
 
-This section covers basic usage via **`ArtusAPI_V2`** (see [`ArtusAPI/artus_api_new.py`](ArtusAPI/artus_api_new.py)), the only supported entry point in this repository.
+This section covers basic usage via **`ArtusAPI`** (see [`ArtusAPI/artus_api_new.py`](ArtusAPI/artus_api_new.py)), the only supported entry point in this repository.
 
 ### 2.1 Normal Startup Procedure
 
 1. **Check hardware** — confirm the power connector is secure and, if using a wired connection (Serial or CANbus), that the cable is good.
-2. **Connect** — creating an `ArtusAPI_V2` instance calls `connect()` internally. If you disconnect manually, call `connect()` again before continuing.
+2. **Connect** — creating an `ArtusAPI` instance calls `connect()` internally. If you disconnect manually, call `connect()` again before continuing.
 3. **Wake up** — call `wake_up()` with the control mode appropriate for your application so the hand loads its configuration and enters a ready state.
 4. **Calibrate (if required)** — run `calibrate()` if your model requires it (see [Supported Hardware](#supported-hardware)). Otherwise the hand is ready to accept targets and report feedback.
 
@@ -170,5 +170,5 @@ Drive an ARTUS hand from a webcam using Google MediaPipe hand tracking. See the 
 | Nov. 14, 2023 | v1.0b | Initial release - Artus Lite Mk 5 | - |
 
 ## Appendix
-* [Artus API (`ArtusAPI_V2`)](ArtusAPI/artus_api_new.py) — Main Python class that talks to ARTUS hands (Lite, Lite+, Talos, Scorpion, Dex, and related variants). The legacy v1 `artus_api.py` entry point has been removed from this repository.
+* [Artus API (`ArtusAPI`)](ArtusAPI/artus_api_new.py) — Main Python class that talks to ARTUS hands (Lite, Lite+, Talos, Scorpion, Dex, and related variants). The legacy v1 `artus_api.py` entry point has been removed from this repository.
 * [API Docs](docs/API%20Functionality.md) — Background on the reasoning behind the API's functions.

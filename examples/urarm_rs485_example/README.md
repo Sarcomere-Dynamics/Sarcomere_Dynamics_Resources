@@ -53,7 +53,7 @@ The setup on the PC creates a temporary port (/tmp/ttyUR) that forwards artus co
 sudo apt install socat
 ```
 2. Connect the remote PC to the control box using ethernet cable.
-<!-- Legacy snippet (pre–`artus_api.py` removal): after socat exposes `/tmp/ttyUR`, construct `ArtusAPI_V2` with that path as `communication_channel_identifier`, matching `communication_method` / `baudrate` to your harness. The current `urarm_rs485_example.py` uses `ArtusAPIPortForwarder` instead of pasting this by hand. -->
+<!-- Legacy snippet (pre–`artus_api.py` removal): after socat exposes `/tmp/ttyUR`, construct `ArtusAPI` with that path as `communication_channel_identifier`, matching `communication_method` / `baudrate` to your harness. The current `urarm_rs485_example.py` uses `ArtusAPIPortForwarder` instead of pasting this by hand. -->
 3. Determine UR Robot's IP:
 
     example:

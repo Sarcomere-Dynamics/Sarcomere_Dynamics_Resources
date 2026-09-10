@@ -17,7 +17,7 @@ This example uses **`socat`** to create a **pseudo-terminal on your machine** th
 ## Mental model
 
 ```
-[ Python / ArtusAPI_V2 ] → [ local PTY ] --socat--TCP--> [ robot:port ]
+[ Python / ArtusAPI ] → [ local PTY ] --socat--TCP--> [ robot:port ]
 ```
 
 You point `communication_channel_identifier` (or equivalent) at the **local** device name returned by the forwarder, not at the remote IP directly.

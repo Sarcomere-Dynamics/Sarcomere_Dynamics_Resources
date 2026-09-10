@@ -14,7 +14,7 @@ See the LICENSE file in the repository for full details.
 
 Uses ArtusAPIPortForwarder to expose the UR robot's onboard RS485 line as
 a local serial device, connects to the ARTUS hand through it using the
-ArtusAPI_V2 API, and presents a numbered menu for connecting/
+ArtusAPI API, and presents a numbered menu for connecting/
 disconnecting, waking/sleeping, calibrating, sending saved hand poses,
 and reading back feedback data.
 """
@@ -34,7 +34,7 @@ sys.path.append(PROJECT_ROOT)
 from ArtusAPI import ArtusConfig
 
 # new version of ArtusAPI use local version
-from ArtusAPI.artus_api_new import ArtusAPI_V2
+from ArtusAPI.artus_api_new import ArtusAPI
 
 # import ArtusAPIPortForwarder
 from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForwarder
@@ -50,7 +50,7 @@ def example():
     """Runs the interactive menu loop for controlling an ARTUS hand via UR RS485.
 
     Starts an ArtusAPIPortForwarder to the UR robot's RS485 port, connects
-    to the hand using the ArtusAPI_V2 API, and then repeatedly shows
+    to the hand using the ArtusAPI API, and then repeatedly shows
     main_menu() and dispatches the entered command via handle_command()
     (both shared with general_example.py). Runs until interrupted;
     per-iteration exceptions are logged and the loop continues.
@@ -68,7 +68,7 @@ def example():
 
     # find robot type from robot config
     robot_type = config.find_single_robot_type()
-    artusapi = ArtusAPI_V2(communication_method='RS485_RTU',
+    artusapi = ArtusAPI(communication_method='RS485_RTU',
                         communication_channel_identifier=local_device_name,
                         robot_type=robot_type,
                         hand_type=config.config.robots.left_hand_robot.hand_type,

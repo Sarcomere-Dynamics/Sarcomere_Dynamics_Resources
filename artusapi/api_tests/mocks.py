@@ -15,7 +15,7 @@ def make_communication_mock() -> mock.MagicMock:
     """Builds a MagicMock standing in for NewCommunication.
 
     Returns:
-        A MagicMock with the NewCommunication methods used by ArtusAPI_V2
+        A MagicMock with the NewCommunication methods used by ArtusAPI
         (open_connection, close_connection, send_data, receive_data,
         wait_for_ready, _check_robot_state) pre-configured with sane defaults.
     """
@@ -34,14 +34,14 @@ def make_communication_mock() -> mock.MagicMock:
 def patched_artus_api_v2_constructor(
     communication_mock: mock.MagicMock | None = None,
 ) -> Generator[Tuple[Type, mock.MagicMock], None, None]:
-    """Patches NewCommunication, time.sleep, and signal.signal while constructing ArtusAPI_V2.
+    """Patches NewCommunication, time.sleep, and signal.signal while constructing ArtusAPI.
 
     Args:
         communication_mock: Mock to substitute for the real NewCommunication
             instance. If None, one is created via make_communication_mock().
 
     Yields:
-        A tuple of (ArtusAPI_V2 class, communication mock instance returned
+        A tuple of (ArtusAPI class, communication mock instance returned
         to the API).
     """
     if communication_mock is None:
@@ -53,7 +53,7 @@ def patched_artus_api_v2_constructor(
         nc_cls.return_value = communication_mock
         with mock.patch.object(api_mod.time, "sleep"):
             with mock.patch.object(api_mod.signal, "signal"):
-                yield api_mod.ArtusAPI_V2, communication_mock
+                yield api_mod.ArtusAPI, communication_mock
 
 
 def build_api(
@@ -62,17 +62,17 @@ def build_api(
     communication_mock: mock.MagicMock | None = None,
     **kwargs: Any,
 ):
-    """Constructs ArtusAPI_V2 with communication fully mocked.
+    """Constructs ArtusAPI with communication fully mocked.
 
     Args:
-        robot_type: Robot type string passed to ArtusAPI_V2 (e.g. "artus_lite").
-        hand_type: Hand type string passed to ArtusAPI_V2 (e.g. "left").
+        robot_type: Robot type string passed to ArtusAPI (e.g. "artus_lite").
+        hand_type: Hand type string passed to ArtusAPI (e.g. "left").
         communication_mock: Mock to substitute for the real NewCommunication
             instance. If None, one is created via make_communication_mock().
-        **kwargs: Additional keyword arguments forwarded to ArtusAPI_V2.
+        **kwargs: Additional keyword arguments forwarded to ArtusAPI.
 
     Returns:
-        A tuple of (ArtusAPI_V2 instance, communication mock instance).
+        A tuple of (ArtusAPI instance, communication mock instance).
     """
     comm = communication_mock or make_communication_mock()
     with patched_artus_api_v2_constructor(comm) as (Cls, _):

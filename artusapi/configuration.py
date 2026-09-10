@@ -213,7 +213,7 @@ def scan_port_for_robots(port, baudrate, logger, prefer_slave=None):
 
 
 class ArtusConfig:
-    """Loads robot_config.yaml and builds a configured ArtusAPI_V2 instance.
+    """Loads robot_config.yaml and builds a configured ArtusAPI instance.
 
     The YAML config is converted into nested SimpleNamespace objects so
     fields are accessible via attribute access (e.g. config.robots.left_hand_robot).
@@ -357,7 +357,7 @@ class ArtusConfig:
         return self.get_connected_robot().robot_type
 
     def get_api(self, logger=None):
-        """Builds a configured ArtusAPI_V2 instance for whichever hand is connected.
+        """Builds a configured ArtusAPI instance for whichever hand is connected.
 
         Only one robot can be connected at a time. The API loads this
         configuration first, then runs automatic port/robot discovery
@@ -368,7 +368,7 @@ class ArtusConfig:
                 used for pre-flight messages. Defaults to ``self.logger``.
 
         Returns:
-            A configured ArtusAPI_V2 instance for the connected hand.
+            A configured ArtusAPI instance for the connected hand.
 
         Raises:
             ValueError: If no robot is connected, or more than one is.
@@ -376,8 +376,8 @@ class ArtusConfig:
         logger = logger or self.logger
         robot_cfg = self.get_connected_robot()
         logger.info("%s hand robot connected", robot_cfg.hand_type.capitalize())
-        from .artus_api_new import ArtusAPI_V2
-        return ArtusAPI_V2(config=self, logger=logger)
+        from .artus_api_new import ArtusAPI
+        return ArtusAPI(config=self, logger=logger)
 
     def _preflight(self, robot_cfg, logger):
         """Discovers the serial port and robot identity before the API builds handlers.
@@ -472,7 +472,7 @@ class ArtusConfig:
         )
 
     def return_api(self, robot_cfg=None, logger=None):
-        """Instantiates ArtusAPI_V2 from a robot configuration.
+        """Instantiates ArtusAPI from a robot configuration.
 
         Explicit robot fields are passed as overrides so the API skips
         automatic port discovery (the caller already chose a hand).
@@ -482,12 +482,12 @@ class ArtusConfig:
             logger: Optional logger passed through to the API instance.
 
         Returns:
-            A configured ArtusAPI_V2 instance, or None if robot_cfg is None.
+            A configured ArtusAPI instance, or None if robot_cfg is None.
         """
         if robot_cfg is None:
             return None
-        from .artus_api_new import ArtusAPI_V2
-        return ArtusAPI_V2(
+        from .artus_api_new import ArtusAPI
+        return ArtusAPI(
             config=self,
             logger=logger or self.logger,
             robot_type=robot_cfg.robot_type,

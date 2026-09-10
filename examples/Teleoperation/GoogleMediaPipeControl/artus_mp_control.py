@@ -19,7 +19,7 @@ Captures webcam frames, runs MediaPipe's HandLandmarker to extract 3D hand
 landmarks, converts them to per-joint flexion angles (geometrically, with an
 optional IK-assisted refinement based on calibrated finger link lengths),
 smooths the angles with a per-joint Kalman filter, and streams the resulting
-joint commands to an ARTUS Lite hand via the ArtusAPI_V2 API.
+joint commands to an ARTUS Lite hand via the ArtusAPI API.
 """
 
 import cv2
@@ -722,12 +722,12 @@ def main():
     config = ArtusConfig()
     artus = config.get_api()
 
-    # ArtusAPI_V2 connects automatically on construction; wake the hand
+    # ArtusAPI connects automatically on construction; wake the hand
     # before sending joint commands.
     artus.wake_up()
 
     # Real ARTUS joint names, in the same order as JOINT_ORDER above, used
-    # to build the name-keyed dict ArtusAPI_V2.set_joint_angles expects.
+    # to build the name-keyed dict ArtusAPI.set_joint_angles expects.
     joint_names = artus._robot_handler.robot.joint_names
 
     detector = create_hand_landmarker()

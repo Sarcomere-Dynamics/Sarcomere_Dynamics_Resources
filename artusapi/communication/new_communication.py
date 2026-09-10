@@ -20,7 +20,7 @@ from .Modbus_TCP.modbus_tcp import ModbusTCP
 from ..common.ModbusMap import ModbusMap,ActuatorState,CommandType,TrajectoryReturn
 
 class NewCommunication:
-    """Transport-agnostic wrapper used by ArtusAPI_V2 to talk to an ARTUS hand.
+    """Transport-agnostic wrapper used by ArtusAPI to talk to an ARTUS hand.
 
     Selects and owns a concrete communicator (RS485_RTU or ModbusTCP) based on
     `communication_method` and exposes a uniform send/receive/state-polling

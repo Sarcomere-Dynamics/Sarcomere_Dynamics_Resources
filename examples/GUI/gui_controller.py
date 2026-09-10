@@ -32,7 +32,7 @@ logger.info(f"Project Root: {PROJECT_ROOT}")
 sys.path.append(PROJECT_ROOT)
 from ArtusAPI import ArtusConfig
 from examples.Tracking.zmq_class.zmq_class import ZMQPublisher, ZMQSubscriber
-from ArtusAPI.artus_api_new import ArtusAPI_V2
+from ArtusAPI.artus_api_new import ArtusAPI
 
 
 class ArtusGUIController:
@@ -89,7 +89,7 @@ class ArtusGUIController:
             self.artus_api.calibrate()
             time.sleep(0.5)
         # test robot
-        # self.artus_api = ArtusAPI_V2(robot_type='artus_talos',
+        # self.artus_api = ArtusAPI(robot_type='artus_talos',
         #                         communication_method='RS485_RTU',
         #                         communication_channel_identifier='/dev/ttyUSB0',
         #                         communication_frequency=20,
@@ -101,7 +101,7 @@ class ArtusGUIController:
 
         Args:
             joint_angles: Mapping of joint name/index to target angle
-                data, as expected by ArtusAPI_V2.set_joint_angles. If
+                data, as expected by ArtusAPI.set_joint_angles. If
                 None, logs an error and returns without sending anything.
         """
         if joint_angles is not None:

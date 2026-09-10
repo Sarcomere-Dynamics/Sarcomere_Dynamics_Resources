@@ -1,8 +1,8 @@
 <img src='../data/images/SarcomereLogoHorizontal.svg'>
 
-> **Note:** The legacy `ArtusAPI` class in `artus_api.py` has been **removed** from this repository. All examples here use **`ArtusAPI_V2`** in [`ArtusAPI/artus_api_new.py`](../ArtusAPI/artus_api_new.py). Import with `from ArtusAPI import ArtusAPI_V2`.
+> **Note:** The legacy `ArtusAPI` class in `artus_api.py` has been **removed** from this repository. All examples here use **`ArtusAPI`** in [`ArtusAPI/artus_api_new.py`](../ArtusAPI/artus_api_new.py). Import with `from ArtusAPI import ArtusAPI`.
 
-### Creating an `ArtusAPI_V2` object
+### Creating an `ArtusAPI` object
 
 Below is how to construct the API for a single hand. Common constructor arguments:
 
@@ -12,16 +12,16 @@ Below is how to construct the API for a single hand. Common constructor argument
 * `hand_type` — `left` or `right` where applicable.
 * `communication_frequency` — Control/feedback loop rate in Hz (default in code is `50`).
 * `logger` — Optional Python `logging.Logger`; if `None`, the API creates its own.
-* `baudrate` — Serial baud rate (default `115200` in `ArtusAPI_V2`; match your harness and firmware).
+* `baudrate` — Serial baud rate (default `115200` in `ArtusAPI`; match your harness and firmware).
 
 The constructor calls `connect()` to open the transport. Then call `wake_up(control_type=...)` with `3` for position, `2` for velocity, or `1` for torque, consistent with your application.
 
 #### Example (RS485-style serial)
 
 ```python
-from ArtusAPI import ArtusAPI_V2
+from ArtusAPI import ArtusAPI
 
-hand = ArtusAPI_V2(
+hand = ArtusAPI(
     communication_method="RS485_RTU",
     communication_channel_identifier="COM7",
     robot_type="artus_lite",
@@ -40,7 +40,7 @@ e.g.
 artusapi.set_joint_angles(pinky_dict)
 ```
 ### Startup commands
-* `connect()` opens the link for the configured communication method (also invoked from the `ArtusAPI_V2` constructor).
+* `connect()` opens the link for the configured communication method (also invoked from the `ArtusAPI` constructor).
 * `wake_up(control_type=...)` configures the hand and actuators for the selected control mode; wait until the hand reports ready before commanding motion.
 * `calibrate()` runs the calibration sequence when required for your robot model.
 
@@ -73,7 +73,7 @@ Notice that the above example does not include the `"target_velocity"` or `"targ
 
 ### Getting feedback
 
-With **`ArtusAPI_V2`**, request feedback with explicit getters such as `get_feedback_data()`, `get_joint_speeds()`, `get_joint_forces()`, and `get_joint_temperatures()`. The older “streaming vs request” toggle from legacy `ArtusAPI` does not apply the same way; `get_streamed_joint_angles()` is not implemented in V2 and will log an error if called.
+With **`ArtusAPI`**, request feedback with explicit getters such as `get_feedback_data()`, `get_joint_speeds()`, `get_joint_forces()`, and `get_joint_temperatures()`. The older “streaming vs request” toggle from legacy `ArtusAPI` does not apply the same way; `get_streamed_joint_angles()` is not implemented in V2 and will log an error if called.
 
 Every getter is a thin wrapper around `get_feedback_data(start_reg)`, which is the single entry point for all feedback fields. It accepts either a `ModbusMap` key name or its register address:
 
@@ -89,7 +89,7 @@ After reads complete, updated values are reflected under `hand._robot_handler.ro
 ### SD Card Interactions
 
 >[!NOTE]
->**Not yet implemented in `ArtusAPI_V2`.** The onboard SD-card grasp workflow below (`save_grasp_onhand`, `execute_grasp`, `get_saved_grasps_onhand`) exists as firmware-level commands but is not yet exposed as public methods on `ArtusAPI_V2`. This section describes the intended behavior once it lands.
+>**Not yet implemented in `ArtusAPI`.** The onboard SD-card grasp workflow below (`save_grasp_onhand`, `execute_grasp`, `get_saved_grasps_onhand`) exists as firmware-level commands but is not yet exposed as public methods on `ArtusAPI`. This section describes the intended behavior once it lands.
 
 Before using the Artus Lite's digital IO functionality to communicate with a robotic arm, there are two steps that need to be done. 
 1. Users must set the grasps that they want to call. This is done through the UI or general_example.py, using the `save_grasp_onhand` command. This command will save the last command sent to the hand in the designated position specified (1-6) on the SD card and persist through resets.
@@ -108,7 +108,7 @@ The bottleneck for controlling multiple systems is their MODBUS ID which is curr
 
 ### Other API Methods
 
-Beyond joint control and feedback, `ArtusAPI_V2` exposes:
+Beyond joint control and feedback, `ArtusAPI` exposes:
 
 | Method | Purpose |
 |---|---|

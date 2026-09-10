@@ -1,4 +1,4 @@
-"""ArtusAPI_V2 tests with mocked communication (no hardware)."""
+"""ArtusAPI tests with mocked communication (no hardware)."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from ArtusAPI.communication.new_communication import ActuatorState, CommandType
 
 
 class TestArtusAPIV2Mocked(unittest.TestCase):
-    """Exercises ArtusAPI_V2 behavior with the communication layer mocked out."""
+    """Exercises ArtusAPI behavior with the communication layer mocked out."""
 
     def test_connect_opens_transport(self):
         """Verifies constructing the API opens the communication transport."""
@@ -28,7 +28,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         comm = MagicMock()
         with patched_artus_api_v2_constructor(comm):
             with patch.object(api_mod.signal, "signal") as sig_mock:
-                api = api_mod.ArtusAPI_V2(
+                api = api_mod.ArtusAPI(
                     robot_type="artus_lite",
                     hand_type="left",
                     communication_method="RS485_RTU",
@@ -44,7 +44,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
         self.assertEqual(api.hand_type, "right")
 
     def test_loads_config_file_before_building_handlers(self):
-        """Verifies ArtusAPI_V2 reads robot_type/hand_type from the config file first."""
+        """Verifies ArtusAPI reads robot_type/hand_type from the config file first."""
         import tempfile
         from pathlib import Path
 
@@ -83,7 +83,7 @@ logging:
             cfg_path = Path(tmp) / "robot_config.yaml"
             cfg_path.write_text(yaml_text, encoding="utf-8")
             with patched_artus_api_v2_constructor(comm):
-                api = api_mod.ArtusAPI_V2(
+                api = api_mod.ArtusAPI(
                     config_file=str(cfg_path),
                     communication_channel_identifier="MOCK",
                 )
@@ -97,13 +97,13 @@ logging:
         self.assertFalse(api.get_robot_wake_up("right"))
 
     def test_copy_default_config(self):
-        """Verifies ArtusAPI_V2.copy_default_config writes the packaged YAML template."""
+        """Verifies ArtusAPI.copy_default_config writes the packaged YAML template."""
         import tempfile
 
         import ArtusAPI.artus_api_new as api_mod
 
         with tempfile.TemporaryDirectory() as tmp:
-            dest = api_mod.ArtusAPI_V2.copy_default_config(tmp)
+            dest = api_mod.ArtusAPI.copy_default_config(tmp)
             self.assertTrue(dest.is_file())
             self.assertEqual(dest.name, "robot_config.yaml")
             self.assertGreater(dest.stat().st_size, 0)
@@ -152,7 +152,7 @@ logging:
             nc_cls.return_value = comm
             with patch.object(api_mod.time, "sleep"):
                 with patch.object(api_mod.signal, "signal"):
-                    api_mod.ArtusAPI_V2(
+                    api_mod.ArtusAPI(
                         robot_type="artus_talos",
                         hand_type="right",
                         communication_method="RS485_RTU",

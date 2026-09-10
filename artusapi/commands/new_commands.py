@@ -445,7 +445,7 @@ class NewCommands(ModbusMap):
         Args:
             config_reg: List of packed 16-bit registers (see the
                 ``NewCommands`` helper below or
-                ``ArtusAPI_V2.string_to_registers``) representing
+                ``ArtusAPI.string_to_registers``) representing
                 config_value.
             config_value: The raw string being written; used only for its
                 length.

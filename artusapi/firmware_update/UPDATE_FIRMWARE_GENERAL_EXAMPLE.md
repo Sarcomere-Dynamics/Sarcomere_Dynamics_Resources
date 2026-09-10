@@ -50,7 +50,7 @@ The `f` handler in `handle_command()` calls:
 artusapi.update_firmware(file_location=file_location_, drivers_to_flash=driver)
 ```
 
-`ArtusAPI_V2.update_firmware()` (in [`artus_api_new.py`](/ArtusAPI/artus_api_new.py)) then:
+`ArtusAPI.update_firmware()` (in [`artus_api_new.py`](/ArtusAPI/artus_api_new.py)) then:
 
 1. Reads the binary size via `FirmwareUpdaterNew.get_bin_file_info()`.
 2. Sends the firmware command (with the selected driver) to the command register.

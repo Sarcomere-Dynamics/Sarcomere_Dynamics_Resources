@@ -6,7 +6,7 @@ The main [repository README](../README.md) is the **starting point** for setup, 
 
 | Document | What it covers |
 |----------|----------------|
-| [`API Functionality.md`](API%20Functionality.md) | `ArtusAPI_V2` usage notes (legacy `artus_api.py` is removed); read after you have run a basic example. |
+| [`API Functionality.md`](API%20Functionality.md) | `ArtusAPI` usage notes (legacy `artus_api.py` is removed); read after you have run a basic example. |
 | [`COMPATIBILITY.md`](COMPATIBILITY.md) | Which hand firmware versions work with which `ArtusAPI` versions—check before updating either. |
 
 ## How to use this folder

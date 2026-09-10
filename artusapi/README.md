@@ -1,4 +1,4 @@
-    # ArtusAPI (Python library)
+# ArtusAPI (Python library)
 
 This folder is the **Python control library** for ARTUS robotic hands from Sarcomere Dynamics. If you are new to robotics, think of it as a **driver plus a small toolkit**: your program imports this code, opens a connection to the hand, then sends targets (for example “move this finger to 30 degrees”) and reads back state (positions, errors, and similar feedback).
 
@@ -6,12 +6,12 @@ The hardware still needs correct **power, cabling, and safety practices**. Softw
 
 ## What you actually import
 
-The package exports **`ArtusAPI_V2`** and **`ArtusConfig`** from [`__init__.py`](__init__.py). Implementation lives in [`artus_api_new.py`](artus_api_new.py); the YAML loader is [`configuration.py`](configuration.py).
+The package exports **`ArtusAPI`** and **`ArtusConfig`** from [`__init__.py`](__init__.py). Implementation lives in [`artus_api_new.py`](artus_api_new.py); the YAML loader is [`configuration.py`](configuration.py).
 
-The legacy module **`artus_api.py` is no longer in this repository.** Older tutorials that used `from ArtusAPI.artus_api import ArtusAPI` should be updated to `ArtusAPI_V2` and the constructor / communication options that match your hardware. `ArtusAPI_V2` is the only supported entry point — there is no v1 code path left to fall back to.
+The legacy module **`artus_api.py` is no longer in this repository.** Older tutorials that used `from ArtusAPI.artus_api import ArtusAPI` should be updated to `ArtusAPI` and the constructor / communication options that match your hardware. `ArtusAPI` is the only supported entry point — there is no v1 code path left to fall back to.
 
 ```python
-from ArtusAPI import ArtusAPI_V2, ArtusConfig
+from ArtusAPI import ArtusAPI, ArtusConfig
 ```
 
 Your application chooses parameters such as **robot type**, **left or right hand**, and **how the PC talks to the device** (for example RS485). Those details are set when you construct the API object, or via `ArtusConfig` and a `robot_config.yaml` — see [examples/config/README.md](../examples/config/README.md).
@@ -19,13 +19,13 @@ Your application chooses parameters such as **robot type**, **left or right hand
 ## How the code is organized
 
 | Folder | Role in plain terms |
-|--------|---------------------|
-| [`configuration.py`](configuration.py) | YAML loader (`ArtusConfig`) that builds a configured `ArtusAPI_V2`. Ships `robot_config.yaml` as the packaged default. |
+| ----------- | --------------------- |
+| [`configuration.py`](configuration.py) | YAML loader (`ArtusConfig`) that builds a configured `ArtusAPI`. Ships `robot_config.yaml` as the packaged default. |
 | [`robot/`](robot/) | Descriptions of each supported hand: joint counts, names, limits, and model-specific behavior. Start with [robot/README.md](robot/README.md). |
 | [`communication/`](communication/) | Transports — RS485 RTU and Modbus TCP live here. This is where bytes move between your PC and the hand's electronics. |
 | [`commands/`](commands/) | Building and encoding the low-level Modbus command streams the firmware understands. |
 | [`common/`](common/) | Shared definitions used across transports: the Modbus register map (`ModbusMap.py`) and per-hand slave ID table (`SlaveIDMap.py`). |
-| [`firmware_update/`](firmware_update/) | Tools and firmware binaries for flashing hand controllers from Python (`update_firmware()` on `ArtusAPI_V2`). |
+| [`firmware_update/`](firmware_update/) | Tools and firmware binaries for flashing hand controllers from Python (`update_firmware()` on `ArtusAPI`). |
 | [`sensors/`](sensors/) | `ForceSensor` — the fingertip/contactile force reading structure used by Talos, Scorpion, and Lite+. |
 | [`api_tests/`](api_tests/) | Hardware-free unit tests (mocks only, no serial connection). See [api_tests/README.md](api_tests/README.md) to run them. |
 
