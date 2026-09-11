@@ -6,7 +6,7 @@
 
 Below is how to construct the API for a single hand. Common constructor arguments:
 
-* `communication_method` — How the host talks to the hand (for example `RS485_RTU`; must match what [`NewCommunication`](../ArtusAPI/communication/new_communication.py) supports for your checkout).
+* `communication_method` — How the host talks to the hand (for example `RS485_RTU`; must match what [`CommunicationHandler`](../ArtusAPI/communication/communication_handler.py) supports for your checkout).
 * `communication_channel_identifier` — Port or device path (for example `COM7` on Windows or `/dev/ttyUSB0` on Linux).
 * `robot_type` — Which hand model (for example `artus_lite`, `artus_talos`, `artus_scorpion`).
 * `hand_type` — `left` or `right` where applicable.

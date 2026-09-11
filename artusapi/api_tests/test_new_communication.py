@@ -1,29 +1,29 @@
-"""Tests for NewCommunication with RS485_RTU mocked (no serial port)."""
+"""Tests for CommunicationHandler with RS485_RTU mocked (no serial port)."""
 
 import unittest
 from unittest.mock import MagicMock, patch
 
 from artusapi.common.ModbusMap import ModbusMap, TrajectoryReturn
-from artusapi.communication.new_communication import ActuatorState, NewCommunication
+from artusapi.communication.communication_handler import ActuatorState, CommunicationHandler
 
 
 class TestNewCommunicationMocked(unittest.TestCase):
-    """Verifies NewCommunication delegates to a mocked RS485_RTU transport."""
+    """Verifies CommunicationHandler delegates to a mocked RS485_RTU transport."""
 
-    def _make_nc(self, mock_inst: MagicMock) -> NewCommunication:
-        """Builds a NewCommunication with RS485_RTU patched to return the given mock.
+    def _make_nc(self, mock_inst: MagicMock) -> CommunicationHandler:
+        """Builds a CommunicationHandler with RS485_RTU patched to return the given mock.
 
         Args:
             mock_inst: Mock to substitute for the real RS485_RTU instance.
 
         Returns:
-            A NewCommunication instance wired to the mock transport.
+            A CommunicationHandler instance wired to the mock transport.
         """
         with patch(
-            "ArtusAPI.communication.new_communication.RS485_RTU",
+            "ArtusAPI.communication.communication_handler.RS485_RTU",
             return_value=mock_inst,
         ):
-            nc = NewCommunication(
+            nc = CommunicationHandler(
                 port="MOCK",
                 baudrate=115200,
                 communication_method="RS485_RTU",
@@ -82,9 +82,9 @@ class TestNewCommunicationMocked(unittest.TestCase):
         self.assertEqual(low, 0x06)
 
     def test_unknown_method_raises(self):
-        """Verifies constructing NewCommunication with an unsupported communication method raises ValueError."""
+        """Verifies constructing CommunicationHandler with an unsupported communication method raises ValueError."""
         with self.assertRaises(ValueError):
-            NewCommunication(communication_method="NOT_A_METHOD")
+            CommunicationHandler(communication_method="NOT_A_METHOD")
 
     def test_wait_for_ready_decodes_trajectory_state(self):
         """Verifies wait_for_ready splits the status word into actuator state and trajectory return, logging the latter."""

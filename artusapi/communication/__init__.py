@@ -1,5 +1,5 @@
-"""Communication package exposing the NewCommunication transport wrapper."""
+"""Communication package exposing the CommunicationHandler transport wrapper."""
 
-from .new_communication import NewCommunication
+from .communication_handler import CommunicationHandler
 
-__all__ = ["NewCommunication"]
+__all__ = ["CommunicationHandler"]

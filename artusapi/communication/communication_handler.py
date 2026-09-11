@@ -20,7 +20,7 @@ from .Modbus_TCP.modbus_tcp import ModbusTCP
 from .RS485_RTU.rs485_rtu import RS485_RTU
 
 
-class NewCommunication:
+class CommunicationHandler:
     """Transport-agnostic wrapper used by ArtusAPI to talk to an ARTUS hand.
 
     Selects and owns a concrete communicator (RS485_RTU or ModbusTCP) based on

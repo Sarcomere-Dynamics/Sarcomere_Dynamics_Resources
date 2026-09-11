@@ -18,7 +18,7 @@ import time
 from tqdm import tqdm
 
 from ..common.ModbusMap import ActuatorState, CommandType
-from ..communication.new_communication import NewCommunication
+from ..communication.communication_handler import CommunicationHandler
 
 BYTES_CHUNK = 64
 
@@ -41,7 +41,7 @@ class FirmwareUpdaterNew:
 
     def __init__(
         self,
-        communication_handler: NewCommunication = None,
+        communication_handler: CommunicationHandler = None,
         command_handler=None,
         file_location=None,
         logger=None,

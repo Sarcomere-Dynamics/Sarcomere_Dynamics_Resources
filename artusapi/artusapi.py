@@ -18,10 +18,10 @@ import time
 from .commands import NewCommands
 from .common.ModbusMap import ModbusMap, TrajectoryReturn
 from .common.SlaveIDMap import expected_slave_id
-from .communication.new_communication import (
+from .communication.communication_handler import (
     ActuatorState,
     CommandType,
-    NewCommunication,
+    CommunicationHandler,
 )
 from .firmware_update import FirmwareUpdaterNew
 from .robot import Robot
@@ -111,7 +111,7 @@ class ArtusAPI:
 
         self.control_type = self.control_types["position"]
 
-        self._communication_handler = NewCommunication(
+        self._communication_handler = CommunicationHandler(
             communication_method=settings["communication_method"],
             logger=self.logger,
             port=settings["communication_channel_identifier"],

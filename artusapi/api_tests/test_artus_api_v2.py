@@ -13,7 +13,7 @@ from artusapi.api_tests.mocks import (
 )
 from artusapi.common.ModbusMap import ModbusMap
 from artusapi.common.SlaveIDMap import expected_slave_id
-from artusapi.communication.new_communication import ActuatorState, CommandType
+from artusapi.communication.communication_handler import ActuatorState, CommandType
 
 
 class TestArtusAPIV2Mocked(unittest.TestCase):
@@ -148,11 +148,11 @@ logging:
         self.assertIsNotNone(tr)
 
     def test_new_communication_gets_slave_address_from_slave_id_map(self):
-        """Verifies NewCommunication is constructed with the slave address resolved from SlaveIDMap."""
+        """Verifies CommunicationHandler is constructed with the slave address resolved from SlaveIDMap."""
         import ArtusAPI.artus_api_new as api_mod
 
         comm = make_communication_mock()
-        with patch.object(api_mod, "NewCommunication", autospec=True) as nc_cls:
+        with patch.object(api_mod, "CommunicationHandler", autospec=True) as nc_cls:
             nc_cls.return_value = comm
             with patch.object(api_mod.time, "sleep"):
                 with patch.object(api_mod.signal, "signal"):

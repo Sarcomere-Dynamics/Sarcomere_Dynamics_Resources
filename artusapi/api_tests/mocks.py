@@ -9,14 +9,14 @@ from contextlib import contextmanager
 from typing import Any
 from unittest import mock
 
-from artusapi.communication.new_communication import ActuatorState
+from artusapi.communication.communication_handler import ActuatorState
 
 
 def make_communication_mock() -> mock.MagicMock:
-    """Builds a MagicMock standing in for NewCommunication.
+    """Builds a MagicMock standing in for CommunicationHandler.
 
     Returns:
-        A MagicMock with the NewCommunication methods used by ArtusAPI
+        A MagicMock with the CommunicationHandler methods used by ArtusAPI
         (open_connection, close_connection, send_data, receive_data,
         wait_for_ready, _check_robot_state) pre-configured with sane defaults.
     """
@@ -35,10 +35,10 @@ def make_communication_mock() -> mock.MagicMock:
 def patched_artus_api_v2_constructor(
     communication_mock: mock.MagicMock | None = None,
 ) -> Generator[tuple[type, mock.MagicMock], None, None]:
-    """Patches NewCommunication, time.sleep, and signal.signal while constructing ArtusAPI.
+    """Patches CommunicationHandler, time.sleep, and signal.signal while constructing ArtusAPI.
 
     Args:
-        communication_mock: Mock to substitute for the real NewCommunication
+        communication_mock: Mock to substitute for the real CommunicationHandler
             instance. If None, one is created via make_communication_mock().
 
     Yields:
@@ -50,7 +50,7 @@ def patched_artus_api_v2_constructor(
 
     import ArtusAPI.artus_api_new as api_mod
 
-    with mock.patch.object(api_mod, "NewCommunication", autospec=True) as nc_cls:
+    with mock.patch.object(api_mod, "CommunicationHandler", autospec=True) as nc_cls:
         nc_cls.return_value = communication_mock
         with mock.patch.object(api_mod.time, "sleep"):
             with mock.patch.object(api_mod.signal, "signal"):
@@ -68,7 +68,7 @@ def build_api(
     Args:
         robot_type: Robot type string passed to ArtusAPI (e.g. "artus_lite").
         hand_type: Hand type string passed to ArtusAPI (e.g. "left").
-        communication_mock: Mock to substitute for the real NewCommunication
+        communication_mock: Mock to substitute for the real CommunicationHandler
             instance. If None, one is created via make_communication_mock().
         **kwargs: Additional keyword arguments forwarded to ArtusAPI.
 
