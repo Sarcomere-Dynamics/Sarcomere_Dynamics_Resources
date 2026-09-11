@@ -17,7 +17,7 @@ from ...common.ModbusMap import ModbusMap
 """Base robot model shared by all ARTUS BLDC-actuated hand variants."""
 
 
-class BLDCRobot:
+class ArtusBase:
     """Base class defining joint layout, limits, and the ``Joint`` data model.
 
     Subclasses (ArtusTalos, ArtusLite, ArtusScorpion, ArtusDex, ...) extend

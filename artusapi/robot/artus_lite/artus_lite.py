@@ -10,10 +10,10 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from ..bldc_robot.bldcrobot import BLDCRobot
+from ..artus_base.artus_base import ArtusBase
 
 
-class ArtusLite(BLDCRobot):
+class ArtusLite(ArtusBase):
     """ARTUS Lite hand model: 16 joints (5 fingers, no wrist), no force sensors."""
 
     def __init__(

@@ -35,7 +35,7 @@ class Robot:
     Attributes:
         robot_type: Robot variant string (e.g. 'artus_talos', 'artus_lite').
         hand_type: Hand side string (e.g. 'left', 'right').
-        robot: The instantiated hand model (subclass of ``BLDCRobot``).
+        robot: The instantiated hand model (subclass of ``ArtusBase``).
     """
 
     def __init__(self, robot_type="artus_lite", hand_type="left", logger=None):
@@ -111,7 +111,7 @@ class Robot:
 
         Returns:
             Bitmask of available control types that were set (see
-            ``BLDCRobot.set_joint_angles``).
+            ``ArtusBase.set_joint_angles``).
         """
         if name:  # scorpion has no name for joints because just 1 joint
             return self.robot.set_joint_angles_by_name(joint_angles)

@@ -16,7 +16,7 @@ You do not need to memorize every joint name on day one. What matters for onboar
 | [`artus_talos/`](artus_talos/) | ARTUS Talos. |
 | [`artus_scorpion/`](artus_scorpion/) | ARTUS Scorpion (single-DOF parallel gripper — no left/right). |
 | [`artus_dex/`](artus_dex/) | ARTUS Dex (left/right). No hardware datasheet yet — see [`artus_dex.py`](artus_dex/artus_dex.py) as the source of truth in the meantime. |
-| [`bldc_robot/`](bldc_robot/) | `BLDCRobot` — the shared base class every hand above inherits from (joint definitions, angle constraints, `set_joint_angles`/`get_joint_angles` plumbing). Not a standalone hand; nothing instantiates this folder directly. Its markdown ([`BDLC_Robot.md`](bldc_robot/BDLC_Robot.md)) documents the physical BLDC driver board used specifically by **Talos, Scorpion and Dex** — Lite uses a different actuator hardware even though they share this same Python base class. |
+| [`artus_base/`](artus_base/) | `ArtusBase` — the shared base class every hand above inherits from (joint definitions, angle constraints, `set_joint_angles`/`get_joint_angles` plumbing). Not a standalone hand; nothing instantiates this folder directly. Its markdown ([`BDLC_Robot.md`](artus_base/BDLC_Robot.md)) documents the physical BLDC driver board used specifically by **Talos, Scorpion and Dex** — Lite uses a different actuator hardware even though they share this same Python base class. |
 
 ## `robot_type` / `hand_type` reference
 

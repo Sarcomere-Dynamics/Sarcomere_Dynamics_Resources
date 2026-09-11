@@ -10,10 +10,10 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from ..bldc_robot.bldcrobot import BLDCRobot
+from ..artus_base.artus_base import ArtusBase
 
 
-class ArtusDex(BLDCRobot):
+class ArtusDex(ArtusBase):
     """ARTUS Dex hand model: 18 joints (5 fingers + wrist) with velocity/force defaults."""
 
     def __init__(
@@ -115,7 +115,7 @@ class ArtusDex(BLDCRobot):
                 construction).
             joint_names: Ordered joint name strings.
             number_of_joints: Total number of joints (18).
-            logger: Optional logger instance passed through to ``BLDCRobot``.
+            logger: Optional logger instance passed through to ``ArtusBase``.
         """
         super().__init__(
             joint_max_angles=joint_max_angles,
