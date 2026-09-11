@@ -170,9 +170,13 @@ class TestAutoPortSelect(unittest.TestCase):
     def test_no_ports_raises(self):
         """Verifies _validate_port_or_select raises when no serial ports exist."""
         robot_cfg = self.config.get_connected_robot()
-        with patch(
-            "ArtusAPI.configuration.serial.tools.list_ports.comports", return_value=[]
-        ), self.assertRaises(RuntimeError):
+        with (
+            patch(
+                "ArtusAPI.configuration.serial.tools.list_ports.comports",
+                return_value=[],
+            ),
+            self.assertRaises(RuntimeError),
+        ):
             self.config._validate_port_or_select(robot_cfg, self.logger)
 
     def test_scans_each_port_then_each_robot(self):

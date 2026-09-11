@@ -360,9 +360,9 @@ class BLDCRobot:
         """
         for joint in self.hand_joints:
             joint_angles[joint.index] = min(joint_angles[joint.index], joint.max_force)
-                # TODO logging
+            # TODO logging
             joint_angles[joint.index] = max(joint_angles[joint.index], joint.min_force)
-                # TODO logging
+            # TODO logging
         return joint_angles
 
     def set_home_position(self):

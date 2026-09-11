@@ -10,8 +10,6 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-
-
 import logging
 import math
 import os
