@@ -1,29 +1,29 @@
-"""Unit tests for ArtusAPI.commands.new_commands.NewCommands (no hardware)."""
+"""Unit tests for ArtusAPI.commands.command_handler.CommandHandler (no hardware)."""
 
 import logging
 import struct
 import unittest
 from types import SimpleNamespace
 
-from artusapi.commands.new_commands import NewCommands
+from artusapi.commands.command_handler import CommandHandler
 
 
 class TestNewCommands(unittest.TestCase):
-    """Verifies NewCommands command serialization and feedback decoding."""
+    """Verifies CommandHandler command serialization and feedback decoding."""
 
     def setUp(self):
-        """Creates a 16-joint NewCommands instance for each test."""
-        self.nc = NewCommands(num_joints=16, logger=logging.getLogger("test_nc"))
+        """Creates a 16-joint CommandHandler instance for each test."""
+        self.nc = CommandHandler(num_joints=16, logger=logging.getLogger("test_nc"))
 
     def test_get_robot_start_command(self):
         """Verifies the start command is packed as [start_command, control_type]."""
         cmd = self.nc.get_robot_start_command(control_type=3)
-        self.assertEqual(cmd, [self.nc.commands["start_command"], 3])
+        self.assertEqual(cmd, [self.nc.command_dict["start_command"], 3])
 
     def test_get_sleep_command(self):
         """Verifies the sleep command is a single-element list."""
         self.assertEqual(
-            self.nc.get_sleep_command(), [self.nc.commands["sleep_command"]]
+            self.nc.get_sleep_command(), [self.nc.command_dict["sleep_command"]]
         )
 
     def test_get_clear_errors_command(self):
@@ -32,27 +32,27 @@ class TestNewCommands(unittest.TestCase):
         # 0x1A value through Actuator_event_e -> ACTUATOR_EVENT_CLEAR_ERRORS.
         self.assertEqual(
             self.nc.get_clear_errors_command(),
-            [self.nc.commands["clear_errors_command"]],
+            [self.nc.command_dict["clear_errors_command"]],
         )
-        self.assertEqual(self.nc.commands["clear_errors_command"], 0x1A)
+        self.assertEqual(self.nc.command_dict["clear_errors_command"], 0x1A)
 
     def test_get_calibration_command(self):
         """Verifies the calibration command is a single-element list."""
         self.assertEqual(
-            self.nc.get_calibration_command(), [self.nc.commands["calibrate_command"]]
+            self.nc.get_calibration_command(), [self.nc.command_dict["calibrate_command"]]
         )
 
     def test_get_firmware_command(self):
         """Verifies the firmware command is packed as [firmware_update_command, value]."""
         self.assertEqual(
             self.nc.get_firmware_command(2),
-            [self.nc.commands["firmware_update_command"], 2],
+            [self.nc.command_dict["firmware_update_command"], 2],
         )
 
     def test_get_reset_command(self):
         """Verifies the reset command is packed as [reset_command, joint_count]."""
         self.assertEqual(
-            self.nc.get_reset_command(4), [self.nc.commands["reset_command"], 4]
+            self.nc.get_reset_command(4), [self.nc.command_dict["reset_command"], 4]
         )
 
     def test_get_target_position_single_joint(self):
@@ -105,7 +105,7 @@ class TestNewCommands(unittest.TestCase):
 
     def test_decode_position_8b_packed(self):
         """Verifies packed position registers are decoded into one value per joint (two joints per register)."""
-        nc4 = NewCommands(num_joints=4, logger=self.nc.logger)
+        nc4 = CommandHandler(num_joints=4, logger=self.nc.logger)
         regs = [(5 << 8) | 6, (7 << 8) | 8]
         out = nc4.get_decoded_feedback_data(
             regs, modbus_key="feedback_position_start_reg"
@@ -144,9 +144,9 @@ class TestNewCommands(unittest.TestCase):
         """Verifies the update-config command payload and its 0x44 opcode."""
         self.assertEqual(
             self.nc.update_config_command(1),
-            [self.nc.commands["update_config_command"], 1],
+            [self.nc.command_dict["update_config_command"], 1],
         )
-        self.assertEqual(self.nc.commands["update_config_command"], 0x44)
+        self.assertEqual(self.nc.command_dict["update_config_command"], 0x44)
 
     def test_update_config_len_command(self):
         """Verifies the update-config-length command prefixes the packed registers with a string length."""

@@ -15,7 +15,7 @@ See the LICENSE file in the repository for full details.
 import signal
 import time
 
-from .commands import NewCommands
+from .commands import CommandHandler
 from .common.ModbusMap import ModbusMap, TrajectoryReturn
 from .common.SlaveIDMap import expected_slave_id
 from .communication.communication_handler import (
@@ -123,7 +123,7 @@ class ArtusAPI:
             hand_type=self.hand_type,
             logger=self.logger,
         )
-        self._command_handler = NewCommands(
+        self._command_handler = CommandHandler(
             num_joints=len(self._robot_handler.robot.hand_joints),
             logger=self.logger,
         )
@@ -738,7 +738,7 @@ class ArtusAPI:
 
         Args:
             joint_angles: Joint dict consumed by ``Robot.set_joint_angles``.
-            target_packer: ``NewCommands`` method that packs
+            target_packer: ``CommandHandler`` method that packs
                 ``[start_reg, *values]`` for the target field.
             feedback_reg_key: ModbusMap key for the feedback start register.
 

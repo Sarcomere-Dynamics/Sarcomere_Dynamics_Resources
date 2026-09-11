@@ -21,7 +21,7 @@ New Commands Class based on Modbus RTU for RS485 Communication
 """
 
 
-class NewCommands(ModbusMap):
+class CommandHandler(ModbusMap):
     """Serializes user-facing commands into Modbus register lists.
 
     Owns its own opcode table and combines it with the register layout
@@ -45,7 +45,7 @@ class NewCommands(ModbusMap):
                 not provided.
         """
         ModbusMap.__init__(self)
-        self.commands = {
+        self.command_dict = {
             "start_command": 0x0B,
             "calibrate_command": 0x0D,
             "sleep_command": 0x0F,
@@ -81,7 +81,7 @@ class NewCommands(ModbusMap):
         Returns:
             The start command opcode followed by the control type.
         """
-        return [self.commands["start_command"], control_type]
+        return [self.command_dict["start_command"], control_type]
 
     def get_target_position_command(self, hand_joints: dict) -> list:
         """Packs target joint positions into Modbus register words.
@@ -139,7 +139,7 @@ class NewCommands(ModbusMap):
         Returns:
             The reset command opcode followed by the joint count.
         """
-        return [self.commands["reset_command"], joints]
+        return [self.command_dict["reset_command"], joints]
 
     def get_soft_reset_command(self, joints=0):
         """Builds the command to reset the given number of joints.
@@ -150,7 +150,7 @@ class NewCommands(ModbusMap):
         Returns:
             The reset command opcode followed by the joint count.
         """
-        return [self.commands["soft_reset_command"], joints]
+        return [self.command_dict["soft_reset_command"], joints]
 
     def get_target_velocity_command(self, hand_joints: dict) -> list:
         """Packs target joint velocities into Modbus register words.
@@ -387,7 +387,7 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the set-zero command opcode.
         """
-        return [self.commands["set_zero_command"]]
+        return [self.command_dict["set_zero_command"]]
 
     def get_calibration_command(self):
         """Builds the command to trigger hand calibration.
@@ -395,7 +395,7 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the calibrate command opcode.
         """
-        return [self.commands["calibrate_command"]]
+        return [self.command_dict["calibrate_command"]]
 
     def get_sleep_command(self):
         """Builds the command to put the hand to sleep.
@@ -403,7 +403,7 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the sleep command opcode.
         """
-        return [self.commands["sleep_command"]]
+        return [self.command_dict["sleep_command"]]
 
     def get_clear_errors_command(self):
         """Builds the explicit host-triggered error clear command.
@@ -418,7 +418,7 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the clear-errors command opcode.
         """
-        return [self.commands["clear_errors_command"]]
+        return [self.command_dict["clear_errors_command"]]
 
     def get_states_command(self, type=0):
         """Builds the command requesting feedback/state data.
@@ -430,7 +430,7 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the get-feedback command opcode.
         """
-        return [self.commands["get_feedback_command"]]
+        return [self.command_dict["get_feedback_command"]]
 
     # @todo implement firmware flashing
     def get_firmware_command(self, drivers):
@@ -442,7 +442,7 @@ class NewCommands(ModbusMap):
         Returns:
             The firmware update command opcode followed by the drivers value.
         """
-        return [self.commands["firmware_update_command"], drivers]
+        return [self.command_dict["firmware_update_command"], drivers]
 
     def update_config_command(self, config_type: int):
         """Triggers the hand to enter ACTUATOR_CONFIG for an onboard config write.
@@ -453,14 +453,14 @@ class NewCommands(ModbusMap):
         Returns:
             The update-config command opcode followed by the config type.
         """
-        return [self.commands["update_config_command"], config_type]
+        return [self.command_dict["update_config_command"], config_type]
 
     def update_config_len_command(self, config_reg: list, config_value: str):
         """Prefixes a config register payload with its string length.
 
         Args:
             config_reg: List of packed 16-bit registers (see the
-                ``NewCommands`` helper below or
+                ``CommandHandler`` helper below or
                 ``ArtusAPI.string_to_registers``) representing
                 config_value.
             config_value: The raw string being written; used only for its

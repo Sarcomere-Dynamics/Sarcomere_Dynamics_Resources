@@ -165,7 +165,7 @@ class FirmwareUpdaterNew:
                         byte_counter += 2
 
                     concat_chunk.insert(
-                        0, self._command_handler.commands["firmware_update_command"]
+                        0, self._command_handler.command_dict["firmware_update_command"]
                     )  # this has to be the first element every time
 
                     self._communication_handler.send_data(
@@ -265,7 +265,7 @@ class FirmwareUpdaterNew:
                     byte_counter += 2
 
                 concat_chunk.insert(
-                    0, self._command_handler.commands["firmware_update_command"]
+                    0, self._command_handler.command_dict["firmware_update_command"]
                 )  # this has to be the first element every time
 
                 self._communication_handler.send_data(

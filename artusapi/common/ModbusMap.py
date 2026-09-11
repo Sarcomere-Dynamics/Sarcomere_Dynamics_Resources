@@ -87,7 +87,7 @@ class ModbusMap:  # Artus Generic Modbus Map
             # size is byte
             "feedback_temperature_start_reg": 0.5,  # input feedback temperature registers
             # error_report is a uint32 bitfield per joint (2 registers each).
-            # Decoded as uint32 (not IEEE float) — see NewCommands.get_decoded_feedback_data.
+            # Decoded as uint32 (not IEEE float) — see CommandHandler.get_decoded_feedback_data.
             "feedback_actuator_error_reg": 2,  # feedback error reports (uint32 per joint)
             # size is byte
             "feedback_atuator_motor_mode_reg": 0.5,  # feedback motor mode
@@ -97,7 +97,7 @@ class ModbusMap:  # Artus Generic Modbus Map
             "feedback_voltage_start_reg": 2,  # feedback voltage register (1 value)
             # size is int16_t
             "feedback_avg_temperature_start_reg": 1,
-            # decoded as single uint8 from low byte (see NewCommands.get_decoded_feedback_data)
+            # decoded as single uint8 from low byte (see CommandHandler.get_decoded_feedback_data)
             "slave_id_reg": 1,
         }
 

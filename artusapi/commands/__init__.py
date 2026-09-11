@@ -1,7 +1,7 @@
 """Command builder package.
 
-Exposes the Modbus RTU based :class:`NewCommands` builder used to
+Exposes the Modbus RTU based :class:`CommandHandler` builder used to
 serialize user-facing commands into register lists.
 """
 
-from .new_commands import NewCommands
+from .command_handler import CommandHandler

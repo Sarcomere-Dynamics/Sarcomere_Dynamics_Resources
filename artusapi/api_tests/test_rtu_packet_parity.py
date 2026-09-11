@@ -37,7 +37,7 @@ needs_minimalmodbus = unittest.skipUnless(
 
 SLAVE_ID = 5
 
-# (name, data list as produced by NewCommands, CommandType)
+# (name, data list as produced by CommandHandler, CommandType)
 SEND_CASES = [
     ("setup_two_values", [0x0B, 0x03], CommandType.SETUP_COMMANDS.value),
     ("setup_single_value", [0x0F], CommandType.SETUP_COMMANDS.value),
@@ -112,7 +112,7 @@ class MinimalmodbusCallCapture:
         """Sends data through the RTU backend and captures the resulting library call.
 
         Args:
-            data: Command payload as produced by NewCommands.
+            data: Command payload as produced by CommandHandler.
             command: CommandType value identifying the operation.
 
         Returns:
@@ -174,7 +174,7 @@ class PymodbusCallCapture:
         """Sends data through the RTU backend and captures the resulting library call.
 
         Args:
-            data: Command payload as produced by NewCommands.
+            data: Command payload as produced by CommandHandler.
             command: CommandType value identifying the operation.
 
         Returns:
