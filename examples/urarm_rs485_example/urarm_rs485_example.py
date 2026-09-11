@@ -23,10 +23,14 @@ and reading back feedback data.
 # ------------------------------------------------------------------------------
 import time
 import json
+
 # Add the desired path to the system path
 import os
 import sys
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
@@ -41,7 +45,12 @@ from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForward
 
 # reuse the interactive menu, logger setup, and command dispatch from the
 # general example instead of duplicating them here
-from examples.general_example.general_example import main_menu, setup_logger, handle_command
+from examples.general_example.general_example import (
+    main_menu,
+    setup_logger,
+    handle_command,
+)
+
 
 # -------------------------------------------------------------------------------
 # --------------------------------- Example -------------------------------------
@@ -64,18 +73,22 @@ def example():
     local_device_name = artusAPIPortForwarder.get_local_device_name()
 
     hand_poses_path = None
-    logger = setup_logger(level=config.config.logging.level,format=config.config.logging.format)
+    logger = setup_logger(
+        level=config.config.logging.level, format=config.config.logging.format
+    )
 
     # find robot type from robot config
     robot_type = config.find_single_robot_type()
-    artusapi = ArtusAPI(communication_method='RS485_RTU',
-                        communication_channel_identifier=local_device_name,
-                        robot_type=robot_type,
-                        hand_type=config.config.robots.left_hand_robot.hand_type,
-                        baudrate=115200)
+    artusapi = ArtusAPI(
+        communication_method="RS485_RTU",
+        communication_channel_identifier=local_device_name,
+        robot_type=robot_type,
+        hand_type=config.config.robots.left_hand_robot.hand_type,
+        baudrate=115200,
+    )
 
-    hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
-    
+    hand_poses_path = os.path.join(PROJECT_ROOT, "data", "hand_poses")
+
     # Main loop (example)
     while True:
         try:
@@ -84,8 +97,10 @@ def example():
         except Exception as e:
             logger.error(f"Error: {e}")
             pass
+
+
 # ----------------------------------------------------------------------------------
 # ---------------------------------- Main ------------------------------------------
 # ----------------------------------------------------------------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     example()

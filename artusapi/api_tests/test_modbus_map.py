@@ -2,7 +2,12 @@
 
 import unittest
 
-from artusapi.common.ModbusMap import ModbusMap, ActuatorState, CommandType, TrajectoryReturn
+from artusapi.common.ModbusMap import (
+    ModbusMap,
+    ActuatorState,
+    CommandType,
+    TrajectoryReturn,
+)
 
 
 class TestModbusMap(unittest.TestCase):
@@ -15,7 +20,9 @@ class TestModbusMap(unittest.TestCase):
     def test_slave_id_reg_after_avg_temperature(self):
         """Verifies the slave ID register is addressed after the average temperature feedback register."""
         regs = self.m.modbus_reg_map
-        self.assertLess(regs["feedback_avg_temperature_start_reg"], regs["slave_id_reg"])
+        self.assertLess(
+            regs["feedback_avg_temperature_start_reg"], regs["slave_id_reg"]
+        )
 
     def test_reg_maps_have_same_keys(self):
         """Verifies every register has a corresponding data-type multiplier entry."""
@@ -68,14 +75,22 @@ class TestModbusMap(unittest.TestCase):
 
     def test_feedback_register_count_scalar_ignores_joint_count(self):
         """Verifies whole-hand scalar fields use the multiplier as a fixed register count."""
-        self.assertEqual(self.m.feedback_register_count("feedback_voltage_start_reg", 16), 2)
-        self.assertEqual(self.m.feedback_register_count("feedback_avg_temperature_start_reg", 16), 1)
+        self.assertEqual(
+            self.m.feedback_register_count("feedback_voltage_start_reg", 16), 2
+        )
+        self.assertEqual(
+            self.m.feedback_register_count("feedback_avg_temperature_start_reg", 16), 1
+        )
         self.assertEqual(self.m.feedback_register_count("slave_id_reg", 16), 1)
 
     def test_feedback_register_count_per_joint(self):
         """Verifies per-joint fields scale by the multiplier and joint count."""
-        self.assertEqual(self.m.feedback_register_count("feedback_velocity_start_reg", 16), 16)
-        self.assertEqual(self.m.feedback_register_count("feedback_force_start_reg", 16), 32)
+        self.assertEqual(
+            self.m.feedback_register_count("feedback_velocity_start_reg", 16), 16
+        )
+        self.assertEqual(
+            self.m.feedback_register_count("feedback_force_start_reg", 16), 32
+        )
 
     def test_feedback_register_count_fingertip(self):
         """Verifies fingertip fields scale by sensor count and axes, not joint count."""

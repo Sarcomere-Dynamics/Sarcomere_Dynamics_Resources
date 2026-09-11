@@ -64,7 +64,9 @@ class TestResolveConfigFile(unittest.TestCase):
     def test_explicit_path_beats_env_var(self):
         """Verifies an explicit path takes priority over ARTUS_CONFIG."""
         with patch.dict(os.environ, {CONFIG_ENV_VAR: "/tmp/from-env.yaml"}):
-            self.assertEqual(resolve_config_file("/tmp/explicit.yaml"), "/tmp/explicit.yaml")
+            self.assertEqual(
+                resolve_config_file("/tmp/explicit.yaml"), "/tmp/explicit.yaml"
+            )
 
 
 class TestArtusConfigLoading(unittest.TestCase):
@@ -79,7 +81,9 @@ class TestArtusConfigLoading(unittest.TestCase):
 
     def test_loads_nested_namespace(self):
         """Verifies YAML keys are reachable via attribute access."""
-        self.assertEqual(self.config.config.robots.left_hand_robot.robot_type, "artus_lite")
+        self.assertEqual(
+            self.config.config.robots.left_hand_robot.robot_type, "artus_lite"
+        )
         self.assertEqual(self.config.config.logging.level, "INFO")
 
     def test_stores_resolved_path(self):
@@ -139,7 +143,9 @@ class TestArtusConfigLoading(unittest.TestCase):
             ArtusConfig(str(self.cfg_path), logger=custom)
         resolved = str(self.cfg_path.resolve())
         self.assertTrue(
-            any("Using robot config:" in line and resolved in line for line in cm.output),
+            any(
+                "Using robot config:" in line and resolved in line for line in cm.output
+            ),
             msg=cm.output,
         )
 
@@ -165,7 +171,9 @@ class TestAutoPortSelect(unittest.TestCase):
     def test_no_ports_raises(self):
         """Verifies _validate_port_or_select raises when no serial ports exist."""
         robot_cfg = self.config.get_connected_robot()
-        with patch("ArtusAPI.configuration.serial.tools.list_ports.comports", return_value=[]):
+        with patch(
+            "ArtusAPI.configuration.serial.tools.list_ports.comports", return_value=[]
+        ):
             with self.assertRaises(RuntimeError):
                 self.config._validate_port_or_select(robot_cfg, self.logger)
 

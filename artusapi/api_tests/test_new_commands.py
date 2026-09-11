@@ -21,7 +21,9 @@ class TestNewCommands(unittest.TestCase):
 
     def test_get_sleep_command(self):
         """Verifies the sleep command is a single-element list."""
-        self.assertEqual(self.nc.get_sleep_command(), [self.nc.commands["sleep_command"]])
+        self.assertEqual(
+            self.nc.get_sleep_command(), [self.nc.commands["sleep_command"]]
+        )
 
     def test_get_clear_errors_command(self):
         """Verifies the clear-errors command payload and its 0x1A opcode."""
@@ -35,7 +37,9 @@ class TestNewCommands(unittest.TestCase):
 
     def test_get_calibration_command(self):
         """Verifies the calibration command is a single-element list."""
-        self.assertEqual(self.nc.get_calibration_command(), [self.nc.commands["calibrate_command"]])
+        self.assertEqual(
+            self.nc.get_calibration_command(), [self.nc.commands["calibrate_command"]]
+        )
 
     def test_get_firmware_command(self):
         """Verifies the firmware command is packed as [firmware_update_command, value]."""
@@ -46,7 +50,9 @@ class TestNewCommands(unittest.TestCase):
 
     def test_get_reset_command(self):
         """Verifies the reset command is packed as [reset_command, joint_count]."""
-        self.assertEqual(self.nc.get_reset_command(4), [self.nc.commands["reset_command"], 4])
+        self.assertEqual(
+            self.nc.get_reset_command(4), [self.nc.commands["reset_command"], 4]
+        )
 
     def test_get_target_position_single_joint(self):
         """Verifies a single joint's target angle is packed into the high byte of one register."""
@@ -78,7 +84,9 @@ class TestNewCommands(unittest.TestCase):
     def test_decode_signed_16b_list(self):
         """Verifies a list of feedback registers is decoded element-wise as signed 16-bit ints."""
         data = [0x0001, 0xFFFF]
-        raw = self.nc.get_decoded_feedback_data(data, modbus_key="feedback_velocity_start_reg")
+        raw = self.nc.get_decoded_feedback_data(
+            data, modbus_key="feedback_velocity_start_reg"
+        )
         self.assertEqual(raw[0], 1)
         self.assertEqual(raw[1], -1)
 
@@ -88,7 +96,9 @@ class TestNewCommands(unittest.TestCase):
         b = struct.pack("<f", f)
         w0 = struct.unpack("<H", b[0:2])[0]
         w1 = struct.unpack("<H", b[2:4])[0]
-        out = self.nc.get_decoded_feedback_data([w0, w1], modbus_key="feedback_force_start_reg")
+        out = self.nc.get_decoded_feedback_data(
+            [w0, w1], modbus_key="feedback_force_start_reg"
+        )
         self.assertEqual(len(out), 1)
         self.assertAlmostEqual(out[0], 1.25, places=5)
 
@@ -96,7 +106,9 @@ class TestNewCommands(unittest.TestCase):
         """Verifies packed position registers are decoded into one value per joint (two joints per register)."""
         nc4 = NewCommands(num_joints=4, logger=self.nc.logger)
         regs = [(5 << 8) | 6, (7 << 8) | 8]
-        out = nc4.get_decoded_feedback_data(regs, modbus_key="feedback_position_start_reg")
+        out = nc4.get_decoded_feedback_data(
+            regs, modbus_key="feedback_position_start_reg"
+        )
         self.assertEqual(len(out), 4)
         self.assertEqual(out, [5, 6, 7, 8])
 
@@ -122,6 +134,7 @@ class TestNewCommands(unittest.TestCase):
         m = self.nc.data_type_multiplier_map
         n = self.nc.num_joints
         import math
+
         self.assertEqual(math.ceil(m["feedback_position_start_reg"] * n), 8)
         self.assertEqual(math.ceil(m["feedback_velocity_start_reg"] * n), 16)
         self.assertEqual(math.ceil(m["feedback_force_start_reg"] * n), 32)

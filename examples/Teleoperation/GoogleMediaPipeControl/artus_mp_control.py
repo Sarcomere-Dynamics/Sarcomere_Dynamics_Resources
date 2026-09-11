@@ -41,11 +41,7 @@ from mediapipe.tasks.python import vision
 from artusapi import ArtusConfig
 
 PROJECT_ROOT = os.path.dirname(
-    os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(os.path.abspath(__file__))
-        )
-    )
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 )
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
@@ -54,6 +50,7 @@ sys.path.append(PROJECT_ROOT)
 # ============================================================
 #  CAMERA AUTO-DETECTION
 # ============================================================
+
 
 def find_working_camera(max_tested=10):
     """Scans camera indices to find the first working webcam.
@@ -88,9 +85,7 @@ mp_hand_connections = vision.HandLandmarksConnections
 mp_drawing = vision.drawing_utils
 mp_drawing_styles = vision.drawing_styles
 
-HAND_LANDMARKER_MODEL_URL = (
-    "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
-)
+HAND_LANDMARKER_MODEL_URL = "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task"
 
 
 def get_hand_landmarker_model_path():
@@ -160,6 +155,7 @@ class MonotonicTimestampMS:
     This prevents MediaPipe Tasks VIDEO/LIVE_STREAM pipelines from throwing:
         "input timestamp must be monotonically increasing"
     """
+
     def __init__(self):
         """Initializes the timestamp generator with no prior timestamp."""
         self._last = -1
@@ -198,21 +194,17 @@ def draw_hand_landmarks_on_image(rgb_image, hand_landmarks):
 JOINTS = {
     "thumb_cmc": (5, 0, 1),
     "thumb_mcp": (1, 2, 3),
-    "thumb_ip":  (2, 3, 4),
+    "thumb_ip": (2, 3, 4),
     "thumb_dip": (2, 3, 4),
-
     "index_mcp": (0, 5, 6),
     "index_pip": (5, 6, 7),
     "index_dip": (6, 7, 8),
-
     "middle_mcp": (0, 9, 10),
     "middle_pip": (9, 10, 11),
     "middle_dip": (10, 11, 12),
-
     "ring_mcp": (0, 13, 14),
     "ring_pip": (13, 14, 15),
     "ring_dip": (14, 15, 16),
-
     "pinky_mcp": (0, 17, 18),
     "pinky_pip": (17, 18, 19),
     "pinky_dip": (18, 19, 20),
@@ -220,12 +212,24 @@ JOINTS = {
 
 # Order of joints as expected by the Artus Lite (16 joints)
 JOINT_ORDER = [
-    "thumb_cmc", "thumb_mcp", "thumb_ip", "thumb_dip",
-    "index_mcp", "index_pip", "index_dip",
-    "middle_mcp", "middle_pip", "middle_dip",
-    "ring_mcp", "ring_pip", "ring_dip",
-    "pinky_mcp", "pinky_pip", "pinky_dip",
+    "thumb_cmc",
+    "thumb_mcp",
+    "thumb_ip",
+    "thumb_dip",
+    "index_mcp",
+    "index_pip",
+    "index_dip",
+    "middle_mcp",
+    "middle_pip",
+    "middle_dip",
+    "ring_mcp",
+    "ring_pip",
+    "ring_dip",
+    "pinky_mcp",
+    "pinky_pip",
+    "pinky_dip",
 ]
+
 
 def map_range(value, in_min, in_max, out_min, out_max, clamp=True):
     """Linearly maps a value from one numeric range to another.
@@ -294,17 +298,18 @@ def map_angle_for_artus(joint_name, flex_deg):
 
 # Finger chains for link-length calibration (landmark indices)
 FINGER_CHAINS = {
-    "thumb":  [1, 2, 3, 4],     # CMC -> MCP -> IP -> TIP
-    "index":  [5, 6, 7, 8],     # MCP -> PIP -> DIP -> TIP
+    "thumb": [1, 2, 3, 4],  # CMC -> MCP -> IP -> TIP
+    "index": [5, 6, 7, 8],  # MCP -> PIP -> DIP -> TIP
     "middle": [9, 10, 11, 12],
-    "ring":   [13, 14, 15, 16],
-    "pinky":  [17, 18, 19, 20],
+    "ring": [13, 14, 15, 16],
+    "pinky": [17, 18, 19, 20],
 }
 
 
 # ============================================================
 #  ANGLE COMPUTATION FUNCTIONS (GEOMETRIC)
 # ============================================================
+
 
 def angle_between_3d(p1, p2, p3):
     """Computes the geometric angle at p2 formed by the segments p2-p1 and p2-p3.
@@ -372,6 +377,7 @@ def compute_hand_joint_angles_geometric(landmarks):
 #  SIMPLE 1D KALMAN FILTER FOR ANGLES
 # ============================================================
 
+
 class AngleKalmanFilter:
     """Constant-velocity Kalman filter for a single joint angle.
 
@@ -387,12 +393,12 @@ class AngleKalmanFilter:
             measurement_var: Measurement noise variance R for the angle
                 observation.
         """
-        self.x = np.array([[0.0],
-                           [0.0]], dtype=np.float32)
+        self.x = np.array([[0.0], [0.0]], dtype=np.float32)
         self.P = np.eye(2, dtype=np.float32) * 1000.0
 
-        self.Q_base = np.array([[0.25, 0.5],
-                                [0.5,  1.0]], dtype=np.float32) * process_var
+        self.Q_base = (
+            np.array([[0.25, 0.5], [0.5, 1.0]], dtype=np.float32) * process_var
+        )
         self.R = np.array([[measurement_var]], dtype=np.float32)
 
         self.initialized = False
@@ -403,8 +409,7 @@ class AngleKalmanFilter:
         Args:
             dt: Time elapsed since the previous update, in seconds.
         """
-        A = np.array([[1.0, dt],
-                      [0.0, 1.0]], dtype=np.float32)
+        A = np.array([[1.0, dt], [0.0, 1.0]], dtype=np.float32)
 
         self.x = A @ self.x
         self.P = A @ self.P @ A.T + self.Q_base
@@ -449,6 +454,7 @@ class AngleKalmanFilter:
 #  DRAWING THE ANGLES ON THE IMAGE
 # ============================================================
 
+
 def draw_finger_angles(image, angles, origin=(10, 30)):
     """Overlays joint flexion angles as text on an image, in place.
 
@@ -461,21 +467,30 @@ def draw_finger_angles(image, angles, origin=(10, 30)):
     x, y = origin
     dy = 20
 
-    cv2.putText(image, "Joint Flex Angles (deg):", (x, y),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+    cv2.putText(
+        image,
+        "Joint Flex Angles (deg):",
+        (x, y),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (0, 255, 0),
+        1,
+    )
     y += dy
 
     for key in JOINT_ORDER:
         if key in angles:
             txt = f"{key}: {angles[key]:5.1f}"
-            cv2.putText(image, txt, (x, y),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+            cv2.putText(
+                image, txt, (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1
+            )
             y += dy
 
 
 # ============================================================
 #  CALIBRATION: FINGER LINK LENGTHS (FLAT HAND)
 # ============================================================
+
 
 def compute_link_lengths_from_landmarks(landmarks):
     """Computes per-segment lengths for each finger chain from hand landmarks.
@@ -573,7 +588,7 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
                 (0, 255, 255),
-                2
+                2,
             )
         else:
             cv2.putText(
@@ -583,7 +598,7 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
                 (0, 255, 0),
-                2
+                2,
             )
             cv2.putText(
                 display,
@@ -592,17 +607,17 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
                 (0, 255, 0),
-                2
+                2,
             )
 
         cv2.imshow("Calibration - Hold Hand Flat", display)
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord('c') and not collecting:
+        if key == ord("c") and not collecting:
             print("Calibration: started sampling...")
             collecting = True
 
-        if key == ord('q') or key == 27:
+        if key == ord("q") or key == 27:
             print("Calibration aborted by user.")
             return None
 
@@ -624,9 +639,11 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
 
     return avg_lengths
 
+
 # ============================================================
 #  IK-BASED JOINT ANGLES (USING FINGER LINK LENGTHS)
 # ============================================================
+
 
 def compute_hand_joint_angles_with_ik(landmarks, finger_link_lengths):
     """Computes joint flexion angles refined with a 2-link IK approximation.
@@ -702,6 +719,7 @@ def compute_hand_joint_angles_with_ik(landmarks, finger_link_lengths):
 # ============================================================
 #  MAIN PROGRAM
 # ============================================================
+
 
 def main():
     """Runs the live webcam-to-ARTUS teleoperation loop.
@@ -780,7 +798,8 @@ def main():
 
             if tracked_wrist is None or hand_lost_frames >= max_hand_lost_frames:
                 right_indices = [
-                    i for i in range(len(result.handedness))
+                    i
+                    for i in range(len(result.handedness))
                     if result.handedness[i][0].category_name == "Right"
                 ]
                 if right_indices:
@@ -810,8 +829,7 @@ def main():
             frame = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
 
             raw_angles = compute_hand_joint_angles_with_ik(
-                hand_landmarks,
-                finger_link_lengths
+                hand_landmarks, finger_link_lengths
             )
 
             smoothed_angles = {}
@@ -828,8 +846,8 @@ def main():
 
             hand_joints = {
                 joint_names[i]: {
-                    'target_angle': angle,
-                    'target_velocity': artus._robot_handler.robot.default_velocity,
+                    "target_angle": angle,
+                    "target_velocity": artus._robot_handler.robot.default_velocity,
                 }
                 for i, angle in enumerate(joint_angles)
             }
@@ -856,7 +874,7 @@ def main():
 
         cv2.imshow("Hand Tracking with IK + Kalman", frame)
         key = cv2.waitKey(1) & 0xFF
-        if key == 27 or key == ord('q'):
+        if key == 27 or key == ord("q"):
             break
 
     cap.release()

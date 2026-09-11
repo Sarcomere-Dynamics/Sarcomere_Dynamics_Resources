@@ -16,9 +16,12 @@ import struct
 import math
 
 from ..common.ModbusMap import ModbusMap
+
 """
 New Commands Class based on Modbus RTU for RS485 Communication
 """
+
+
 class NewCommands(ModbusMap):
     """Serializes user-facing commands into Modbus register lists.
 
@@ -34,7 +37,7 @@ class NewCommands(ModbusMap):
         logger: Logger used for warnings/info about this command builder.
     """
 
-    def __init__(self,num_joints,logger=None):
+    def __init__(self, num_joints, logger=None):
         """Initializes the command builder for a hand with the given joint count.
 
         Args:
@@ -44,23 +47,23 @@ class NewCommands(ModbusMap):
         """
         ModbusMap.__init__(self)
         self.commands = {
-            'start_command': 0x0B,
-            'calibrate_command': 0x0D,
-            'sleep_command': 0x0F,
-            'firmware_update_command': 0x11,
-            'reset_command': 0x13,
-            'soft_reset_command': 0x35,
-            'hard_close_command': 0x38,
-            'target_command': 0x66,
-            'get_feedback_command': 0x68,
-            'save_grasp_onboard_command': 0xC8,
-            'return_grasps_command': 0xD2,
-            'execute_grasp_command': 0xE0,
-            'update_param_command': 0x44,
-            'update_config_command': 0x44, # same opcode as update_param_command; new firmware repurposes it to enter ACTUATOR_CONFIG for onboard config writes (e.g. WiFi SSID/password)
-            'wipe_sd_command': 0x46,
-            'set_zero_command': 0x15,
-            'clear_errors_command': 0x1A,
+            "start_command": 0x0B,
+            "calibrate_command": 0x0D,
+            "sleep_command": 0x0F,
+            "firmware_update_command": 0x11,
+            "reset_command": 0x13,
+            "soft_reset_command": 0x35,
+            "hard_close_command": 0x38,
+            "target_command": 0x66,
+            "get_feedback_command": 0x68,
+            "save_grasp_onboard_command": 0xC8,
+            "return_grasps_command": 0xD2,
+            "execute_grasp_command": 0xE0,
+            "update_param_command": 0x44,
+            "update_config_command": 0x44,  # same opcode as update_param_command; new firmware repurposes it to enter ACTUATOR_CONFIG for onboard config writes (e.g. WiFi SSID/password)
+            "wipe_sd_command": 0x46,
+            "set_zero_command": 0x15,
+            "clear_errors_command": 0x1A,
         }
         self.num_joints = num_joints
         if not logger:
@@ -68,7 +71,7 @@ class NewCommands(ModbusMap):
         else:
             self.logger = logger
 
-    def get_robot_start_command(self, control_type:int=3) -> list:
+    def get_robot_start_command(self, control_type: int = 3) -> list:
         """Builds the command to start the hand in a given control mode.
 
         Args:
@@ -79,9 +82,9 @@ class NewCommands(ModbusMap):
         Returns:
             The start command opcode followed by the control type.
         """
-        return [self.commands['start_command'],control_type]
+        return [self.commands["start_command"], control_type]
 
-    def get_target_position_command(self,hand_joints:dict) -> list:
+    def get_target_position_command(self, hand_joints: dict) -> list:
         """Packs target joint positions into Modbus register words.
 
         Args:
@@ -96,35 +99,39 @@ class NewCommands(ModbusMap):
             int8_t range with a warning logged.
         """
         tmp_list = []
-        starting_reg = self.modbus_reg_map['target_position_start_reg'] # get starting register
+        starting_reg = self.modbus_reg_map[
+            "target_position_start_reg"
+        ]  # get starting register
 
         for name, joint_data in hand_joints.items():
             if joint_data.target_angle is not None:
                 # constrain target_angle to be size int8_t
                 int8_angle = int(joint_data.target_angle)
                 if int8_angle < -128 or int8_angle > 127:
-                    self.logger.warning(f"target_angle {int8_angle} out of int8_t range, will be truncated.")
+                    self.logger.warning(
+                        f"target_angle {int8_angle} out of int8_t range, will be truncated."
+                    )
                     # Clamp the value to int8_t range
                     int8_angle = max(-128, min(127, int8_angle))
             else:
                 int8_angle = 0
             tmp_list.append(int8_angle)
-        
+
         command_list = []
         command_list.append(starting_reg)
 
         # if number of joints is 1, just fill with 0
         if len(tmp_list) == 1:
             tmp_list.append(0)
-        
+
         for i in range(0, len(tmp_list), 2):
-            command_list.append((tmp_list[i] & 0xFF) << 8 | (tmp_list[i+1] & 0xFF))
+            command_list.append((tmp_list[i] & 0xFF) << 8 | (tmp_list[i + 1] & 0xFF))
 
         # cast all elements to uint16_t
         command_list = [x & 0xFFFF for x in command_list]
         return command_list
 
-    def get_reset_command(self,joints=0):
+    def get_reset_command(self, joints=0):
         """Builds the command to reset the given number of joints.
 
         Args:
@@ -133,9 +140,9 @@ class NewCommands(ModbusMap):
         Returns:
             The reset command opcode followed by the joint count.
         """
-        return [self.commands['reset_command'],joints]
+        return [self.commands["reset_command"], joints]
 
-    def get_soft_reset_command(self,joints=0):
+    def get_soft_reset_command(self, joints=0):
         """Builds the command to reset the given number of joints.
 
         Args:
@@ -144,10 +151,9 @@ class NewCommands(ModbusMap):
         Returns:
             The reset command opcode followed by the joint count.
         """
-        return [self.commands['soft_reset_command'],joints]
+        return [self.commands["soft_reset_command"], joints]
 
-
-    def get_target_velocity_command(self,hand_joints:dict) -> list:
+    def get_target_velocity_command(self, hand_joints: dict) -> list:
         """Packs target joint velocities into Modbus register words.
 
         Args:
@@ -161,14 +167,18 @@ class NewCommands(ModbusMap):
             are clamped to the int16_t range with a warning logged.
         """
         tmp_list = []
-        starting_reg = self.modbus_reg_map['target_velocity_start_reg'] # get starting register
+        starting_reg = self.modbus_reg_map[
+            "target_velocity_start_reg"
+        ]  # get starting register
         tmp_list.append(starting_reg)
-        for name,joint_data in hand_joints.items():
+        for name, joint_data in hand_joints.items():
             if joint_data.target_velocity is not None:
                 # constrain target_velocity to be size int16_t
                 int16_velocity = int(joint_data.target_velocity)
                 if int16_velocity < -32768 or int16_velocity > 32767:
-                    self.logger.warning(f"target_velocity {int16_velocity} out of int16_t range, will be truncated.")
+                    self.logger.warning(
+                        f"target_velocity {int16_velocity} out of int16_t range, will be truncated."
+                    )
                     # Clamp the value to int16_t range
                     int16_velocity = max(-32768, min(32767, int16_velocity))
             else:
@@ -177,7 +187,7 @@ class NewCommands(ModbusMap):
 
         return tmp_list
 
-    def get_target_force_command(self,hand_joints:dict) -> list:
+    def get_target_force_command(self, hand_joints: dict) -> list:
         """Packs target joint forces into Modbus register words.
 
         Args:
@@ -192,23 +202,33 @@ class NewCommands(ModbusMap):
             places. Joints without a target force contribute (0, 0).
         """
         tmp_list = []
-        starting_reg = self.modbus_reg_map['target_force_start_reg'] # get starting register
+        starting_reg = self.modbus_reg_map[
+            "target_force_start_reg"
+        ]  # get starting register
         tmp_list.append(starting_reg)
-        for name,joint_data in hand_joints.items():
+        for name, joint_data in hand_joints.items():
             if joint_data.target_force is not None:
                 # round target force to 2 decimal places
                 tmp = round(joint_data.target_force, 2)
-                byte_representation = struct.pack('<f', tmp)  # Little-endian float to bytes
-                int_low = struct.unpack('<H', byte_representation[:2])[0]  # First 2 bytes as uint16
-                int_high = struct.unpack('<H', byte_representation[2:])[0]  # Last 2 bytes as uint16
-                tmp_list.append(int_high) # high byte is first (even register index)
-                tmp_list.append(int_low) # low byte is second (odd register index)
+                byte_representation = struct.pack(
+                    "<f", tmp
+                )  # Little-endian float to bytes
+                int_low = struct.unpack("<H", byte_representation[:2])[
+                    0
+                ]  # First 2 bytes as uint16
+                int_high = struct.unpack("<H", byte_representation[2:])[
+                    0
+                ]  # Last 2 bytes as uint16
+                tmp_list.append(int_high)  # high byte is first (even register index)
+                tmp_list.append(int_low)  # low byte is second (odd register index)
             else:
                 tmp_list.append(0)
                 tmp_list.append(0)
         return tmp_list
 
-    def get_decoded_feedback_data(self,feedback_data:list,modbus_key:str='feedback_register') -> list:
+    def get_decoded_feedback_data(
+        self, feedback_data: list, modbus_key: str = "feedback_register"
+    ) -> list:
         """Decodes raw feedback register words into typed per-joint values.
 
         Dispatches to the appropriate helper based on the data-type
@@ -231,7 +251,7 @@ class NewCommands(ModbusMap):
             value type.
         """
 
-        def helper_decode_feedback_16b_8b(data:list) -> list:
+        def helper_decode_feedback_16b_8b(data: list) -> list:
             """Decodes packed feedback/temperature values (splits 16-bit values into two signed 8-bit values).
 
             Args:
@@ -245,9 +265,9 @@ class NewCommands(ModbusMap):
             decoded_data = []
             for value in data:
                 # Split 16-bit value into two 8-bit bytes
-                high_byte = ((value >> 8) & 0xFF)  # Extract upper 8 bits
-                low_byte = (value & 0xFF)          # Extract lower 8 bits
-                
+                high_byte = (value >> 8) & 0xFF  # Extract upper 8 bits
+                low_byte = value & 0xFF  # Extract lower 8 bits
+
                 # Convert to signed 8-bit values using two's complement
                 high_byte = high_byte if high_byte < 128 else high_byte - 256
                 low_byte = low_byte if low_byte < 128 else low_byte - 256
@@ -260,7 +280,7 @@ class NewCommands(ModbusMap):
                 decoded_data.pop()
             return decoded_data
 
-        def helper_decode_feedback_16b_float(data:list) -> list:
+        def helper_decode_feedback_16b_float(data: list) -> list:
             """Decodes pairs of uint16 registers into IEEE 754 floats.
 
             Args:
@@ -275,12 +295,12 @@ class NewCommands(ModbusMap):
                 if i + 1 < len(data):
                     # Pack two 16-bit values into 4 bytes and unpack as IEEE float
                     # Device sends data in big-endian format (high word first)
-                    packed_bytes = struct.pack('<HH', data[i], data[i + 1])
-                    float_value = struct.unpack('<f', packed_bytes)[0]
+                    packed_bytes = struct.pack("<HH", data[i], data[i + 1])
+                    float_value = struct.unpack("<f", packed_bytes)[0]
                     decoded_data.append(round(float_value, 2))
             return decoded_data
 
-        def helper_decode_feedback_16b_uint32(data:list) -> list:
+        def helper_decode_feedback_16b_uint32(data: list) -> list:
             """Decodes bit-field fields transported as pairs of uint16 registers.
 
             Firmware packs the low 16 bits at the even register and the
@@ -299,12 +319,12 @@ class NewCommands(ModbusMap):
             for i in range(0, len(data), 2):
                 if i + 1 < len(data):
                     # low word first, high word second (matches get_word() on firmware)
-                    packed_bytes = struct.pack('<HH', data[i], data[i + 1])
-                    uint32_value = struct.unpack('<I', packed_bytes)[0]
+                    packed_bytes = struct.pack("<HH", data[i], data[i + 1])
+                    uint32_value = struct.unpack("<I", packed_bytes)[0]
                     decoded_data.append(uint32_value)
             return decoded_data
 
-        def helper_decode_feedback_signed_16b(data:Any) -> Any:
+        def helper_decode_feedback_signed_16b(data: Any) -> Any:
             """Decodes uint16 value(s) into signed 16-bit integers.
 
             Args:
@@ -318,10 +338,7 @@ class NewCommands(ModbusMap):
             if isinstance(data, list):
                 return [((v + 2**15) % 2**16 - 2**15) for v in data]
             else:
-                return ((data + 2**15) % 2**16 - 2**15)
-
-
-            
+                return (data + 2**15) % 2**16 - 2**15
 
         # feedback type
         estimated_feedback_type = None
@@ -331,7 +348,9 @@ class NewCommands(ModbusMap):
             feedback_data = [feedback_data]
         else:
             size_of_feedback_data = len(feedback_data)
-        self.logger.info(f"Size of feedback data: {size_of_feedback_data} & num joints: {self.num_joints}")
+        self.logger.info(
+            f"Size of feedback data: {size_of_feedback_data} & num joints: {self.num_joints}"
+        )
 
         # only 1 data type is allowed to be sent back at a time
 
@@ -363,15 +382,13 @@ class NewCommands(ModbusMap):
 
         return decoded_data
 
-
-
     def get_set_zero_command(self):
         """Builds the command to zero the current joint positions.
 
         Returns:
             A single-element list containing the set-zero command opcode.
         """
-        return [self.commands['set_zero_command']]
+        return [self.commands["set_zero_command"]]
 
     def get_calibration_command(self):
         """Builds the command to trigger hand calibration.
@@ -379,7 +396,7 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the calibrate command opcode.
         """
-        return [self.commands['calibrate_command']]
+        return [self.commands["calibrate_command"]]
 
     def get_sleep_command(self):
         """Builds the command to put the hand to sleep.
@@ -387,7 +404,7 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the sleep command opcode.
         """
-        return [self.commands['sleep_command']]
+        return [self.commands["sleep_command"]]
 
     def get_clear_errors_command(self):
         """Builds the explicit host-triggered error clear command.
@@ -402,9 +419,9 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the clear-errors command opcode.
         """
-        return [self.commands['clear_errors_command']]
+        return [self.commands["clear_errors_command"]]
 
-    def get_states_command(self,type=0):
+    def get_states_command(self, type=0):
         """Builds the command requesting feedback/state data.
 
         Args:
@@ -414,10 +431,10 @@ class NewCommands(ModbusMap):
         Returns:
             A single-element list containing the get-feedback command opcode.
         """
-        return [self.commands['get_feedback_command']]
+        return [self.commands["get_feedback_command"]]
 
     # @todo implement firmware flashing
-    def get_firmware_command(self,drivers):
+    def get_firmware_command(self, drivers):
         """Builds the command that initiates a firmware update.
 
         Args:
@@ -426,9 +443,9 @@ class NewCommands(ModbusMap):
         Returns:
             The firmware update command opcode followed by the drivers value.
         """
-        return [self.commands['firmware_update_command'],drivers]
+        return [self.commands["firmware_update_command"], drivers]
 
-    def update_config_command(self,config_type:int):
+    def update_config_command(self, config_type: int):
         """Triggers the hand to enter ACTUATOR_CONFIG for an onboard config write.
 
         Args:
@@ -437,9 +454,9 @@ class NewCommands(ModbusMap):
         Returns:
             The update-config command opcode followed by the config type.
         """
-        return [self.commands['update_config_command'],config_type]
+        return [self.commands["update_config_command"], config_type]
 
-    def update_config_len_command(self,config_reg:list,config_value:str):
+    def update_config_len_command(self, config_reg: list, config_value: str):
         """Prefixes a config register payload with its string length.
 
         Args:
@@ -453,5 +470,4 @@ class NewCommands(ModbusMap):
         Returns:
             Length-prefixed register payload written starting at register 0.
         """
-        return [len(config_value),*config_reg]
-
+        return [len(config_value), *config_reg]

@@ -67,7 +67,7 @@ These apply to both **ARTUS Lite** and **ARTUS Lite+** — Lite+ inherits them u
 They live as attributes on the robot model, not as hardcoded constants in the API:
 ```python
 hand._robot_handler.robot.default_velocity  # 150
-hand._robot_handler.robot.default_force     # 10
+hand._robot_handler.robot.default_force  # 10
 ```
 
 >[!IMPORTANT]

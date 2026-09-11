@@ -15,6 +15,7 @@ from .artus_lite_plus import ArtusLite_Plus
 
 class ArtusLite_Plus_LeftHand(ArtusLite_Plus):
     """Left-hand variant of the ARTUS Lite Plus."""
+
     def __init__(self, logger=None):
         """Initializes the left ARTUS Lite Plus hand with mirrored spread joints.
 
@@ -23,10 +24,23 @@ class ArtusLite_Plus_LeftHand(ArtusLite_Plus):
                 ``ArtusLite_Plus``.
         """
         super().__init__(
-            joint_rotation_directions=[-1, 1, 1, 1,  # thumb
-                                       -1, 1, 1,  # index
-                                       -1, 1, 1,  # middle
-                                       -1, 1, 1,  # ring
-                                       -1, 1, 1],  # pinky
-            logger=logger
+            joint_rotation_directions=[
+                -1,
+                1,
+                1,
+                1,  # thumb
+                -1,
+                1,
+                1,  # index
+                -1,
+                1,
+                1,  # middle
+                -1,
+                1,
+                1,  # ring
+                -1,
+                1,
+                1,
+            ],  # pinky
+            logger=logger,
         )

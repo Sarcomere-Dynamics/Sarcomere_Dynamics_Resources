@@ -9,6 +9,7 @@ Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
+
 import time
 import json
 import logging
@@ -19,15 +20,17 @@ import sys
 if not logging.getLogger().handlers:
     logging.basicConfig(
         level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
 
 # Create a logger for this module
 logger = logging.getLogger(__name__)
 logger.propagate = True  # Ensure logs propagate to parent loggers
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 logger.info(f"Project Root: {PROJECT_ROOT}")
 sys.path.append(PROJECT_ROOT)
 from artusapi import ArtusConfig
@@ -43,7 +46,11 @@ class ArtusGUIController:
     ZMQ subscriber socket.
     """
 
-    def __init__(self, feedbackPub_address="tcp://127.0.0.1:5555", jointSub_address="tcp://127.0.0.1:5556"):
+    def __init__(
+        self,
+        feedbackPub_address="tcp://127.0.0.1:5555",
+        jointSub_address="tcp://127.0.0.1:5556",
+    ):
         """Sets up ZMQ sockets and initializes the ARTUS API connection.
 
         Args:
@@ -59,12 +66,11 @@ class ArtusGUIController:
         self.logger.propagate = True
 
         # sensor feedback type
-        self.sensor_feedback = 'actuator'
-        
+        self.sensor_feedback = "actuator"
+
         # Load robot configuration
         self.robot_config = ArtusConfig()
         self._initialize_api()
-
 
     def _initialize_api(self):
         """Initializes a single ArtusAPI instance for the configured robot.
@@ -75,17 +81,20 @@ class ArtusGUIController:
         """
         self.artus_api = self.robot_config.get_api(logger=self.logger)
 
-        # always try to get data first 
+        # always try to get data first
         logger.info(self.artus_api.get_robot_status())
 
-        
         # wake if set in config
-        if self.robot_config.get_robot_wake_up(hand_type=self.artus_api._robot_handler.hand_type):
+        if self.robot_config.get_robot_wake_up(
+            hand_type=self.artus_api._robot_handler.hand_type
+        ):
             self.artus_api.wake_up()
             time.sleep(0.5)
 
         # calibrate if set in config
-        if self.robot_config.get_robot_calibrate(hand_type=self.artus_api._robot_handler.hand_type):
+        if self.robot_config.get_robot_calibrate(
+            hand_type=self.artus_api._robot_handler.hand_type
+        ):
             self.artus_api.calibrate()
             time.sleep(0.5)
         # test robot
@@ -96,7 +105,7 @@ class ArtusGUIController:
         #                         logger=self.logger)
         # self.logger.info("Robot connected")
 
-    def _send_joint_angles(self,joint_angles:dict=None):
+    def _send_joint_angles(self, joint_angles: dict = None):
         """Sends a dict of target joint angles to the robot.
 
         Args:
@@ -110,7 +119,7 @@ class ArtusGUIController:
             self.logger.error("No joint angles received")
             return
 
-    def _publish_feedback(self,feedback:dict=None):
+    def _publish_feedback(self, feedback: dict = None):
         """Publishes the robot's current feedback data to the GUI over ZMQ.
 
         Reads joint feedback (index, angle, force, velocity, current) and,
@@ -124,7 +133,13 @@ class ArtusGUIController:
         """
 
         # Only include specific fields from each joint in the feedback
-        allowed_fields = ["index", "feedback_angle", "feedback_force", "feedback_velocity", "feedback_current"]
+        allowed_fields = [
+            "index",
+            "feedback_angle",
+            "feedback_force",
+            "feedback_velocity",
+            "feedback_current",
+        ]
 
         robot = getattr(self.artus_api._robot_handler, "robot", None)
         hand_joints_serializable = {
@@ -138,9 +153,15 @@ class ArtusGUIController:
         if force_sensors:
             force_sensor_payload = {
                 sensor_name: {
-                    "x": getattr(sensor_info.get("data"), "x", None) if sensor_info else None,
-                    "y": getattr(sensor_info.get("data"), "y", None) if sensor_info else None,
-                    "z": getattr(sensor_info.get("data"), "z", None) if sensor_info else None,
+                    "x": getattr(sensor_info.get("data"), "x", None)
+                    if sensor_info
+                    else None,
+                    "y": getattr(sensor_info.get("data"), "y", None)
+                    if sensor_info
+                    else None,
+                    "z": getattr(sensor_info.get("data"), "z", None)
+                    if sensor_info
+                    else None,
                 }
                 for sensor_name, sensor_info in force_sensors.items()
             }
@@ -149,9 +170,8 @@ class ArtusGUIController:
         if force_sensor_payload:
             payload["force_sensors"] = force_sensor_payload
 
-        self.zmq_publisher.send(topic="Feedback",message=json.dumps(payload))
+        self.zmq_publisher.send(topic="Feedback", message=json.dumps(payload))
         self.logger.info(f"Published feedback to ZMQ")
-
 
     def _receive_feedback(self):
         """Triggers a feedback read from the robot for backward compatibility.
@@ -184,16 +204,18 @@ class ArtusGUIController:
         package = self.zmq_subscriber.receive()
         if package is not None:
             package = json.loads(package)
-            joint_angles = package['joint_values']
-            force = package['force']
-            speed = package['speed']
-            
-            # joint angles with key and float value but I want key: {'target_angle': int(value)}
-            joint_angles = {key: {'target_angle': int(value)} for key,value in joint_angles.items()}
+            joint_angles = package["joint_values"]
+            force = package["force"]
+            speed = package["speed"]
 
-            for key,value in joint_angles.items():
-                joint_angles[key]['target_force'] = force
-                joint_angles[key]['target_velocity'] = speed
+            # joint angles with key and float value but I want key: {'target_angle': int(value)}
+            joint_angles = {
+                key: {"target_angle": int(value)} for key, value in joint_angles.items()
+            }
+
+            for key, value in joint_angles.items():
+                joint_angles[key]["target_force"] = force
+                joint_angles[key]["target_velocity"] = speed
 
             return joint_angles
         else:
@@ -217,13 +239,15 @@ class ArtusGUIController:
                 time.sleep(0.02)
 
                 self._receive_feedback()
-                self._publish_feedback(feedback=self.artus_api._robot_handler.robot.hand_joints)
-                
+                self._publish_feedback(
+                    feedback=self.artus_api._robot_handler.robot.hand_joints
+                )
 
                 # time.sleep(0.02)
             except Exception as e:
                 self.logger.error(f"Error in start_streaming: {e}")
                 continue
+
 
 if __name__ == "__main__":
     gui_controller = ArtusGUIController()

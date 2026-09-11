@@ -16,29 +16,94 @@ from ..bldc_robot.bldcrobot import BLDCRobot
 
 class ArtusDex(BLDCRobot):
     """ARTUS Dex hand model: 18 joints (5 fingers + wrist) with velocity/force defaults."""
-    def __init__(self,
-                 joint_max_angles=[40, 90, 90, 90,  # thumb
-                                  17, 90, 90,  # index
-                                  17, 90, 90,  # middle
-                                  17, 90, 90,  # ring
-                                  17, 90, 90,  # pinky
-                                  30, 30],  # wrist
-                 joint_min_angles=[-40, 0, 0, 0,  # thumb
-                                  -17, 0, 0,  # index
-                                  -17, 0, 0,  # middle
-                                  -17, 0, 0,  # ring
-                                  -17, 0, 0,  # pinky
-                                  -30, -30],  # wrist
-                 joint_default_angles=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                 joint_rotation_directions=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-                 joint_forces=[],
-                 joint_names=['thumb_spread', 'thumb_flex', 'thumb_d2', 'thumb_d1',
-                              'index_spread', 'index_flex', 'index_d2',
-                              'middle_spread', 'middle_flex', 'middle_d2',
-                              'ring_spread', 'ring_flex', 'ring_d2',
-                              'pinky_spread', 'pinky_flex', 'pinky_d2','wrist_pitch','wrist_yaw'],
-                 number_of_joints=18,
-                 logger=None):
+
+    def __init__(
+        self,
+        joint_max_angles=[
+            40,
+            90,
+            90,
+            90,  # thumb
+            17,
+            90,
+            90,  # index
+            17,
+            90,
+            90,  # middle
+            17,
+            90,
+            90,  # ring
+            17,
+            90,
+            90,  # pinky
+            30,
+            30,
+        ],  # wrist
+        joint_min_angles=[
+            -40,
+            0,
+            0,
+            0,  # thumb
+            -17,
+            0,
+            0,  # index
+            -17,
+            0,
+            0,  # middle
+            -17,
+            0,
+            0,  # ring
+            -17,
+            0,
+            0,  # pinky
+            -30,
+            -30,
+        ],  # wrist
+        joint_default_angles=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        joint_rotation_directions=[
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+        ],
+        joint_forces=[],
+        joint_names=[
+            "thumb_spread",
+            "thumb_flex",
+            "thumb_d2",
+            "thumb_d1",
+            "index_spread",
+            "index_flex",
+            "index_d2",
+            "middle_spread",
+            "middle_flex",
+            "middle_d2",
+            "ring_spread",
+            "ring_flex",
+            "ring_d2",
+            "pinky_spread",
+            "pinky_flex",
+            "pinky_d2",
+            "wrist_pitch",
+            "wrist_yaw",
+        ],
+        number_of_joints=18,
+        logger=None,
+    ):
         """Initializes the ARTUS Dex joint model and velocity/force defaults.
 
         Args:
@@ -53,15 +118,17 @@ class ArtusDex(BLDCRobot):
             number_of_joints: Total number of joints (18).
             logger: Optional logger instance passed through to ``BLDCRobot``.
         """
-        super().__init__(joint_max_angles=joint_max_angles,
-                         joint_min_angles=joint_min_angles,
-                         joint_default_angles=joint_default_angles,
-                         joint_rotation_directions=joint_rotation_directions,
-                         joint_forces=joint_forces,
-                         joint_names=joint_names,
-                         number_of_joints=number_of_joints,
-                         number_of_controllers=24,
-                         logger=logger)
+        super().__init__(
+            joint_max_angles=joint_max_angles,
+            joint_min_angles=joint_min_angles,
+            joint_default_angles=joint_default_angles,
+            joint_rotation_directions=joint_rotation_directions,
+            joint_forces=joint_forces,
+            joint_names=joint_names,
+            number_of_joints=number_of_joints,
+            number_of_controllers=24,
+            logger=logger,
+        )
 
         # speeds (deg/s)
         self.max_velocity = 300

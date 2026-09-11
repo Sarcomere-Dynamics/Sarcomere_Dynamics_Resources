@@ -17,7 +17,9 @@ import json
 from PySide6 import QtCore, QtGui, QtWidgets
 import sys
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 print("PROJECT_ROOT: ", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
@@ -25,6 +27,7 @@ sys.path.append(PROJECT_ROOT)
 from examples.Tracking.zmq_class.zmq_class import ZMQPublisher
 from artusapi import ArtusConfig
 from artusapi.robot.robot import Robot
+
 
 class UIControl(QtWidgets.QWidget, ZMQPublisher):
     """Qt widget exposing manual control elements for the connected robot hand.
@@ -40,6 +43,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
     ZMQPublisher is used on the backend to publish the joint/force/speed
     values to the robot over ZMQ.
     """
+
     def __init__(self, win=None, zmq_sliderCommands_pubPort=5556):
         """Initializes the ZMQ publisher, robot joint model, and widget layout.
 
@@ -53,7 +57,9 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
                 configuration.
         """
         QtWidgets.QWidget.__init__(self)
-        ZMQPublisher.__init__(self, address=f"tcp://127.0.0.1:{zmq_sliderCommands_pubPort}")
+        ZMQPublisher.__init__(
+            self, address=f"tcp://127.0.0.1:{zmq_sliderCommands_pubPort}"
+        )
         robot = None
         if ArtusConfig().config.robots.left_hand_robot.robot_connected:
             robot = ArtusConfig().config.robots.left_hand_robot.robot_type
@@ -64,9 +70,17 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         self.win = win
 
         self.joint_names = list(Robot(robot_type=robot).robot.hand_joints.keys())
-        self.minimum_angle = {name: Robot(robot_type=robot).robot.hand_joints[name].min_angle for name in self.joint_names}
-        self.maximum_angle = {name: Robot(robot_type=robot).robot.hand_joints[name].max_angle for name in self.joint_names}
-        self.joint_values = {name: 0.0 for name in self.joint_names}  # Initialize joint values
+        self.minimum_angle = {
+            name: Robot(robot_type=robot).robot.hand_joints[name].min_angle
+            for name in self.joint_names
+        }
+        self.maximum_angle = {
+            name: Robot(robot_type=robot).robot.hand_joints[name].max_angle
+            for name in self.joint_names
+        }
+        self.joint_values = {
+            name: 0.0 for name in self.joint_names
+        }  # Initialize joint values
         self.force_value = 10.0
         self.speed_value = 150.0
         self.minimum_force = Robot(robot_type=robot).robot.min_force
@@ -93,17 +107,23 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         for i, name in enumerate(self.joint_names):
             label = QtWidgets.QLabel(name)
             slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
-            slider.setRange(self.minimum_angle[name], self.maximum_angle[name])  # Example range, adjust as needed
+            slider.setRange(
+                self.minimum_angle[name], self.maximum_angle[name]
+            )  # Example range, adjust as needed
             slider.setValue(0)
             slider.setTickInterval(10)
             slider.setTickPosition(QtWidgets.QSlider.TicksBelow)
             slider.setSingleStep(1)
-            slider.valueChanged.connect(lambda value, n=name: self.update_joint_angle(n, value))
+            slider.valueChanged.connect(
+                lambda value, n=name: self.update_joint_angle(n, value)
+            )
 
             line_edit = QtWidgets.QLineEdit("0.0")
             line_edit.setValidator(QtGui.QDoubleValidator())
             line_edit.setMaximumWidth(60)
-            line_edit.textChanged.connect(lambda text, n=name: self.update_joint_angle_from_text(n, text))
+            line_edit.textChanged.connect(
+                lambda text, n=name: self.update_joint_angle_from_text(n, text)
+            )
 
             self.sliders[name] = slider
             self.line_edit[name] = line_edit
@@ -238,7 +258,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
             self.joint_values[name] = value
             self.sliders[name].setValue(int(value))
         except ValueError:
-            pass # Handle invalid text input
+            pass  # Handle invalid text input
 
     def update_force_from_text(self, text):
         """Updates the force value from manually entered text, syncing its slider.
@@ -253,7 +273,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
             self.force_value = value
             self.force_slider.setValue(int(value))
         except ValueError:
-            pass # Handle invalid text input
+            pass  # Handle invalid text input
 
     def update_speed_from_text(self, text):
         """Updates the speed value from manually entered text, syncing its slider.
@@ -268,7 +288,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
             self.speed_value = value
             self.speed_slider.setValue(int(value))
         except ValueError:
-            pass # Handle invalid text input
+            pass  # Handle invalid text input
 
     def send_data(self):
         """Publishes the current joint, force, and speed values over ZMQ.
@@ -280,7 +300,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         data_to_send = {
             "joint_values": self.joint_values,
             "force": self.force_value,
-            "speed": self.speed_value
+            "speed": self.speed_value,
         }
         self.send(topic="Target", message=json.dumps(data_to_send))
 
@@ -292,18 +312,23 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         load dropdown. No-op if the user cancels or enters no filename.
         """
         # Get filename from user using a QInputDialog
-        filename, ok = QtWidgets.QInputDialog.getText(self, "Save Joint Angles", "Enter filename (e.g., my_pose.json):")
+        filename, ok = QtWidgets.QInputDialog.getText(
+            self, "Save Joint Angles", "Enter filename (e.g., my_pose.json):"
+        )
         if ok and filename:
             # Ensure the filename has a .json extension
             if not filename.endswith(".json"):
                 filename += ".json"
-            
+
             # Define the directory to save the poses
             save_directory = os.path.join(PROJECT_ROOT, "data", "hand_poses")
             # os.makedirs(save_directory, exist_ok=True) # Create directory if it doesn't exist
 
             # convert the joint values to the loaded values format which is key: {'target_angle': int(value)}
-            loaded_values = {key: {'target_angle': int(value)} for key,value in self.joint_values.items()}
+            loaded_values = {
+                key: {"target_angle": int(value)}
+                for key, value in self.joint_values.items()
+            }
 
             filepath = os.path.join(save_directory, filename)
             try:
@@ -337,7 +362,6 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         """Timer callback that publishes the current values while streaming is active."""
         self.send_data()
 
-
     def populate_load_dropdown(self):
         """Refreshes the load dropdown with the pose JSON files found on disk.
 
@@ -345,7 +369,7 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
         .json files, sorted alphabetically.
         """
         save_directory = os.path.join(PROJECT_ROOT, "data", "hand_poses")
-        os.makedirs(save_directory, exist_ok=True) # Ensure the directory exists
+        os.makedirs(save_directory, exist_ok=True)  # Ensure the directory exists
         self.load_dropdown.clear()
         files = [f for f in os.listdir(save_directory) if f.endswith(".json")]
         self.load_dropdown.addItems(sorted(files))
@@ -365,8 +389,10 @@ class UIControl(QtWidgets.QWidget, ZMQPublisher):
                     loaded_values = json.load(f)
 
                 # I want to convert the loaded values to the joint values format which is key: float value
-                loaded_values = {key: value['target_angle'] for key,value in loaded_values.items()}
-                
+                loaded_values = {
+                    key: value["target_angle"] for key, value in loaded_values.items()
+                }
+
                 for name, value in loaded_values.items():
                     if name in self.joint_names:
                         self.update_joint_angle(name, value)
@@ -385,5 +411,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

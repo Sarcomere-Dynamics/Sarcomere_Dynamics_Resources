@@ -19,8 +19,9 @@ import logging
 from tqdm import tqdm
 import math
 
-from ..common.ModbusMap import CommandType,ActuatorState
+from ..common.ModbusMap import CommandType, ActuatorState
 from ..communication.new_communication import NewCommunication
+
 BYTES_CHUNK = 64
 
 
@@ -40,11 +41,13 @@ class FirmwareUpdaterNew:
         logger: Logger used for progress/error messages.
     """
 
-    def __init__(self,
-                 communication_handler:NewCommunication = None,
-                 command_handler = None,
-                 file_location = None,
-                 logger = None):
+    def __init__(
+        self,
+        communication_handler: NewCommunication = None,
+        command_handler=None,
+        file_location=None,
+        logger=None,
+    ):
         """Initializes the firmware updater.
 
         Args:
@@ -97,13 +100,13 @@ class FirmwareUpdaterNew:
                     self.logger.error(f"Error: {ret}")
                     return False
                 elif ret == ActuatorState.ACTUATOR_FLASHING.value:
-                    self.logger.info(f'Erasing Flash..')
+                    self.logger.info(f"Erasing Flash..")
             except Exception as e:
                 self.logger.error(f"Error checking robot state: {e}")
                 continue
             time.sleep(5)
-    
-    def update_firmware_piecewise(self,file_size):
+
+    def update_firmware_piecewise(self, file_size):
         """Uploads firmware to brushless drivers through the masterboard, one page at a time.
 
         Reads the binary at ``self.file_location``, and for each 256-byte
@@ -123,7 +126,7 @@ class FirmwareUpdaterNew:
         page_counter = 0
         ret = None
 
-        file = open(self.file_location,'rb')
+        file = open(self.file_location, "rb")
         file_data = file.read()
         file.close()
 
@@ -133,11 +136,16 @@ class FirmwareUpdaterNew:
         if not self.flashing_ack_checker():
             return False
 
-        pages_required = math.ceil(file_size/256)
+        pages_required = math.ceil(file_size / 256)
         self.logger.info(f"Upload requires {pages_required} page writes")
 
         # over total number of bytes
-        with tqdm(total=pages_required, unit="pages", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
+        with tqdm(
+            total=pages_required,
+            unit="pages",
+            unit_scale=True,
+            desc="Uploading Actuator Firmware",
+        ) as pbar:
             while page_counter < pages_required:
                 # page loop
                 page_byte_counter = 0
@@ -146,18 +154,25 @@ class FirmwareUpdaterNew:
 
                     concat_chunk = []
                     # take each pair and make it into a 16bit value
-                    while len(concat_chunk) < 64: # 128 bytes
+                    while len(concat_chunk) < 64:  # 128 bytes
                         if byte_counter >= file_size:
-                            concat_chunk.append(0xffff)
-                        elif byte_counter+1 >= file_size:
-                            concat_chunk.append(file_data[byte_counter] << 8 | 0xff) 
+                            concat_chunk.append(0xFFFF)
+                        elif byte_counter + 1 >= file_size:
+                            concat_chunk.append(file_data[byte_counter] << 8 | 0xFF)
                         else:
-                            concat_chunk.append(file_data[byte_counter] << 8 | file_data[byte_counter+1])
+                            concat_chunk.append(
+                                file_data[byte_counter] << 8
+                                | file_data[byte_counter + 1]
+                            )
                         byte_counter += 2
 
-                    concat_chunk.insert(0,self._command_handler.commands['firmware_update_command']) # this has to be the first element every time
+                    concat_chunk.insert(
+                        0, self._command_handler.commands["firmware_update_command"]
+                    )  # this has to be the first element every time
 
-                    self._communication_handler.send_data(concat_chunk,CommandType.FIRMWARE_COMMAND.value)
+                    self._communication_handler.send_data(
+                        concat_chunk, CommandType.FIRMWARE_COMMAND.value
+                    )
                     page_byte_counter += 128
 
                 time.sleep(0.01)
@@ -170,7 +185,9 @@ class FirmwareUpdaterNew:
                 # while not self.flashing_ack_checker():
                 #     time.sleep(0.1)
 
-                self.logger.info(f"Page {page_counter} of {pages_required} uploaded - ACK received")
+                self.logger.info(
+                    f"Page {page_counter} of {pages_required} uploaded - ACK received"
+                )
 
                 time.sleep(0.01)
 
@@ -180,16 +197,15 @@ class FirmwareUpdaterNew:
                 pbar.update(1)
 
         # send 0000 to end the firmware update process
-        eof_list = [0x0,0x0]
-        self._communication_handler.send_data(eof_list,CommandType.FIRMWARE_COMMAND.value)
+        eof_list = [0x0, 0x0]
+        self._communication_handler.send_data(
+            eof_list, CommandType.FIRMWARE_COMMAND.value
+        )
         self.logger.info("Firmware Update is in progress..")
-
-
-
 
     # this function is only managing sending the actuatl binary data to the master
     # it is not managing starting the firmware update process on the master
-    def update_firmware(self,file_size):
+    def update_firmware(self, file_size):
         """Uploads firmware binary data to the master board in half-page chunks.
 
         Only manages sending the actual binary data to the master; it
@@ -212,7 +228,7 @@ class FirmwareUpdaterNew:
         page_counter = 0
         ret = None
 
-        file = open(self.file_location,'rb')
+        file = open(self.file_location, "rb")
         file_data = file.read()
         self.logger.info(f"file read complete")
         file.close()
@@ -225,28 +241,38 @@ class FirmwareUpdaterNew:
             return False
 
         self.logger.info(f"if self.flashing_ack_checker()")
-        pages_required = math.ceil(file_size/256)
+        pages_required = math.ceil(file_size / 256)
         self.logger.info(f"Upload requires {pages_required} page writes")
 
         # over total number of bytes
-        with tqdm(total=pages_required, unit="pages", unit_scale=True, desc="Uploading Actuator Firmware") as pbar:
+        with tqdm(
+            total=pages_required,
+            unit="pages",
+            unit_scale=True,
+            desc="Uploading Actuator Firmware",
+        ) as pbar:
             while page_counter < pages_required:
-
-                    # fill byte data
+                # fill byte data
                 concat_chunk = []
                 # take each pair and make it into a 16bit value
-                while len(concat_chunk) < 64: # 128 bytes
+                while len(concat_chunk) < 64:  # 128 bytes
                     if byte_counter >= file_size:
-                        concat_chunk.append(0xffff)
-                    elif byte_counter+1 >= file_size:
-                        concat_chunk.append(file_data[byte_counter] << 8 | 0xff) 
+                        concat_chunk.append(0xFFFF)
+                    elif byte_counter + 1 >= file_size:
+                        concat_chunk.append(file_data[byte_counter] << 8 | 0xFF)
                     else:
-                        concat_chunk.append(file_data[byte_counter] << 8 | file_data[byte_counter+1])
+                        concat_chunk.append(
+                            file_data[byte_counter] << 8 | file_data[byte_counter + 1]
+                        )
                     byte_counter += 2
 
-                concat_chunk.insert(0,self._command_handler.commands['firmware_update_command']) # this has to be the first element every time
+                concat_chunk.insert(
+                    0, self._command_handler.commands["firmware_update_command"]
+                )  # this has to be the first element every time
 
-                self._communication_handler.send_data(concat_chunk,CommandType.FIRMWARE_COMMAND.value)
+                self._communication_handler.send_data(
+                    concat_chunk, CommandType.FIRMWARE_COMMAND.value
+                )
                 # page_byte_counter += 128
 
                 time.sleep(0.01)
@@ -259,19 +285,23 @@ class FirmwareUpdaterNew:
                 # while not self.flashing_ack_checker():
                 #     time.sleep(0.1)
 
-                self.logger.info(f"Page {page_counter} of {pages_required} uploaded - ACK received")
+                self.logger.info(
+                    f"Page {page_counter} of {pages_required} uploaded - ACK received"
+                )
 
                 time.sleep(0.01)
 
                 # reset page_byte_counter
                 # page_byte_counter = 0
-                page_counter += 0.5 # update by 0.5 pages becaause sending 128 bytes (1/2 page) instead of 256 bytes (full page)
+                page_counter += 0.5  # update by 0.5 pages becaause sending 128 bytes (1/2 page) instead of 256 bytes (full page)
                 pbar.update(0.5)
 
                 if page_counter % 50 == 0:
                     time.sleep(0.1)
 
         # send 0000 to end the firmware update process
-        eof_list = [0x0,0x0]
-        self._communication_handler.send_data(eof_list,CommandType.FIRMWARE_COMMAND.value)
+        eof_list = [0x0, 0x0]
+        self._communication_handler.send_data(
+            eof_list, CommandType.FIRMWARE_COMMAND.value
+        )
         self.logger.info("Firmware Update is in progress..")

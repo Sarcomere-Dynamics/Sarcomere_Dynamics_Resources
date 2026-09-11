@@ -16,8 +16,8 @@ from .artus_dex import ArtusDex
 
 class ArtusDex_Right(ArtusDex):
     """Right-hand variant of the ARTUS Dex."""
-    def __init__(self,
-                 logger=None):
+
+    def __init__(self, logger=None):
         """Initializes the right ARTUS Dex hand.
 
         Args:

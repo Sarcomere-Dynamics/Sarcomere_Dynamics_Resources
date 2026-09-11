@@ -16,12 +16,15 @@ import os
 import sys
 from PySide6 import QtWidgets
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 print("PROJECT_ROOT: ", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 from examples.Tracking.ui.ui_control import UIControl
 from examples.Tracking.ui.ui_feedback import UIFeedback
+
 
 class MainWindow(QtWidgets.QMainWindow):
     """Main application window combining the control and feedback panels.
@@ -46,7 +49,7 @@ class MainWindow(QtWidgets.QMainWindow):
         central_widget.setLayout(main_layout)
 
         self.setCentralWidget(central_widget)
-    
+
     def receive_joint_angles(self):
         """Triggers the control panel to publish its current joint values.
 
@@ -55,6 +58,7 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         self.control_panel.send_data()
 
+
 def main():
     """Creates the QApplication, shows the main window, and starts the event loop."""
     app = QtWidgets.QApplication(sys.argv)
@@ -62,5 +66,6 @@ def main():
     main_window.show()
     sys.exit(app.exec_())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

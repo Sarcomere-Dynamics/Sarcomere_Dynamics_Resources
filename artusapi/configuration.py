@@ -270,7 +270,9 @@ class ArtusConfig:
             objects; lists and scalars are recursed into or returned as-is.
         """
         if isinstance(d, dict):
-            return SimpleNamespace(**{k: self.dict_to_namespace(v) for k, v in d.items()})
+            return SimpleNamespace(
+                **{k: self.dict_to_namespace(v) for k, v in d.items()}
+            )
         if isinstance(d, list):
             return [self.dict_to_namespace(i) for i in d]
         return d
@@ -290,7 +292,11 @@ class ArtusConfig:
 
         logging_cfg = getattr(self.config, "logging", None)
         level_name = getattr(logging_cfg, "level", "INFO") if logging_cfg else "INFO"
-        fmt = getattr(logging_cfg, "format", DEFAULT_LOG_FORMAT) if logging_cfg else DEFAULT_LOG_FORMAT
+        fmt = (
+            getattr(logging_cfg, "format", DEFAULT_LOG_FORMAT)
+            if logging_cfg
+            else DEFAULT_LOG_FORMAT
+        )
         level = getattr(logging, str(level_name).upper(), logging.INFO)
 
         configured = logging.getLogger(LOGGER_NAME)
@@ -377,6 +383,7 @@ class ArtusConfig:
         robot_cfg = self.get_connected_robot()
         logger.info("%s hand robot connected", robot_cfg.hand_type.capitalize())
         from .artusapi import ArtusAPI
+
         return ArtusAPI(config=self, logger=logger)
 
     def _preflight(self, robot_cfg, logger):
@@ -487,6 +494,7 @@ class ArtusConfig:
         if robot_cfg is None:
             return None
         from .artus_api_new import ArtusAPI
+
         return ArtusAPI(
             config=self,
             logger=logger or self.logger,

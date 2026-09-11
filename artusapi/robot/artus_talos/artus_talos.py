@@ -14,19 +14,29 @@ from ...sensors import ForceSensor
 from ..bldc_robot.bldcrobot import BLDCRobot
 import logging
 
+
 class ArtusTalos(BLDCRobot):
     """ARTUS Talos hand model: 6 joints with per-finger force sensors."""
-    def __init__(self,
-                joint_max_angles=[55,90,90,90,90,90],
-                joint_min_angles=[-55,0,0,0,0,0],
-                joint_default_angles=[],
-                joint_rotation_directions=[1,1,1,1,1,1],
-                joint_forces=[],
-                joint_names=['thumb_spread','thumb_flex','index_flex',
-                            'middle_flex','ring_flex','pinky_flex'],
-                number_of_joints=6,
-                number_of_controllers=6,
-                logger=None):
+
+    def __init__(
+        self,
+        joint_max_angles=[55, 90, 90, 90, 90, 90],
+        joint_min_angles=[-55, 0, 0, 0, 0, 0],
+        joint_default_angles=[],
+        joint_rotation_directions=[1, 1, 1, 1, 1, 1],
+        joint_forces=[],
+        joint_names=[
+            "thumb_spread",
+            "thumb_flex",
+            "index_flex",
+            "middle_flex",
+            "ring_flex",
+            "pinky_flex",
+        ],
+        number_of_joints=6,
+        number_of_controllers=6,
+        logger=None,
+    ):
         """Initializes the ARTUS Talos joint model, force sensors, and defaults.
 
         Args:
@@ -41,29 +51,31 @@ class ArtusTalos(BLDCRobot):
             number_of_joints: Total number of joints (6).
             logger: Optional logger instance passed through to ``BLDCRobot``.
         """
-        super().__init__(joint_max_angles=joint_max_angles,
-                         joint_min_angles=joint_min_angles,
-                         joint_default_angles=joint_default_angles,
-                         joint_rotation_directions=joint_rotation_directions,
-                         joint_forces=joint_forces,
-                         joint_names=joint_names,
-                         number_of_joints=number_of_joints,
-                         number_of_controllers=number_of_controllers,
-                         logger=logger)
+        super().__init__(
+            joint_max_angles=joint_max_angles,
+            joint_min_angles=joint_min_angles,
+            joint_default_angles=joint_default_angles,
+            joint_rotation_directions=joint_rotation_directions,
+            joint_forces=joint_forces,
+            joint_names=joint_names,
+            number_of_joints=number_of_joints,
+            number_of_controllers=number_of_controllers,
+            logger=logger,
+        )
 
         # force sensor init
         self.force_sensors = {}
-        fingers = ['thumb', 'index', 'middle', 'ring', 'pinky']
-        indices = [[0,1],[2],[3],[4],[5]]
+        fingers = ["thumb", "index", "middle", "ring", "pinky"]
+        indices = [[0, 1], [2], [3], [4], [5]]
 
         for i in range(len(fingers)):
             self.force_sensors[fingers[i]] = {
-                'data' : ForceSensor(),
-                'indices' : indices[i]
+                "data": ForceSensor(),
+                "indices": indices[i],
             }
 
         # add force sensor feedback type
-        self.available_feedback_types.append('feedback_force_sensor_start_reg')
+        self.available_feedback_types.append("feedback_force_sensor_start_reg")
 
         # speeds
         self.max_velocity = 300

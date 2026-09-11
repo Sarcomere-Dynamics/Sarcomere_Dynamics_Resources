@@ -12,6 +12,7 @@ See the LICENSE file in the repository for full details.
 
 import minimalmodbus
 import serial
+
 # import modbus_tk
 # from modbus_tk.modbus_rtu import RtuMaster
 # import modbus_tk.defines as cst
@@ -19,6 +20,7 @@ from tqdm import tqdm
 import logging
 import time
 from ...common.ModbusMap import CommandType
+
 
 class RS485_RTU:
     """ARCHIVED minimalmodbus-based RS485 transport for the ARTUS hand.
@@ -43,7 +45,9 @@ class RS485_RTU:
             the first call to `open`.
     """
 
-    def __init__(self, port='COM9', baudrate=115200, timeout=0.1, logger=None, slave_address=1):
+    def __init__(
+        self, port="COM9", baudrate=115200, timeout=0.1, logger=None, slave_address=1
+    ):
         """Initializes connection parameters without opening the port.
 
         Args:
@@ -71,7 +75,9 @@ class RS485_RTU:
         """
         try:
             # minimalmodbus
-            self.instrument = minimalmodbus.Instrument(port=self.port, slaveaddress=self.slave_address,debug=False)
+            self.instrument = minimalmodbus.Instrument(
+                port=self.port, slaveaddress=self.slave_address, debug=False
+            )
             self.instrument.serial.baudrate = self.baudrate
             self.instrument.serial.timeout = self.timeout
             self.instrument.address = self.slave_address
@@ -88,8 +94,8 @@ class RS485_RTU:
             self.logger.error(e)
             self.logger.error(f"Error opening {self.port} @ {self.baudrate} baudrate")
             quit()
-    
-    def send(self, data:list, command:int, max_retries=3, retry_delay=0.5):
+
+    def send(self, data: list, command: int, max_retries=3, retry_delay=0.5):
         """Writes register values to the hand, retrying on Modbus errors.
 
         Data must be in 16-bit register format. Dispatches to
@@ -129,44 +135,55 @@ class RS485_RTU:
                         d0 = int(data[0]) & 0xFF
                         d1 = int(data[1]) & 0xFF
                         if not (0 <= d0 <= 255 and 0 <= d1 <= 255):
-                            self.logger.error(f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}")
+                            self.logger.error(
+                                f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}"
+                            )
                             return False
                         value = (d1 << 8) | d0
                     else:
                         value = data[0]
-                    
-                    self.instrument.write_register(registeraddress=0, functioncode=0x06, value=value)
+
+                    self.instrument.write_register(
+                        registeraddress=0, functioncode=0x06, value=value
+                    )
                 elif command == CommandType.TARGET_COMMAND.value:
-                    self.instrument.write_registers(registeraddress=data[0], values=data[1:])
+                    self.instrument.write_registers(
+                        registeraddress=data[0], values=data[1:]
+                    )
                 elif command == CommandType.FIRMWARE_COMMAND.value:
                     self.instrument.write_registers(registeraddress=0, values=data)
                 else:
                     self.logger.error(f"Unknown command: {command}")
                     return False
-                
+
                 # Success - return True
                 return True
-                
-            except (minimalmodbus.NoResponseError, minimalmodbus.InvalidResponseError,
-                    minimalmodbus.ModbusException) as e:
-                self.logger.warning(f"Modbus exception on attempt {attempt + 1}/{max_retries}: {e}")
+
+            except (
+                minimalmodbus.NoResponseError,
+                minimalmodbus.InvalidResponseError,
+                minimalmodbus.ModbusException,
+            ) as e:
+                self.logger.warning(
+                    f"Modbus exception on attempt {attempt + 1}/{max_retries}: {e}"
+                )
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
                     self.logger.error(f"Failed to send after {max_retries} attempts")
                     raise  # Re-raise on final attempt
-                    
+
             except serial.SerialException as e:
                 self.logger.error(f"Serial port error: {e}")
                 raise  # Don't retry serial port errors
-                
+
             except Exception as e:
                 self.logger.error(f"Unexpected error: {e}")
                 raise  # Don't retry unexpected errors
-        
+
         return False
 
-    def receive(self, data:list, max_retries=3, retry_delay=0.1):
+    def receive(self, data: list, max_retries=3, retry_delay=0.1):
         """Reads holding registers from the hand, retrying on Modbus errors.
 
         Args:
@@ -191,32 +208,38 @@ class RS485_RTU:
         """
         for attempt in range(max_retries):
             try:
-                ret_list = self.instrument.read_registers(registeraddress=data[0], number_of_registers=data[1])
+                ret_list = self.instrument.read_registers(
+                    registeraddress=data[0], number_of_registers=data[1]
+                )
                 if len(ret_list) == 1:
                     return ret_list[0]
                 else:
                     return ret_list
-                    
-            except (minimalmodbus.NoResponseError, minimalmodbus.InvalidResponseError,
-                    minimalmodbus.ModbusException) as e:
-                self.logger.warning(f"Modbus exception on receive attempt {attempt + 1}/{max_retries}: {e}")
+
+            except (
+                minimalmodbus.NoResponseError,
+                minimalmodbus.InvalidResponseError,
+                minimalmodbus.ModbusException,
+            ) as e:
+                self.logger.warning(
+                    f"Modbus exception on receive attempt {attempt + 1}/{max_retries}: {e}"
+                )
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
                     self.logger.error(f"Failed to receive after {max_retries} attempts")
                     raise
-                    
+
             except serial.SerialException as e:
                 self.logger.error(f"Serial port error: {e}")
                 raise
-                
+
             except Exception as e:
                 self.logger.error(f"Unexpected error during receive: {e}")
                 raise
-        
+
         return None
 
     def close(self):
         """Closes the underlying serial connection."""
         self.instrument.serial.close()
-

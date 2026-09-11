@@ -17,12 +17,17 @@ import logging
 import signal
 from enum import Enum
 from tracemalloc import start
-from .common.ModbusMap import ModbusMap,TrajectoryReturn
+from .common.ModbusMap import ModbusMap, TrajectoryReturn
 from .common.SlaveIDMap import expected_slave_id
 from .commands import NewCommands
-from .communication.new_communication import NewCommunication,ActuatorState,CommandType
+from .communication.new_communication import (
+    NewCommunication,
+    ActuatorState,
+    CommandType,
+)
 from .robot import Robot
 from .firmware_update import FirmwareUpdaterNew
+
 
 class ArtusAPI:
     """Newer, single user-facing entry point for controlling an ARTUS hand.
@@ -33,17 +38,20 @@ class ArtusAPI:
     handler (Modbus register serialization), and a communication handler
     (physical bus I/O).
     """
-    def __init__(self,
-                config_file=None,
-                config=None,
-                logger=None,
-                # optional overrides of the loaded configuration
-                communication_method=None,
-                communication_channel_identifier=None,
-                robot_type=None,
-                hand_type=None,
-                communication_frequency=None,
-                baudrate=None):
+
+    def __init__(
+        self,
+        config_file=None,
+        config=None,
+        logger=None,
+        # optional overrides of the loaded configuration
+        communication_method=None,
+        communication_channel_identifier=None,
+        robot_type=None,
+        hand_type=None,
+        communication_frequency=None,
+        baudrate=None,
+    ):
         """Initializes from the robot configuration, then builds handlers and connects.
 
         The configuration file is loaded first (an explicit *config_file* or
@@ -74,9 +82,13 @@ class ArtusAPI:
         """
         from .configuration import ArtusConfig
 
-        self.config = config if config is not None else ArtusConfig(
-            config_file=config_file,
-            logger=logger,
+        self.config = (
+            config
+            if config is not None
+            else ArtusConfig(
+                config_file=config_file,
+                logger=logger,
+            )
         )
         self.logger = logger or self.config.logger
 
@@ -93,13 +105,13 @@ class ArtusAPI:
         self.hand_type = settings["hand_type"]
 
         self.control_types = {
-            'position': 3,
-            'velocity': 2,
-            'torque': 1,
+            "position": 3,
+            "velocity": 2,
+            "torque": 1,
             # 'current': 0
         }
 
-        self.control_type = self.control_types['position']
+        self.control_type = self.control_types["position"]
 
         self._communication_handler = NewCommunication(
             communication_method=settings["communication_method"],
@@ -178,7 +190,8 @@ class ArtusAPI:
             or communication_method == "Modbus_TCP"
             or (
                 robot_cfg is not None
-                and getattr(robot_cfg, "communication_method", "RS485_RTU") == "Modbus_TCP"
+                and getattr(robot_cfg, "communication_method", "RS485_RTU")
+                == "Modbus_TCP"
             )
         )
         if robot_cfg is not None and not skip_preflight:
@@ -202,7 +215,9 @@ class ArtusAPI:
         return {
             "robot_type": resolved_robot_type,
             "hand_type": resolved_hand_type,
-            "communication_method": pick(communication_method, "communication_method", "RS485_RTU"),
+            "communication_method": pick(
+                communication_method, "communication_method", "RS485_RTU"
+            ),
             "communication_channel_identifier": pick(
                 communication_channel_identifier,
                 "communication_channel_identifier",
@@ -212,7 +227,9 @@ class ArtusAPI:
             "communication_frequency": (
                 communication_frequency
                 if communication_frequency is not None
-                else getattr(robot_cfg, "streaming_frequency", 50) if robot_cfg is not None else 50
+                else getattr(robot_cfg, "streaming_frequency", 50)
+                if robot_cfg is not None
+                else 50
             ),
         }
 
@@ -255,6 +272,7 @@ class ArtusAPI:
             The Path of the written file.
         """
         from .configuration import copy_default_config as _copy_default_config
+
         return _copy_default_config(dest)
 
     def _sigint_handler(self, signum, frame):
@@ -269,7 +287,7 @@ class ArtusAPI:
         self.disconnect()
         self.original_sigint_handler(signum, frame)
 
-    def set_control_type(self,control_type:int):
+    def set_control_type(self, control_type: int):
         """Sets the active control type of the hand.
 
         Args:
@@ -309,7 +327,7 @@ class ArtusAPI:
         self._communication_handler.close_connection()
         signal.signal(signal.SIGINT, self.original_sigint_handler)
 
-    def wake_up(self,control_type:int=3):
+    def wake_up(self, control_type: int = 3):
         """Wakes up the hand and sets its control type.
 
         Sends the start command, waits for the hand to report a ready state,
@@ -320,14 +338,16 @@ class ArtusAPI:
                 control, 2 for velocity control, 1 for torque control
                 (maximum 3 bits).
         """
-        wake_command = self._command_handler.get_robot_start_command(control_type=control_type)
+        wake_command = self._command_handler.get_robot_start_command(
+            control_type=control_type
+        )
 
         self.control_type = control_type
         self._communication_handler.send_data(wake_command)
         self.last_time = time.perf_counter()
 
         # wait for hand state ready
-        ready_result = self._communication_handler.wait_for_ready(vis=False,timeout=30)
+        ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=30)
         if not ready_result:
             self.logger.error("Hand timed out waiting for ready")
         elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
@@ -360,7 +380,7 @@ class ArtusAPI:
         self._communication_handler.send_data(clear_errors_command)
         self.last_time = time.perf_counter()
 
-    def get_config(self, wifi_name:str, wifi_pass:str):
+    def get_config(self, wifi_name: str, wifi_pass: str):
         """Writes new WiFi credentials to the hand and reads back its IP.
 
         Writes new WiFi credentials to the hand's onboard config over Modbus and
@@ -383,7 +403,7 @@ class ArtusAPI:
         ssid_regs = self.string_to_registers(wifi_name)
         pass_regs = self.string_to_registers(wifi_pass)
 
-        config_types = [1, 2] # 1 -> wifi name, 2 -> wifi pass
+        config_types = [1, 2]  # 1 -> wifi name, 2 -> wifi pass
         labels = {1: "wifi name", 2: "wifi pass"}
         regs = {1: ssid_regs, 2: pass_regs}
         values = {1: wifi_name, 2: wifi_pass}
@@ -392,37 +412,54 @@ class ArtusAPI:
             config_command = self._command_handler.update_config_command(config_type)
             self._communication_handler.send_data(config_command)
 
-            ready_result = self._communication_handler.wait_for_ready(vis=False,acceptable_state=ActuatorState.ACTUATOR_CONFIG.value,timeout=30)
+            ready_result = self._communication_handler.wait_for_ready(
+                vis=False,
+                acceptable_state=ActuatorState.ACTUATOR_CONFIG.value,
+                timeout=30,
+            )
             if not ready_result:
                 self.logger.error("Hand timed out waiting for ready")
                 continue
 
-            length_command = self._command_handler.update_config_len_command(regs[config_type],values[config_type])
-            self._communication_handler.send_data(length_command, CommandType.CONFIG_COMMAND.value)
+            length_command = self._command_handler.update_config_len_command(
+                regs[config_type], values[config_type]
+            )
+            self._communication_handler.send_data(
+                length_command, CommandType.CONFIG_COMMAND.value
+            )
 
-            ready_result = self._communication_handler.wait_for_ready(vis=False,acceptable_state=ActuatorState.ACTUATOR_CONFIG_FINISH.value,timeout=10)
+            ready_result = self._communication_handler.wait_for_ready(
+                vis=False,
+                acceptable_state=ActuatorState.ACTUATOR_CONFIG_FINISH.value,
+                timeout=10,
+            )
             if not ready_result:
                 self.logger.error("Hand timed out waiting for ready")
             else:
                 self.logger.info(f"Finished writing {labels[config_type]}")
             time.sleep(0.2)
 
-        feedback_data = self._communication_handler.receive_data(amount_dat=4,start=ModbusMap().modbus_reg_map['feedback_position_start_reg'])
+        feedback_data = self._communication_handler.receive_data(
+            amount_dat=4,
+            start=ModbusMap().modbus_reg_map["feedback_position_start_reg"],
+        )
 
         bytes_out = []
-        for reg in feedback_data[:2]: # only first 2 registers contain the IP
+        for reg in feedback_data[:2]:  # only first 2 registers contain the IP
             bytes_out.append((reg >> 8) & 0xFF)
             bytes_out.append(reg & 0xFF)
 
         ip_address = ".".join(str(b) for b in bytes_out)
 
-        if ip_address == '0.0.0.0':
+        if ip_address == "0.0.0.0":
             self.logger.info("WiFi failed to connect. Please retry.")
         else:
-            self.logger.info(f"WiFi parameters set as:\nWiFi name: {wifi_name}\nWiFi pass: {wifi_pass}\nIP address: {ip_address}\nRestart the API with the corresponding IP address.")
+            self.logger.info(
+                f"WiFi parameters set as:\nWiFi name: {wifi_name}\nWiFi pass: {wifi_pass}\nIP address: {ip_address}\nRestart the API with the corresponding IP address."
+            )
 
     @staticmethod
-    def string_to_registers(s:str) -> list:
+    def string_to_registers(s: str) -> list:
         """Converts a string into a list of 16-bit Modbus register values.
 
         Each register holds two ASCII bytes; the byte string is null-padded
@@ -458,13 +495,15 @@ class ArtusAPI:
             robot_state = self._communication_handler._check_robot_state()
             actuator_state = ActuatorState((robot_state & 0b00001111)).name
             trajectory_return = TrajectoryReturn((robot_state & 0b11110000) >> 4).name
-            self.logger.info(f"Actuator state: {actuator_state}, Trajectory return: {trajectory_return}")
+            self.logger.info(
+                f"Actuator state: {actuator_state}, Trajectory return: {trajectory_return}"
+            )
             return actuator_state, trajectory_return
         except ValueError:
             self.logger.error(f"Invalid actuator state: {robot_state}")
             return None
 
-    def calibrate(self,joint=0):
+    def calibrate(self, joint=0):
         """Runs the calibration routine on the hand.
 
         Sends the calibration command, optionally scoped to a single joint,
@@ -480,20 +519,20 @@ class ArtusAPI:
         if joint > 0:
             self.logger.info(f"Calibrating joint {joint}")
             calibrate_cmd.append(joint)
-        
+
         self._communication_handler.send_data(calibrate_cmd)
         time.sleep(3)
         self.last_time = time.perf_counter()
         self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value
 
         # wait for hand state ready
-        if not self._communication_handler.wait_for_ready(vis=True,timeout=10):
+        if not self._communication_handler.wait_for_ready(vis=True, timeout=10):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")
             self.state = ActuatorState.ACTUATOR_IDLE.value
 
-    def set_joint_angles_by_list(self, joint_angles:list, control_type:int=3):
+    def set_joint_angles_by_list(self, joint_angles: list, control_type: int = 3):
         """Sends joint commands to the hand from an ordered list of angles.
 
         Named ``set_joint_angles_by_list`` for consistency with the v1 API.
@@ -516,10 +555,14 @@ class ArtusAPI:
             return
 
         # create dict of joint angles
-        joint_angles_dict = {f'{i}':{'target_angle':joint_angles[i]} for i in range(len(joint_angles))}
-        return self.set_joint_angles(joint_angles_dict, injected_control_type=control_type)
+        joint_angles_dict = {
+            f"{i}": {"target_angle": joint_angles[i]} for i in range(len(joint_angles))
+        }
+        return self.set_joint_angles(
+            joint_angles_dict, injected_control_type=control_type
+        )
 
-    def set_joint_angles(self, joint_angles:dict, injected_control_type:int=None):
+    def set_joint_angles(self, joint_angles: dict, injected_control_type: int = None):
         """Sends joint commands to the hand.
 
         Named ``set_joint_angles`` for consistency with the v1 API.
@@ -541,7 +584,9 @@ class ArtusAPI:
         if not self._check_awake():
             return
 
-        available_control = self._robot_handler.set_joint_angles(joint_angles,name=True)
+        available_control = self._robot_handler.set_joint_angles(
+            joint_angles, name=True
+        )
         self.logger.info(f"Available control: {available_control}")
 
         if available_control == 0:
@@ -549,22 +594,40 @@ class ArtusAPI:
             return False
 
         if injected_control_type is not None:
-            available_control = (1 << injected_control_type)
+            available_control = 1 << injected_control_type
 
-        if (available_control & 0b100) != 0 and self.control_type == self.control_types['position']:
-            set_joint_angles_cmd = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
+        if (available_control & 0b100) != 0 and self.control_type == self.control_types[
+            "position"
+        ]:
+            set_joint_angles_cmd = self._command_handler.get_target_position_command(
+                self._robot_handler.robot.hand_joints
+            )
             self.wait_for_com_freq()
-            self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
+            self._communication_handler.send_data(
+                set_joint_angles_cmd, CommandType.TARGET_COMMAND.value
+            )
             self.last_time = time.perf_counter()
-        if (available_control & 0b10) != 0 and self.control_type >= self.control_types['velocity']:
-            set_joint_angles_cmd = self._command_handler.get_target_velocity_command(self._robot_handler.robot.hand_joints)
+        if (available_control & 0b10) != 0 and self.control_type >= self.control_types[
+            "velocity"
+        ]:
+            set_joint_angles_cmd = self._command_handler.get_target_velocity_command(
+                self._robot_handler.robot.hand_joints
+            )
             self.wait_for_com_freq()
-            self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
+            self._communication_handler.send_data(
+                set_joint_angles_cmd, CommandType.TARGET_COMMAND.value
+            )
             self.last_time = time.perf_counter()
-        if (available_control & 0b1) != 0 and self.control_type >= self.control_types['torque']:
-            set_joint_angles_cmd = self._command_handler.get_target_force_command(self._robot_handler.robot.hand_joints)
+        if (available_control & 0b1) != 0 and self.control_type >= self.control_types[
+            "torque"
+        ]:
+            set_joint_angles_cmd = self._command_handler.get_target_force_command(
+                self._robot_handler.robot.hand_joints
+            )
             self.wait_for_com_freq()
-            self._communication_handler.send_data(set_joint_angles_cmd,CommandType.TARGET_COMMAND.value)
+            self._communication_handler.send_data(
+                set_joint_angles_cmd, CommandType.TARGET_COMMAND.value
+            )
             self.last_time = time.perf_counter()
         return True
 
@@ -611,7 +674,7 @@ class ArtusAPI:
                 if value == start_reg:
                     return key
         raise ValueError(
-            f'Start Register {start_reg} is not recognized -- see ModbusMap.pdf in robot/$robot$/data'
+            f"Start Register {start_reg} is not recognized -- see ModbusMap.pdf in robot/$robot$/data"
         )
 
     def _read_feedback(self, feedback_reg_key: str) -> list:
@@ -647,10 +710,10 @@ class ArtusAPI:
         """
         if feedback_reg_key in ModbusMap.SCALAR_FEEDBACK_KEYS:
             label = ModbusMap.SCALAR_FEEDBACK_KEYS[feedback_reg_key]
-            self.logger.info(f'{label}: {decoded_feedback_data[0]}')
+            self.logger.info(f"{label}: {decoded_feedback_data[0]}")
             return
         self.logger.info(
-            f'{feedback_reg_key}:{self._robot_handler.get_feedback_data(decoded_feedback_data, feedback_type=feedback_reg_key)}'
+            f"{feedback_reg_key}:{self._robot_handler.get_feedback_data(decoded_feedback_data, feedback_type=feedback_reg_key)}"
         )
 
     def _shape_feedback(self, feedback_reg_key: str, decoded_feedback_data: list):
@@ -670,7 +733,9 @@ class ArtusAPI:
             return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
-    def _set_get_joint_field(self, joint_angles: dict, target_packer, feedback_reg_key: str):
+    def _set_get_joint_field(
+        self, joint_angles: dict, target_packer, feedback_reg_key: str
+    ):
         """Shared FC 0x17 path: write one target field and read matching feedback.
 
         Args:
@@ -686,7 +751,9 @@ class ArtusAPI:
         if not self._check_awake():
             return
 
-        available_control = self._robot_handler.set_joint_angles(joint_angles, name=True)
+        available_control = self._robot_handler.set_joint_angles(
+            joint_angles, name=True
+        )
         if available_control == 0:
             self.logger.warning("No valid data in joint dictionary to send")
             return False
@@ -722,7 +789,7 @@ class ArtusAPI:
         return self._set_get_joint_field(
             joint_angles,
             self._command_handler.get_target_position_command,
-            'feedback_position_start_reg',
+            "feedback_position_start_reg",
         )
 
     def set_get_joint_speeds(self, joint_angles: dict):
@@ -738,7 +805,7 @@ class ArtusAPI:
         return self._set_get_joint_field(
             joint_angles,
             self._command_handler.get_target_velocity_command,
-            'feedback_velocity_start_reg',
+            "feedback_velocity_start_reg",
         )
 
     def set_get_joint_forces(self, joint_angles: dict):
@@ -754,10 +821,10 @@ class ArtusAPI:
         return self._set_get_joint_field(
             joint_angles,
             self._command_handler.get_target_force_command,
-            'feedback_force_start_reg',
+            "feedback_force_start_reg",
         )
 
-    def _check_communication_frequency(self,last_time:float):
+    def _check_communication_frequency(self, last_time: float):
         """Checks whether enough time has passed since the last command.
 
         Necessary so that the messages stay in sync with the configured
@@ -794,10 +861,14 @@ class ArtusAPI:
             return
         # create hand joint dict with zero value angles
         self._robot_handler.set_home_position()
-        robot_set_home_position_cmd = self._command_handler.get_target_position_command(self._robot_handler.robot.hand_joints)
+        robot_set_home_position_cmd = self._command_handler.get_target_position_command(
+            self._robot_handler.robot.hand_joints
+        )
         if not self._check_communication_frequency(self.last_time):
             return False
-        self._communication_handler.send_data(robot_set_home_position_cmd,CommandType.TARGET_COMMAND.value)
+        self._communication_handler.send_data(
+            robot_set_home_position_cmd, CommandType.TARGET_COMMAND.value
+        )
         self.last_time = time.perf_counter()
 
     def get_voltage(self):
@@ -806,10 +877,11 @@ class ArtusAPI:
         Returns:
             Decoded voltage as a float, or None if the hand is not awake.
         """
-        return self.get_feedback_data('feedback_voltage_start_reg')
+        return self.get_feedback_data("feedback_voltage_start_reg")
 
-
-    def get_feedback_data(self,start_reg=ModbusMap().modbus_reg_map['feedback_position_start_reg']):
+    def get_feedback_data(
+        self, start_reg=ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+    ):
         """Reads feedback data for a given feedback register range.
 
         Single entry point for every feedback field -- position, force,
@@ -842,7 +914,9 @@ class ArtusAPI:
         decoded_feedback_data = self._read_feedback(feedback_reg_key)
         return self._shape_feedback(feedback_reg_key, decoded_feedback_data)
 
-    def get_joint_angles(self,start_reg=ModbusMap().modbus_reg_map['feedback_position_start_reg']):
+    def get_joint_angles(
+        self, start_reg=ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+    ):
         """Deprecated alias for :meth:`get_feedback_data`.
 
         Kept so code written against the previous release keeps working. The
@@ -855,14 +929,17 @@ class ArtusAPI:
         Returns:
             Same as :meth:`get_feedback_data`.
         """
-        if not self._warned_get_joint_angles and start_reg != ModbusMap().modbus_reg_map['feedback_position_start_reg']:
+        if (
+            not self._warned_get_joint_angles
+            and start_reg != ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+        ):
             self.logger.warning(
                 "get_joint_angles() is deprecated and will be removed in a future release -- use get_feedback_data() instead"
             )
             self._warned_get_joint_angles = True
         return self.get_feedback_data(start_reg)
 
-    def helper_fill_dict_from_feedback_data(self,feedback_data:list):
+    def helper_fill_dict_from_feedback_data(self, feedback_data: list):
         """Maps a decoded feedback list to a dict keyed by joint name.
 
         Helper function to fill a dictionary from feedback data for getters.
@@ -917,7 +994,7 @@ class ArtusAPI:
             Dict mapping joint name to feedback force value, or None if the
             hand is not awake.
         """
-        return self.get_feedback_data('feedback_force_start_reg')
+        return self.get_feedback_data("feedback_force_start_reg")
 
     def get_fingertip_forces(self):
         """Reads the fingertip forces from the hand.
@@ -932,7 +1009,6 @@ class ArtusAPI:
         """
         return self.get_feedback_data(ModbusMap.FINGERTIP_FEEDBACK_KEY)
 
-
     def get_joint_speeds(self):
         """Reads joint velocity feedback from the hand.
 
@@ -940,7 +1016,7 @@ class ArtusAPI:
             Dict mapping joint name to feedback velocity value, or None if
             the hand is not awake.
         """
-        return self.get_feedback_data('feedback_velocity_start_reg')
+        return self.get_feedback_data("feedback_velocity_start_reg")
 
     ### NOT IMPLEMENTED YET ###
     def get_joint_temperatures(self):
@@ -950,7 +1026,7 @@ class ArtusAPI:
             Dict mapping joint name to feedback temperature value, or None
             if the hand is not awake.
         """
-        return self.get_feedback_data('feedback_temperature_start_reg')
+        return self.get_feedback_data("feedback_temperature_start_reg")
 
     def get_avg_temperature(self):
         """Reads the hand's average temperature feedback.
@@ -959,8 +1035,7 @@ class ArtusAPI:
             Decoded average temperature as a float, or None if the hand is
             not awake.
         """
-        return self.get_feedback_data('feedback_avg_temperature_start_reg')
-
+        return self.get_feedback_data("feedback_avg_temperature_start_reg")
 
     def get_hand_feedback_data(self) -> bool:
         """Reads all feedback types supported by the connected robot.
@@ -987,12 +1062,10 @@ class ArtusAPI:
             Dict mapping joint name to its decoded error report value, or
             None if the hand is not awake.
         """
-        return self.get_feedback_data('feedback_actuator_error_reg')
-
-
+        return self.get_feedback_data("feedback_actuator_error_reg")
 
     # for compatibility
-    def get_streamed_joint_angles(self,dat_type=0):
+    def get_streamed_joint_angles(self, dat_type=0):
         """Stub retained for v1 API compatibility.
 
         Args:
@@ -1005,49 +1078,57 @@ class ArtusAPI:
         self.logger.error(f"get_streamed_joint_angles is not implemented in ArtusAPIv2")
         return None
 
-    def reset(self,joints=None):
+    def reset(self, joints=None):
         """Sends a reset command for the given number of joints.
 
         Args:
             joints: Joint # to reset. If None, prompts on stdin for
                 a value between 0 and the robot's total joint count.
         """
-        if joints is None or joints < 0 or joints > self._robot_handler.robot.number_of_joints - 1:
-            self.logger.error(f'Invalid joint number: {joints}')
+        if (
+            joints is None
+            or joints < 0
+            or joints > self._robot_handler.robot.number_of_joints - 1
+        ):
+            self.logger.error(f"Invalid joint number: {joints}")
             return
         reset_command = self._command_handler.get_reset_command(joints)
         self.wait_for_com_freq()
         self._communication_handler.send_data(reset_command)
         self.last_time = time.perf_counter()
-        
+
         # wait for hand state ready
         if not self._communication_handler.wait_for_ready(vis=False):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")
 
-    def soft_reset(self,joints=None):
+    def soft_reset(self, joints=None):
         """Sends a reset command for the given number of joints.
 
         Args:
             joints: Number of joints to reset. If None, prompts on stdin for
                 a value between 0 and the robot's total joint count.
         """
-        if joints is None or joints < 0 or joints > self._robot_handler.robot.number_of_joints - 1:
-            self.logger.error(f'Invalid joint number: {joints}')
-            return        
+        if (
+            joints is None
+            or joints < 0
+            or joints > self._robot_handler.robot.number_of_joints - 1
+        ):
+            self.logger.error(f"Invalid joint number: {joints}")
+            return
         soft_reset_command = self._command_handler.get_soft_reset_command(joints)
         self.wait_for_com_freq()
         self._communication_handler.send_data(soft_reset_command)
         self.last_time = time.perf_counter()
-        
+
         # wait for hand state ready
         if not self._communication_handler.wait_for_ready(vis=False):
             self.logger.error("Hand timed out waiting for ready")
         else:
             self.logger.info("Hand ready")
-    
-    def update_firmware(self,file_location=None,drivers_to_flash=0):
+
+    def update_firmware(self, file_location=None, drivers_to_flash=0):
         """Flashes new firmware to one or all actuator drivers on the hand.
 
         Prompts on stdin for any missing arguments (binary file path and/or
@@ -1062,25 +1143,33 @@ class ArtusAPI:
                 None, prompted for on stdin.
         """
 
-        if file_location is None or not file_location.endswith('.bin'):
-            self.logger.error(f'Invalid file location: {file_location}')
+        if file_location is None or not file_location.endswith(".bin"):
+            self.logger.error(f"Invalid file location: {file_location}")
             return
 
-        self._firmware_updater = FirmwareUpdaterNew(communication_handler=self._communication_handler,
-                                                    command_handler=self._command_handler,
-                                                    file_location=file_location,
-                                                    logger=self.logger)
-        
+        self._firmware_updater = FirmwareUpdaterNew(
+            communication_handler=self._communication_handler,
+            command_handler=self._command_handler,
+            file_location=file_location,
+            logger=self.logger,
+        )
+
         fw_size = self._firmware_updater.get_bin_file_info()
 
         # get driver to flash
-        if drivers_to_flash == None or drivers_to_flash < 0 or drivers_to_flash > self._robot_handler.robot.number_of_controllers:
-            self.logger.error(f'Invalid driver number: {drivers_to_flash}')
+        if (
+            drivers_to_flash == None
+            or drivers_to_flash < 0
+            or drivers_to_flash > self._robot_handler.robot.number_of_controllers
+        ):
+            self.logger.error(f"Invalid driver number: {drivers_to_flash}")
             return
-        
+
         # send commmand
         firmware_cmd = self._command_handler.get_firmware_command(drivers_to_flash)
-        self._communication_handler.send_data(firmware_cmd) # sent firmware upload command to command register
+        self._communication_handler.send_data(
+            firmware_cmd
+        )  # sent firmware upload command to command register
         self.last_time = time.perf_counter()
 
         # send firmware data
@@ -1089,7 +1178,7 @@ class ArtusAPI:
         time.sleep(0.5)
 
         self.logger.info(f"next line is sending the firmware data")
-        # send firmware data 
+        # send firmware data
         self._firmware_updater.update_firmware(fw_size)
 
         # wait for hand state ready

@@ -59,7 +59,7 @@ The starting position is 100mm wide (fully open, position 0). Since it is a sing
 They live as attributes on the robot model, not as hardcoded constants in the API:
 ```python
 hand._robot_handler.robot.default_velocity  # 50
-hand._robot_handler.robot.default_force     # 20
+hand._robot_handler.robot.default_force  # 20
 ```
 
 >[!IMPORTANT]

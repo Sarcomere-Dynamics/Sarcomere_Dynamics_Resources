@@ -29,6 +29,7 @@ from .artus_dex.artus_dex_right import ArtusDex_Right
 
 """Factory that instantiates the correct robot model from robot/hand type strings."""
 
+
 class Robot:
     """Factory/facade that instantiates and wraps a specific hand model.
 
@@ -37,9 +38,8 @@ class Robot:
         hand_type: Hand side string (e.g. 'left', 'right').
         robot: The instantiated hand model (subclass of ``BLDCRobot``).
     """
-    def __init__(self,
-                 robot_type='artus_lite',
-                hand_type='left',logger=None):
+
+    def __init__(self, robot_type="artus_lite", hand_type="left", logger=None):
         """Initializes the factory and builds the concrete robot instance.
 
         Args:
@@ -56,7 +56,7 @@ class Robot:
         # setup robot
         self.robot = None
         self._setup_robot()
-        
+
     def _setup_robot(self):
         """Instantiates ``self.robot`` based on ``self.robot_type`` and ``self.hand_type``.
 
@@ -66,42 +66,41 @@ class Robot:
                 a left/right hand.
         """
         # setup robot based on the hand
-        if self.robot_type == 'artus_lite':
-            if self.hand_type == 'left':
+        if self.robot_type == "artus_lite":
+            if self.hand_type == "left":
                 self.robot = ArtusLite_LeftHand(logger=self.logger)
-            elif self.hand_type == 'right':
+            elif self.hand_type == "right":
                 self.robot = ArtusLite_RightHand(logger=self.logger)
             else:
                 raise ValueError("Unknown hand")
 
-        elif self.robot_type == 'artus_lite_plus':
-            if self.hand_type == 'right':
+        elif self.robot_type == "artus_lite_plus":
+            if self.hand_type == "right":
                 self.robot = ArtusLite_Plus_RightHand(logger=self.logger)
-            elif self.hand_type == 'left':
+            elif self.hand_type == "left":
                 self.robot = ArtusLite_Plus_LeftHand(logger=self.logger)
             else:
                 raise ValueError("Unknown hand")
-        elif self.robot_type == 'artus_talos':
-            if self.hand_type == 'right':
+        elif self.robot_type == "artus_talos":
+            if self.hand_type == "right":
                 self.robot = ArtusTalos_Right(logger=self.logger)
-            elif self.hand_type == 'left':
+            elif self.hand_type == "left":
                 self.robot = ArtusTalos_Left(logger=self.logger)
             else:
                 raise ValueError("Unknown hand")
-        elif self.robot_type == 'artus_scorpion':
+        elif self.robot_type == "artus_scorpion":
             self.robot = ArtusScorpion(logger=self.logger)
-        elif self.robot_type == 'artus_dex':
-            if self.hand_type == 'right':
+        elif self.robot_type == "artus_dex":
+            if self.hand_type == "right":
                 self.robot = ArtusDex_Right(logger=self.logger)
-            elif self.hand_type == 'left':
+            elif self.hand_type == "left":
                 self.robot = ArtusDex_Left(logger=self.logger)
             else:
                 raise ValueError("Unknown hand")
         else:
             raise ValueError("Unknown robot type")
-        
 
-    def set_joint_angles(self, joint_angles:dict,name:bool):
+    def set_joint_angles(self, joint_angles: dict, name: bool):
         """Sets the joint angles of the hand.
 
         Args:
@@ -115,11 +114,10 @@ class Robot:
             Bitmask of available control types that were set (see
             ``BLDCRobot.set_joint_angles``).
         """
-        if name: # scorpion has no name for joints because just 1 joint
+        if name:  # scorpion has no name for joints because just 1 joint
             return self.robot.set_joint_angles_by_name(joint_angles)
         else:
             return self.robot.set_joint_angles(joint_angles)
-
 
     def set_home_position(self):
         """Moves the hand to its home position.
@@ -141,13 +139,18 @@ class Robot:
         Returns:
             Result of the underlying robot's ``get_joint_angles`` call.
         """
-        modbus_key = feedback_type if feedback_type is not None else 'feedback_position_start_reg'
+        modbus_key = (
+            feedback_type
+            if feedback_type is not None
+            else "feedback_position_start_reg"
+        )
         return self.robot.get_feedback_data(joint_angles, modbus_key=modbus_key)
 
 
 def main():
     """Demo entry point: instantiates a default (artus_lite, left) Robot."""
-    artus_robot = Robot(hand_type='left')
+    artus_robot = Robot(hand_type="left")
+
 
 if __name__ == "__main__":
     main()

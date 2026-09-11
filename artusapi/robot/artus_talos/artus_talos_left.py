@@ -9,20 +9,25 @@ Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
 Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
+
 from .artus_talos import ArtusTalos
+
+
 class ArtusTalos_Left(ArtusTalos):
     """Left-hand variant of the ARTUS Talos."""
-    def __init__(self,logger):
+
+    def __init__(self, logger):
         """Initializes the left ARTUS Talos hand with its narrower thumb-spread limits.
 
         Args:
             logger: Logger instance passed through to ``ArtusTalos``.
         """
         super().__init__(
-                joint_max_angles=[30,90,90,90,90,90],
-                joint_min_angles=[-30,0,0,0,0,0],
-                joint_default_angles=[0,0,0,0,0,0],
-                joint_rotation_directions=[-1,1,1,1,1,1],
-                joint_forces=[],
-                number_of_joints=6,
-                logger=logger)
+            joint_max_angles=[30, 90, 90, 90, 90, 90],
+            joint_min_angles=[-30, 0, 0, 0, 0, 0],
+            joint_default_angles=[0, 0, 0, 0, 0, 0],
+            joint_rotation_directions=[-1, 1, 1, 1, 1, 1],
+            joint_forces=[],
+            number_of_joints=6,
+            logger=logger,
+        )

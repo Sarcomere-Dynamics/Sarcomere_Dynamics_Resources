@@ -35,24 +35,29 @@ def find_port_holders(port):
     holders = []
     try:
         target = os.path.realpath(port)
-        for pid in os.listdir('/proc'):
+        for pid in os.listdir("/proc"):
             if not pid.isdigit() or int(pid) == os.getpid():
                 continue
-            fd_dir = f'/proc/{pid}/fd'
+            fd_dir = f"/proc/{pid}/fd"
             try:
                 for fd in os.listdir(fd_dir):
                     link = os.readlink(os.path.join(fd_dir, fd))
-                    if link == target or link == f'{target} (deleted)':
-                        with open(f'/proc/{pid}/cmdline') as f:
-                            cmd = f.read().replace('\0', ' ').strip() or '?'
-                        suffix = ' [stale fd, port re-enumerated]' if link.endswith('(deleted)') else ''
-                        holders.append(f'pid {pid} ({cmd}){suffix}')
+                    if link == target or link == f"{target} (deleted)":
+                        with open(f"/proc/{pid}/cmdline") as f:
+                            cmd = f.read().replace("\0", " ").strip() or "?"
+                        suffix = (
+                            " [stale fd, port re-enumerated]"
+                            if link.endswith("(deleted)")
+                            else ""
+                        )
+                        holders.append(f"pid {pid} ({cmd}){suffix}")
                         break
             except (PermissionError, FileNotFoundError, OSError):
                 continue
     except Exception:
         pass
     return holders
+
 
 class RS485_RTU:
     """Modbus RTU transport for RS485 communication with an ARTUS hand.
@@ -72,7 +77,9 @@ class RS485_RTU:
             created on the first call to `open`.
     """
 
-    def __init__(self, port='COM9', baudrate=115200, timeout=0.1, logger=None, slave_address=1):
+    def __init__(
+        self, port="COM9", baudrate=115200, timeout=0.1, logger=None, slave_address=1
+    ):
         """Initializes connection parameters without opening the port.
 
         Args:
@@ -107,7 +114,7 @@ class RS485_RTU:
                 port=self.port,
                 baudrate=self.baudrate,
                 bytesize=8,
-                parity='N',
+                parity="N",
                 stopbits=1,
                 timeout=self.timeout,
                 retries=0,
@@ -125,7 +132,7 @@ class RS485_RTU:
             self.logger.error(f"Error opening {self.port} @ {self.baudrate} baudrate")
             raise
 
-    def send(self, data:list, command:int, max_retries=3, retry_delay=0.5):
+    def send(self, data: list, command: int, max_retries=3, retry_delay=0.5):
         """Writes register values to the hand, retrying on Modbus errors.
 
         Data must be in 16-bit register format. Dispatches to
@@ -160,19 +167,29 @@ class RS485_RTU:
                         d0 = int(data[0]) & 0xFF
                         d1 = int(data[1]) & 0xFF
                         if not (0 <= d0 <= 255 and 0 <= d1 <= 255):
-                            self.logger.error(f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}")
+                            self.logger.error(
+                                f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}"
+                            )
                             return False
                         value = (d1 << 8) | d0
                     else:
                         value = data[0]
 
-                    result = self.client.write_register(0, value, device_id=self.slave_address)
+                    result = self.client.write_register(
+                        0, value, device_id=self.slave_address
+                    )
                 elif command == CommandType.TARGET_COMMAND.value:
-                    result = self.client.write_registers(data[0], data[1:], device_id=self.slave_address)
+                    result = self.client.write_registers(
+                        data[0], data[1:], device_id=self.slave_address
+                    )
                 elif command == CommandType.FIRMWARE_COMMAND.value:
-                    result = self.client.write_registers(0, data, device_id=self.slave_address)
+                    result = self.client.write_registers(
+                        0, data, device_id=self.slave_address
+                    )
                 elif command == CommandType.CONFIG_COMMAND.value:
-                    result = self.client.write_registers(0, data, device_id=self.slave_address)
+                    result = self.client.write_registers(
+                        0, data, device_id=self.slave_address
+                    )
                 else:
                     self.logger.error(f"Unknown command: {command}")
                     return False
@@ -184,7 +201,9 @@ class RS485_RTU:
                 return True
 
             except (ModbusIOException, ConnectionException) as e:
-                self.logger.warning(f"Modbus exception on attempt {attempt + 1}/{max_retries}: {e}")
+                self.logger.warning(
+                    f"Modbus exception on attempt {attempt + 1}/{max_retries}: {e}"
+                )
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
@@ -197,7 +216,7 @@ class RS485_RTU:
 
         return False
 
-    def receive(self, data:list, max_retries=3, retry_delay=0.1):
+    def receive(self, data: list, max_retries=3, retry_delay=0.1):
         """Reads holding registers from the hand, retrying on Modbus errors.
 
         Args:
@@ -217,7 +236,9 @@ class RS485_RTU:
         """
         for attempt in range(max_retries):
             try:
-                result = self.client.read_holding_registers(data[0], count=data[1], device_id=self.slave_address)
+                result = self.client.read_holding_registers(
+                    data[0], count=data[1], device_id=self.slave_address
+                )
                 if result.isError():
                     raise ModbusIOException(f"Modbus error response: {result}")
 
@@ -228,7 +249,9 @@ class RS485_RTU:
                     return registers
 
             except (ModbusIOException, ConnectionException) as e:
-                self.logger.warning(f"Modbus exception on receive attempt {attempt + 1}/{max_retries}: {e}")
+                self.logger.warning(
+                    f"Modbus exception on receive attempt {attempt + 1}/{max_retries}: {e}"
+                )
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
@@ -241,8 +264,15 @@ class RS485_RTU:
 
         return None
 
-    def send_receive(self, read_start: int, read_count: int, write_start: int, values: list,
-                     max_retries=3, retry_delay=0.1):
+    def send_receive(
+        self,
+        read_start: int,
+        read_count: int,
+        write_start: int,
+        values: list,
+        max_retries=3,
+        retry_delay=0.1,
+    ):
         """Atomically writes registers then reads registers via Modbus FC 0x17.
 
         Uses pymodbus ``readwrite_registers`` (Read/Write Multiple Registers).
@@ -289,7 +319,9 @@ class RS485_RTU:
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
-                    self.logger.error(f"Failed to send_receive after {max_retries} attempts")
+                    self.logger.error(
+                        f"Failed to send_receive after {max_retries} attempts"
+                    )
                     raise
 
             except Exception as e:

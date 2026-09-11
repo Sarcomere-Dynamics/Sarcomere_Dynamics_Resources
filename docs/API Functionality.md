@@ -78,8 +78,8 @@ With **`ArtusAPI`**, request feedback with explicit getters such as `get_feedbac
 Every getter is a thin wrapper around `get_feedback_data(start_reg)`, which is the single entry point for all feedback fields. It accepts either a `ModbusMap` key name or its register address:
 
 ```python
-hand.get_joint_forces()                              # same as
-hand.get_feedback_data('feedback_force_start_reg')   # ...this
+hand.get_joint_forces()  # same as
+hand.get_feedback_data("feedback_force_start_reg")  # ...this
 ```
 
 The return shape depends on the field: whole-hand scalars (`feedback_voltage_start_reg`, `feedback_avg_temperature_start_reg`, `slave_id_reg`) return a single value, `feedback_force_sensor_start_reg` returns a dict keyed by finger name with `x`/`y`/`z` values, and every other field returns a dict keyed by joint name. An unrecognized key or address raises `ValueError`.

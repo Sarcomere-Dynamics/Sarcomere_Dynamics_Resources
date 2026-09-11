@@ -39,7 +39,10 @@ class TestSlaveIDMap(unittest.TestCase):
 
     def test_scorpion_normalizes_hand(self):
         """Verifies artus_scorpion/right normalizes to the shared left-hand slave ID."""
-        self.assertEqual(normalize_robot_hand_key("artus_scorpion", "right"), ("artus_scorpion", "left"))
+        self.assertEqual(
+            normalize_robot_hand_key("artus_scorpion", "right"),
+            ("artus_scorpion", "left"),
+        )
         self.assertEqual(expected_slave_id("artus_scorpion", "right"), 7)
 
     def test_unknown_slave_id(self):

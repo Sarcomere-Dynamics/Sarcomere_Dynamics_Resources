@@ -26,6 +26,7 @@ from artusapi.common.ModbusMap import CommandType
 
 try:
     import minimalmodbus  # noqa: F401  archived baseline, no longer a runtime dep
+
     HAS_MINIMALMODBUS = True
 except ImportError:
     HAS_MINIMALMODBUS = False
@@ -41,7 +42,11 @@ SEND_CASES = [
     ("setup_two_values", [0x0B, 0x03], CommandType.SETUP_COMMANDS.value),
     ("setup_single_value", [0x0F], CommandType.SETUP_COMMANDS.value),
     ("target_positions", [1, 0x1E3C, 0x2D00, 0x7F80], CommandType.TARGET_COMMAND.value),
-    ("target_forces", [50, 0x0000, 0x3FA0, 0x0000, 0x4020], CommandType.TARGET_COMMAND.value),
+    (
+        "target_forces",
+        [50, 0x0000, 0x3FA0, 0x0000, 0x4020],
+        CommandType.TARGET_COMMAND.value,
+    ),
     ("target_velocities", [150, 100, 200, 0x7FFF], CommandType.TARGET_COMMAND.value),
     ("firmware", [0x11, 0xFF], CommandType.FIRMWARE_COMMAND.value),
 ]
@@ -138,7 +143,11 @@ class MinimalmodbusCallCapture:
         )
         ret = self.rtu.receive(data, max_retries=1)
         kwargs = self.instrument.read_registers.call_args.kwargs
-        return ("read_holding", kwargs["registeraddress"], kwargs["number_of_registers"]), ret
+        return (
+            "read_holding",
+            kwargs["registeraddress"],
+            kwargs["number_of_registers"],
+        ), ret
 
 
 class PymodbusCallCapture:
@@ -194,7 +203,9 @@ class PymodbusCallCapture:
         self.client.reset_mock()
         result = MagicMock()
         result.isError.return_value = False
-        result.registers = return_value if isinstance(return_value, list) else [return_value]
+        result.registers = (
+            return_value if isinstance(return_value, list) else [return_value]
+        )
         self.client.read_holding_registers.return_value = result
         ret = self.rtu.receive(data, max_retries=1)
         args, kwargs = self.client.read_holding_registers.call_args
@@ -296,9 +307,7 @@ class TestCallParity(unittest.TestCase):
         for name, data in RECEIVE_CASES:
             ret_val = list(range(data[1])) if data[1] > 1 else 0x0102
             with self.subTest(name=name):
-                self.assertEqual(
-                    old.receive(data, ret_val), new.receive(data, ret_val)
-                )
+                self.assertEqual(old.receive(data, ret_val), new.receive(data, ret_val))
 
 
 @needs_minimalmodbus

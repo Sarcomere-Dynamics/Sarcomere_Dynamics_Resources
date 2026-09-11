@@ -29,7 +29,9 @@ except ImportError as e:
         "  pip install -r examples/StandardBotsDemo/requirements.txt"
     ) from e
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 sys.path.append(PROJECT_ROOT)
 
 from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_config
@@ -43,19 +45,16 @@ from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_co
 sb_config = load_standard_bots_config()
 
 sdk = StandardBotsRobot(
-    url=sb_config['url'],
-    token=sb_config['token'],
-    robot_kind=getattr(StandardBotsRobot.RobotKind, sb_config['robot_kind']),
+    url=sb_config["url"],
+    token=sb_config["token"],
+    robot_kind=getattr(StandardBotsRobot.RobotKind, sb_config["robot_kind"]),
 )
 
 print("Attempting to connect to standard bot...")
 
 with sdk.connection():
     try:
-        response = sdk.routine_editor.routines.list(
-            limit=100,
-            offset=0
-        )
+        response = sdk.routine_editor.routines.list(limit=100, offset=0)
 
         paginated_response = response.ok()
 

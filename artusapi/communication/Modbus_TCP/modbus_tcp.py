@@ -35,7 +35,9 @@ class ModbusTCP:
             created on the first call to `open`.
     """
 
-    def __init__(self, host='192.168.2.8', port=502, timeout=1.0, logger=None, slave_address=1):
+    def __init__(
+        self, host="192.168.2.8", port=502, timeout=1.0, logger=None, slave_address=1
+    ):
         """Initializes connection parameters without connecting.
 
         Args:
@@ -83,23 +85,29 @@ class ModbusTCP:
                 pass
         try:
             # retries=0: retry policy is owned by send()/receive() loops, same as RS485_RTU
-            self.client = ModbusTcpClient(host=self.host, port=self.port, timeout=self.timeout, retries=0)
+            self.client = ModbusTcpClient(
+                host=self.host, port=self.port, timeout=self.timeout, retries=0
+            )
             if not self.client.connect():
                 raise ConnectionError(
                     f"Could not open Modbus TCP connection to {self.host}:{self.port}"
                 )
             # Disable Nagle's algorithm so small register writes go out immediately
             # instead of being buffered/delayed, which otherwise caps send frequency.
-            if getattr(self.client, 'socket', None) is not None:
+            if getattr(self.client, "socket", None) is not None:
                 try:
-                    self.client.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                    self.client.socket.setsockopt(
+                        socket.IPPROTO_TCP, socket.TCP_NODELAY, 1
+                    )
                     self.logger.debug("Disabled Nagle's algorithm (TCP_NODELAY=1)")
                 except Exception as e:
                     self.logger.warning(f"Could not set TCP_NODELAY socket option: {e}")
             self.logger.info(f"Opened TCP connection to {self.host}:{self.port}")
         except Exception as e:
             self.logger.error(e)
-            self.logger.error(f"Error opening TCP connection to {self.host}:{self.port}")
+            self.logger.error(
+                f"Error opening TCP connection to {self.host}:{self.port}"
+            )
             raise
 
     def send(self, data: list, command: int, max_retries=3, retry_delay=0.5):
@@ -139,19 +147,29 @@ class ModbusTCP:
                         d0 = int(data[0]) & 0xFF
                         d1 = int(data[1]) & 0xFF
                         if not (0 <= d0 <= 255 and 0 <= d1 <= 255):
-                            self.logger.error(f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}")
+                            self.logger.error(
+                                f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}"
+                            )
                             return False
                         value = (d1 << 8) | d0
                     else:
                         value = data[0]
 
-                    result = self.client.write_register(0, value, device_id=self.slave_address)
+                    result = self.client.write_register(
+                        0, value, device_id=self.slave_address
+                    )
                 elif command == CommandType.TARGET_COMMAND.value:
-                    result = self.client.write_registers(data[0], data[1:], device_id=self.slave_address)
+                    result = self.client.write_registers(
+                        data[0], data[1:], device_id=self.slave_address
+                    )
                 elif command == CommandType.FIRMWARE_COMMAND.value:
-                    result = self.client.write_registers(0, data, device_id=self.slave_address)
+                    result = self.client.write_registers(
+                        0, data, device_id=self.slave_address
+                    )
                 elif command == CommandType.CONFIG_COMMAND.value:
-                    result = self.client.write_registers(0, data, device_id=self.slave_address)
+                    result = self.client.write_registers(
+                        0, data, device_id=self.slave_address
+                    )
                 else:
                     self.logger.error(f"Unknown command: {command}")
                     return False
@@ -162,7 +180,9 @@ class ModbusTCP:
                 return True
 
             except (ModbusIOException, ConnectionException, ConnectionError) as e:
-                self.logger.warning(f"Modbus exception on attempt {attempt + 1}/{max_retries}: {e}")
+                self.logger.warning(
+                    f"Modbus exception on attempt {attempt + 1}/{max_retries}: {e}"
+                )
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
@@ -198,7 +218,9 @@ class ModbusTCP:
             try:
                 if not self.is_connected():
                     self.open()
-                result = self.client.read_holding_registers(data[0], count=data[1], device_id=self.slave_address)
+                result = self.client.read_holding_registers(
+                    data[0], count=data[1], device_id=self.slave_address
+                )
                 if result.isError():
                     raise ModbusIOException(f"Modbus error response: {result}")
 
@@ -208,7 +230,9 @@ class ModbusTCP:
                 return registers
 
             except (ModbusIOException, ConnectionException, ConnectionError) as e:
-                self.logger.warning(f"Modbus exception on receive attempt {attempt + 1}/{max_retries}: {e}")
+                self.logger.warning(
+                    f"Modbus exception on receive attempt {attempt + 1}/{max_retries}: {e}"
+                )
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
@@ -221,8 +245,15 @@ class ModbusTCP:
 
         return None
 
-    def send_receive(self, read_start: int, read_count: int, write_start: int, values: list,
-                     max_retries=3, retry_delay=0.1):
+    def send_receive(
+        self,
+        read_start: int,
+        read_count: int,
+        write_start: int,
+        values: list,
+        max_retries=3,
+        retry_delay=0.1,
+    ):
         """Atomically writes registers then reads registers via Modbus FC 0x17.
 
         Uses pymodbus ``readwrite_registers`` (Read/Write Multiple Registers).
@@ -272,7 +303,9 @@ class ModbusTCP:
                 if attempt < max_retries - 1:
                     time.sleep(retry_delay)
                 else:
-                    self.logger.error(f"Failed to send_receive after {max_retries} attempts")
+                    self.logger.error(
+                        f"Failed to send_receive after {max_retries} attempts"
+                    )
                     raise
 
             except Exception as e:

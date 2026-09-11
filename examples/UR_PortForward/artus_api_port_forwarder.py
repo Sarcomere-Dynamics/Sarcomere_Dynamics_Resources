@@ -33,9 +33,11 @@ class ArtusAPIPortForwarder:
     to the robot's RS485 bus.
     """
 
-    def __init__(self,
-                 robot_ip = "192.168.194.129", # robot ip address (change this to the robot's ip address)
-                 local_device_name = "/tmp/ttyUR"): # temporary device name
+    def __init__(
+        self,
+        robot_ip="192.168.194.129",  # robot ip address (change this to the robot's ip address)
+        local_device_name="/tmp/ttyUR",
+    ):  # temporary device name
         """Starts the socat bridge from the robot's TCP port to a local device.
 
         Args:
@@ -50,7 +52,6 @@ class ArtusAPIPortForwarder:
         self.ser = None
         self._run_socat()
 
-
     def _run_socat(self):
         """Launches the socat subprocess linking the local device to the robot.
 
@@ -62,7 +63,6 @@ class ArtusAPIPortForwarder:
         self.socat_process = subprocess.Popen(socat_command, shell=True)
         time.sleep(2)
 
-
     def get_local_device_name(self):
         """Returns the local pseudo-terminal device path for serial access.
 
@@ -71,8 +71,6 @@ class ArtusAPIPortForwarder:
             "/tmp/ttyUR").
         """
         return self.local_device_name
-
-
 
 
 def test_port_forwarder():
@@ -102,7 +100,6 @@ def test_port_forwarder():
         data_received = ser.readline()
         print(f"Received: {data_received}")
         time.sleep(1)
-
 
 
 if __name__ == "__main__":

@@ -53,7 +53,9 @@ class TestNewCommunicationMocked(unittest.TestCase):
         inst.receive.return_value = 0x0102
         nc = self._make_nc(inst)
         nc.open_connection()
-        ret = nc.receive_data(amount_dat=1, start=ModbusMap().modbus_reg_map["feedback_register"])
+        ret = nc.receive_data(
+            amount_dat=1, start=ModbusMap().modbus_reg_map["feedback_register"]
+        )
         self.assertEqual(ret, 0x0102)
         inst.receive.assert_called_once()
 
@@ -92,7 +94,9 @@ class TestNewCommunicationMocked(unittest.TestCase):
         nc = self._make_nc(inst)
         nc.open_connection()
         with patch.object(nc.logger, "info") as log_info:
-            result = nc.wait_for_ready(acceptable_state=ActuatorState.ACTUATOR_IDLE.value)
+            result = nc.wait_for_ready(
+                acceptable_state=ActuatorState.ACTUATOR_IDLE.value
+            )
         self.assertEqual(result, ActuatorState.ACTUATOR_IDLE.value)
         logged = " ".join(str(c.args[0]) for c in log_info.call_args_list)
         self.assertIn(TrajectoryReturn.TRAJECTORY_COMPLETE.name, logged)

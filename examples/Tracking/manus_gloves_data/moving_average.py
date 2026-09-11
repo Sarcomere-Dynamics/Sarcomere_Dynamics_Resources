@@ -12,6 +12,7 @@ See the LICENSE file in the repository for full details.
 
 """Simple fixed-size rolling-window moving average smoothing filters."""
 
+
 class MovingAverage:
     """A fixed-size rolling window average over a single stream of values."""
 
@@ -36,7 +37,7 @@ class MovingAverage:
         self.sum += value
         if len(self.window) > self.window_size:
             self.sum -= self.window.pop(0)
-        #print("Sum: ",self.sum)
+        # print("Sum: ",self.sum)
 
     def get_average(self):
         """Returns the current average of the values in the window.
@@ -98,9 +99,9 @@ def test_multi_moving_average():
     """Manually exercises MultiMovingAverage by printing running averages of a linear ramp."""
     multi_moving_average = MultiMovingAverage(window_size=10, num_windows=5)
     for i in range(100):
-        multi_moving_average.add_values([i, 2*i, 3*i, 4*i, 5*i])
+        multi_moving_average.add_values([i, 2 * i, 3 * i, 4 * i, 5 * i])
         print(multi_moving_average.get_averages())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_multi_moving_average()

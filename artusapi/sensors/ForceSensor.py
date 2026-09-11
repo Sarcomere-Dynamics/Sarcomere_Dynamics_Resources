@@ -15,5 +15,3 @@ class ForceSensor:
         self.z = 0
 
         self.temperature = 0
-
-    

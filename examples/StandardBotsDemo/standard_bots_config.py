@@ -16,8 +16,8 @@ import os
 import yaml
 
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
-CONFIG_PATH = os.path.join(CONFIG_DIR, 'standard_bots_config.yaml')
-EXAMPLE_CONFIG_PATH = os.path.join(CONFIG_DIR, 'standard_bots_config.example.yaml')
+CONFIG_PATH = os.path.join(CONFIG_DIR, "standard_bots_config.yaml")
+EXAMPLE_CONFIG_PATH = os.path.join(CONFIG_DIR, "standard_bots_config.example.yaml")
 
 
 def load_standard_bots_config() -> dict:
@@ -41,6 +41,6 @@ def load_standard_bots_config() -> dict:
             f"{CONFIG_PATH} not found. Copy {EXAMPLE_CONFIG_PATH} to "
             f"'standard_bots_config.yaml' in this folder and fill in your own values."
         )
-    with open(CONFIG_PATH, 'r') as file:
+    with open(CONFIG_PATH, "r") as file:
         config_dict = yaml.safe_load(file)
-    return config_dict['standard_bots']
+    return config_dict["standard_bots"]

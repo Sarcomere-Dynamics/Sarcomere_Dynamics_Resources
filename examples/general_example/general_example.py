@@ -23,10 +23,14 @@ error reports).
 # ------------------------------------------------------------------------------
 import time
 import json
+
 # Add the desired path to the system path
 import os
 import sys
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
@@ -35,6 +39,7 @@ from artusapi import ArtusConfig
 
 # new version of ArtusAPI use local version
 from artusapi.common import ModbusMap
+
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Main Menu -----------------------------------
@@ -46,7 +51,7 @@ def main_menu():
         str: The raw text entered by the user at the prompt.
     """
     return input(
-    """
+        """
     ╔══════════════════════════════════════════════════════════════════╗
     ║                          Artus API 2.0                           ║
     ╠══════════════════════════════════════════════════════════════════╣
@@ -71,15 +76,18 @@ def main_menu():
     ║                                                                  ║
     ╚══════════════════════════════════════════════════════════════════╝
     >> Input Command Code (1-16): """
-    
     )
+
 
 # ------------------------------------------------------------------------------
 # -------------------------------- Logger Setup --------------------------------
 # ------------------------------------------------------------------------------
 import logging
 
-def setup_logger(level='ERROR',format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):
+
+def setup_logger(
+    level="ERROR", format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+):
     """Creates (or reuses) a console logger for the ArtusAPI example.
 
     Args:
@@ -92,21 +100,21 @@ def setup_logger(level='ERROR',format='%(asctime)s - %(name)s - %(levelname)s - 
         logging.Logger: Logger named 'ArtusAPI_Example' with a console
         handler attached (attached only once across repeated calls).
     """
-    logger = logging.getLogger('ArtusAPI_Example')
+    logger = logging.getLogger("ArtusAPI_Example")
     logger.setLevel(level)
-    
+
     # Create console handler with formatting
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
-    
+
     # Create formatter
     formatter = logging.Formatter(format)
     console_handler.setFormatter(formatter)
-    
+
     # Add handler to logger if not already added
     if not logger.handlers:
         logger.addHandler(console_handler)
-    
+
     return logger
 
 
@@ -128,76 +136,103 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
             files (grasp_example.json, grasp_open.json).
     """
     match user_input:
-        case '1':
+        case "1":
             artusapi.connect()
-        case '2':
+        case "2":
             artusapi.disconnect()
-        case '3':
-            control_type = int(input("Enter control type (1: torque, 2: velocity, 3: position): "))
-            if control_type not in [1,2,3]:
+        case "3":
+            control_type = int(
+                input("Enter control type (1: torque, 2: velocity, 3: position): ")
+            )
+            if control_type not in [1, 2, 3]:
                 logger.warning("Invalid control type, defaulting to position control")
                 control_type = 3
             artusapi.wake_up(control_type=control_type)
-        case '4':
+        case "4":
             artusapi.sleep()
-        case '5':
+        case "5":
             n = int(input("Enter joint to calibrate:"))
-            if n not in range(0,artusapi._robot_handler.robot.number_of_joints+1): # because not inclusive range
+            if n not in range(
+                0, artusapi._robot_handler.robot.number_of_joints + 1
+            ):  # because not inclusive range
                 logger.error(f"Invalid joint number, please try again")
                 return
             artusapi.calibrate(n)
-        case '6':
-            with open(os.path.join(hand_poses_path ,'grasp_example.json'),'r') as file:
+        case "6":
+            with open(os.path.join(hand_poses_path, "grasp_example.json"), "r") as file:
                 grasp_example_dict = json.load(file)
-            logger.info(f"Setting joint angles to: {grasp_example_dict} and setting velocity and force to defaults")
-            for key,value in grasp_example_dict.items():
-                grasp_example_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
-                grasp_example_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
+            logger.info(
+                f"Setting joint angles to: {grasp_example_dict} and setting velocity and force to defaults"
+            )
+            for key, value in grasp_example_dict.items():
+                grasp_example_dict[key]["target_velocity"] = (
+                    artusapi._robot_handler.robot.default_velocity
+                )
+                grasp_example_dict[key]["target_force"] = (
+                    artusapi._robot_handler.robot.default_force
+                )
             artusapi.set_joint_angles(grasp_example_dict)
-        case '7':
+        case "7":
             logger.info(artusapi.get_robot_status())
-        case '8':
-            with open(os.path.join(hand_poses_path ,'grasp_open.json'),'r') as file:
+        case "8":
+            with open(os.path.join(hand_poses_path, "grasp_open.json"), "r") as file:
                 grasp_dict = json.load(file)
-            logger.info(f"Setting joint angles to: {grasp_dict} and setting velocity and force to defaults")
-            for key,value in grasp_dict.items():
-                grasp_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
-                grasp_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
+            logger.info(
+                f"Setting joint angles to: {grasp_dict} and setting velocity and force to defaults"
+            )
+            for key, value in grasp_dict.items():
+                grasp_dict[key]["target_velocity"] = (
+                    artusapi._robot_handler.robot.default_velocity
+                )
+                grasp_dict[key]["target_force"] = (
+                    artusapi._robot_handler.robot.default_force
+                )
             artusapi.set_joint_angles(grasp_dict)
-        case '9':
+        case "9":
             artusapi.get_feedback_data()
-        case '10':
+        case "10":
             artusapi.get_joint_speeds()
-        case '11':
+        case "11":
             artusapi.get_joint_forces()
-        case '12':
+        case "12":
             if artusapi._robot_handler.robot.force_sensors is not None:
                 artusapi.get_fingertip_forces()
             else:
                 logger.error("Fingertip forces are not supported for this robot")
-        case '13':
+        case "13":
             artusapi.get_voltage()
-        case '14':
+        case "14":
             artusapi.get_avg_temperature()
-        case '15':
+        case "15":
             artusapi.get_joint_temperatures()
-        case '16':
+        case "16":
             artusapi.get_error_report()
-        case 'c':
+        case "c":
             artusapi.clear_errors()
-        case 'r':
+        case "r":
             artusapi.reset()
-        case 'sr':
+        case "sr":
             artusapi.soft_reset()
-        case 'f':
-            if input(f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue: ") == 'e':
+        case "f":
+            if (
+                input(
+                    f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue: "
+                )
+                == "e"
+            ):
                 driver = int(input("Enter driver to flash: "))
-                if (driver > artusapi._robot_handler.robot.number_of_controllers or driver < 0):
+                if (
+                    driver > artusapi._robot_handler.robot.number_of_controllers
+                    or driver < 0
+                ):
                     logger.error(f"Invalid driver number, please try again")
                 else:
-                    file_location_ = input(f'enter file location of driver: ')
-                    artusapi.update_firmware(file_location=file_location_,drivers_to_flash=driver)
+                    file_location_ = input(f"enter file location of driver: ")
+                    artusapi.update_firmware(
+                        file_location=file_location_, drivers_to_flash=driver
+                    )
                     logger.info(f"Firmware flashed successfully")
+
 
 # -------------------------------------------------------------------------------
 # --------------------------------- Example -------------------------------------
@@ -214,14 +249,13 @@ def example():
     config = ArtusConfig()
 
     artusapi = None
-    hand_poses_path = os.path.join(PROJECT_ROOT,'data','hand_poses')
+    hand_poses_path = os.path.join(PROJECT_ROOT, "data", "hand_poses")
     logger = config.logger
     artusapi = config.get_api()
 
     # while True:
     #     artusapi.get_fingertip_forces()
     #     time.sleep(0.5)
-
 
     # Main loop (example)
     while True:
@@ -231,18 +265,18 @@ def example():
         except Exception as e:
             logger.error(f"Error: {e}")
             pass
+
+
 # ----------------------------------------------------------------------------------
 # ---------------------------------- Main ------------------------------------------
 # ----------------------------------------------------------------------------------
-if __name__ == '__main__':
+if __name__ == "__main__":
     example()
     # import serial
     # x = serial.Serial(port='COM13',baudrate=250000, timeout= 1)
-    
+
     # n = bytearray([0x33])*139
-    
+
     # while True:
     #     x.write(n)
     #     time.sleep(1)
-    
-    

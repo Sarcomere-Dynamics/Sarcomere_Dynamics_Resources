@@ -6,7 +6,11 @@ import struct
 import unittest
 from unittest.mock import MagicMock, patch
 
-from artusapi.api_tests.mocks import build_api, make_communication_mock, patched_artus_api_v2_constructor
+from artusapi.api_tests.mocks import (
+    build_api,
+    make_communication_mock,
+    patched_artus_api_v2_constructor,
+)
 from artusapi.common.ModbusMap import ModbusMap
 from artusapi.common.SlaveIDMap import expected_slave_id
 from artusapi.communication.new_communication import ActuatorState, CommandType
@@ -181,7 +185,9 @@ logging:
         """Verifies get_feedback_data returns the raw slave ID when reading the slave_id_reg register."""
         comm = MagicMock()
         comm.receive_data.return_value = 0x0003
-        api, comm = build_api(robot_type="artus_lite_plus", hand_type="left", communication_mock=comm)
+        api, comm = build_api(
+            robot_type="artus_lite_plus", hand_type="left", communication_mock=comm
+        )
         api.awake = True
         reg = ModbusMap().modbus_reg_map["slave_id_reg"]
         sid = api.get_feedback_data(start_reg=reg)
@@ -249,7 +255,9 @@ logging:
         """Verifies get_fingertip_forces returns a dict for the artus_lite_plus hand."""
         comm = MagicMock()
         comm.receive_data.return_value = [0] * 30
-        api, comm = build_api(robot_type="artus_lite_plus", hand_type="left", communication_mock=comm)
+        api, comm = build_api(
+            robot_type="artus_lite_plus", hand_type="left", communication_mock=comm
+        )
         api.awake = True
         out = api.get_fingertip_forces()
         self.assertIsInstance(out, dict)
@@ -298,8 +306,10 @@ logging:
         """Verifies get_config sends a trigger and payload write for each of SSID and password."""
         comm = MagicMock()
         comm.wait_for_ready.side_effect = [
-            ActuatorState.ACTUATOR_CONFIG.value, ActuatorState.ACTUATOR_CONFIG_FINISH.value,
-            ActuatorState.ACTUATOR_CONFIG.value, ActuatorState.ACTUATOR_CONFIG_FINISH.value,
+            ActuatorState.ACTUATOR_CONFIG.value,
+            ActuatorState.ACTUATOR_CONFIG_FINISH.value,
+            ActuatorState.ACTUATOR_CONFIG.value,
+            ActuatorState.ACTUATOR_CONFIG_FINISH.value,
         ]
         comm.receive_data.return_value = [(192 << 8) | 168, (1 << 8) | 50]
         api, comm = build_api(communication_mock=comm)
@@ -308,8 +318,12 @@ logging:
 
         # 2 send_data calls per config value (trigger + payload) x 2 values
         self.assertEqual(comm.send_data.call_count, 4)
-        payload_call_types = [c.args[1] for c in comm.send_data.call_args_list if len(c.args) > 1]
-        self.assertTrue(all(t == CommandType.CONFIG_COMMAND.value for t in payload_call_types))
+        payload_call_types = [
+            c.args[1] for c in comm.send_data.call_args_list if len(c.args) > 1
+        ]
+        self.assertTrue(
+            all(t == CommandType.CONFIG_COMMAND.value for t in payload_call_types)
+        )
         self.assertEqual(len(payload_call_types), 2)
 
     def test_string_to_registers(self):
@@ -331,17 +345,25 @@ logging:
         """Verifies set_get_joint_angles issues one send_receive_data call with matching read/write args."""
         comm = MagicMock()
         n = 16
-        comm.send_receive_data.return_value = [0] * 8  # position: 0.5 word/joint * 16 -> 8
+        comm.send_receive_data.return_value = [
+            0
+        ] * 8  # position: 0.5 word/joint * 16 -> 8
         api, comm = build_api(communication_mock=comm)
         api.awake = True
         api.last_time = 0.0
         with patch("ArtusAPI.artus_api_new.time.perf_counter", return_value=10.0):
             out = api.set_get_joint_angles({"thumb_spread": {"target_angle": 5}})
         comm.send_receive_data.assert_called_once()
-        read_start, read_count, write_start, values = comm.send_receive_data.call_args[0]
-        self.assertEqual(read_start, ModbusMap().modbus_reg_map["feedback_position_start_reg"])
+        read_start, read_count, write_start, values = comm.send_receive_data.call_args[
+            0
+        ]
+        self.assertEqual(
+            read_start, ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+        )
         self.assertEqual(read_count, 8)
-        self.assertEqual(write_start, ModbusMap().modbus_reg_map["target_position_start_reg"])
+        self.assertEqual(
+            write_start, ModbusMap().modbus_reg_map["target_position_start_reg"]
+        )
         self.assertEqual(len(values), n // 2)
         self.assertIsInstance(out, dict)
         self.assertEqual(len(out), n)
@@ -400,7 +422,9 @@ logging:
         comm = MagicMock()
         api, comm = build_api(communication_mock=comm)
         with patch.object(api, "_check_awake", return_value=False):
-            self.assertIsNone(api.set_get_joint_angles({"thumb_spread": {"target_angle": 5}}))
+            self.assertIsNone(
+                api.set_get_joint_angles({"thumb_spread": {"target_angle": 5}})
+            )
         comm.send_receive_data.assert_not_called()
 
     # --- unified feedback read path (get_feedback_data) ---
@@ -409,15 +433,21 @@ logging:
         """Verifies whole-hand scalar fields read a fixed count, not one sample per joint."""
         api, _ = build_api(robot_type="artus_lite", hand_type="left")
         self.assertEqual(api._feedback_register_count("feedback_voltage_start_reg"), 2)
-        self.assertEqual(api._feedback_register_count("feedback_avg_temperature_start_reg"), 1)
+        self.assertEqual(
+            api._feedback_register_count("feedback_avg_temperature_start_reg"), 1
+        )
         self.assertEqual(api._feedback_register_count("slave_id_reg"), 1)
 
     def test_feedback_register_count_per_joint_fields(self):
         """Verifies per-joint fields scale their read count by the multiplier and joint count."""
         api, _ = build_api(robot_type="artus_lite", hand_type="left")
         joints = api._robot_handler.robot.number_of_joints
-        self.assertEqual(api._feedback_register_count("feedback_velocity_start_reg"), joints)
-        self.assertEqual(api._feedback_register_count("feedback_force_start_reg"), joints * 2)
+        self.assertEqual(
+            api._feedback_register_count("feedback_velocity_start_reg"), joints
+        )
+        self.assertEqual(
+            api._feedback_register_count("feedback_force_start_reg"), joints * 2
+        )
 
     def test_feedback_register_count_fingertip_uses_sensor_count(self):
         """Verifies fingertip forces size the read from the robot's sensor count, not a hardcoded 5."""
@@ -479,7 +509,9 @@ logging:
         with patch.object(api, "get_feedback_data") as gfd:
             self.assertTrue(api.get_hand_feedback_data())
         called = [c.args[0] for c in gfd.call_args_list]
-        self.assertEqual(called, list(api._robot_handler.robot.available_feedback_types))
+        self.assertEqual(
+            called, list(api._robot_handler.robot.available_feedback_types)
+        )
 
     def test_get_joint_angles_alias_delegates(self):
         """Verifies the deprecated get_joint_angles alias forwards to get_feedback_data."""

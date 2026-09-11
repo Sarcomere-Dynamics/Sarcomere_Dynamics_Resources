@@ -12,6 +12,7 @@ correct offsets, flashed in one shot at offset 0x0.
 Example:
   python3 upload_esptool.py -p /dev/ttyUSB0 -f /path/to/master.ino.merged.bin
 """
+
 import argparse
 import sys
 from pathlib import Path
@@ -27,21 +28,30 @@ logger = logging.getLogger(__name__)
 
 def build_write_flash_args(args, merged_bin: Path):
     flash_args = [
-        "--chip", args.chip,
-        "--port", args.port,
-        "--baud", str(args.baud),
-        "--before", "default_reset",
-        "--after", "hard_reset",
+        "--chip",
+        args.chip,
+        "--port",
+        args.port,
+        "--baud",
+        str(args.baud),
+        "--before",
+        "default_reset",
+        "--after",
+        "hard_reset",
         "write_flash",
         "-z",
     ]
     if args.erase:
         flash_args.append("--erase-all")
     flash_args += [
-        "--flash_mode", "keep",
-        "--flash_freq", "keep",
-        "--flash_size", "keep",
-        MERGED_BIN_ADDR, str(merged_bin),
+        "--flash_mode",
+        "keep",
+        "--flash_freq",
+        "keep",
+        "--flash_size",
+        "keep",
+        MERGED_BIN_ADDR,
+        str(merged_bin),
     ]
     return flash_args
 
@@ -50,14 +60,20 @@ def main():
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
-    parser.add_argument("-p", "--port", required=True, help="Serial port, e.g. /dev/ttyUSB0")
     parser.add_argument(
-        "-f", "--file", required=True,
+        "-p", "--port", required=True, help="Serial port, e.g. /dev/ttyUSB0"
+    )
+    parser.add_argument(
+        "-f",
+        "--file",
+        required=True,
         help="Path to the merged binary (e.g. master.ino.merged.bin)",
     )
     parser.add_argument("--baud", type=int, default=DEFAULT_BAUD)
     parser.add_argument("--chip", default=DEFAULT_CHIP)
-    parser.add_argument("--erase", action="store_true", help="Erase entire flash before writing")
+    parser.add_argument(
+        "--erase", action="store_true", help="Erase entire flash before writing"
+    )
     args = parser.parse_args()
 
     merged_bin = Path(args.file)

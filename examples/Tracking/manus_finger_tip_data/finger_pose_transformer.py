@@ -4,7 +4,14 @@ import numpy as np
 
 import os
 import sys
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))))
+
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
+    )
+)
 print("PROJECT_ROOT: ", PROJECT_ROOT)
 
 sys.path.append(PROJECT_ROOT)
@@ -17,6 +24,7 @@ import transforms3d.euler
 import transforms3d.quaternions
 import math
 
+
 class FingerPoseTransformer:
     """
     Compute absolute fingertip poses from relative joint data.
@@ -26,6 +34,7 @@ class FingerPoseTransformer:
     - Output: a dict mapping finger names ('thumb', 'index', etc.)
       to their absolute (position: np.ndarray, quaternion: np.ndarray in [x,y,z,w]).
     """
+
     # DEFAULT_CHAINS = {
     #     'thumb':  [1,  2,  3],
     #     'index':  [6,  7,  8],
@@ -34,16 +43,13 @@ class FingerPoseTransformer:
     #     'pinky':  [21, 22, 23],
     # }
 
-    
     DEFAULT_CHAINS = {
-        'thumb':  [0, 1,  2,  3, 4],
-        'index':  [5, 6,  7,  8, 9],
-        'middle': [10, 11, 12, 13, 14],
-        'ring':   [15, 16, 17, 18, 19],
-        'pinky':  [20, 21, 22, 23, 24],
+        "thumb": [0, 1, 2, 3, 4],
+        "index": [5, 6, 7, 8, 9],
+        "middle": [10, 11, 12, 13, 14],
+        "ring": [15, 16, 17, 18, 19],
+        "pinky": [20, 21, 22, 23, 24],
     }
-
-
 
     def __init__(self, chains: dict[str, list[int]] = None):
         """Initializes the transformer with the finger node chains to use.
@@ -55,7 +61,7 @@ class FingerPoseTransformer:
                 DEFAULT_CHAINS when not provided.
         """
         self.chains = chains or self.DEFAULT_CHAINS
-        
+
         self.mapper = IndexFingerMapper()
         # now map any glove read
         # p_test, q_test = mapper.map(p_gf, q_gf)
@@ -83,8 +89,6 @@ class FingerPoseTransformer:
     #     # … handle other cases (see a standard matrix→quat snippet) …
     #     return np.array([qx, qy, qz, qw])
 
-
-
     @staticmethod
     def quat_mul(q: np.ndarray, r: np.ndarray) -> np.ndarray:
         """Multiplies two quaternions in [x, y, z, w] order.
@@ -98,12 +102,14 @@ class FingerPoseTransformer:
         """
         x1, y1, z1, w1 = q
         x2, y2, z2, w2 = r
-        return np.array([
-            w1*x2 + x1*w2 + y1*z2 - z1*y2,
-            w1*y2 - x1*z2 + y1*w2 + z1*x2,
-            w1*z2 + x1*y2 - y1*x2 + z1*w2,
-            w1*w2 - x1*x2 - y1*y2 - z1*z2
-        ])
+        return np.array(
+            [
+                w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2,
+                w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2,
+                w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2,
+                w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2,
+            ]
+        )
 
     @staticmethod
     def quat_conj(q: np.ndarray) -> np.ndarray:
@@ -129,15 +135,11 @@ class FingerPoseTransformer:
             The rotated vector as an (x, y, z) numpy array.
         """
         v_q = np.array([v[0], v[1], v[2], 0.0])
-        return cls.quat_mul(
-            cls.quat_mul(q, v_q),
-            cls.quat_conj(q)
-        )[:3]
+        return cls.quat_mul(cls.quat_mul(q, v_q), cls.quat_conj(q))[:3]
 
-    def compose(self,
-                p1: np.ndarray, q1: np.ndarray,
-                p2: np.ndarray, q2: np.ndarray
-               ) -> tuple[np.ndarray, np.ndarray]:
+    def compose(
+        self, p1: np.ndarray, q1: np.ndarray, p2: np.ndarray, q2: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Composes a parent pose with a child pose expressed in its frame.
 
         Args:
@@ -157,7 +159,9 @@ class FingerPoseTransformer:
 
     def compute_absolute_poses(
         self,
-        decoded: dict[int, tuple[tuple[float,float,float], tuple[float,float,float,float]]]
+        decoded: dict[
+            int, tuple[tuple[float, float, float], tuple[float, float, float, float]]
+        ],
     ) -> dict[str, tuple[np.ndarray, np.ndarray]]:
         """Chains per-node relative poses into an absolute pose per finger.
 
@@ -181,13 +185,13 @@ class FingerPoseTransformer:
         for finger, node_ids in self.chains.items():
             p_abs = np.zeros(3)
             q_abs = np.array([0.0, 0.0, 0.0, 1.0])  # identity quat in [x,y,z,w]
-            q_base = np.array([ 0.7412965, 0, 0, 0.6711777 ]) # rotate to match Isaac Sim
+            q_base = np.array([0.7412965, 0, 0, 0.6711777])  # rotate to match Isaac Sim
             # q_abs = self.quat_mul(q_base, q_abs)  # rotate to match Isaac Sim
-            q_abs = np.array([ 0.7412965, 0, 0, 0.6711777 ])
+            q_abs = np.array([0.7412965, 0, 0, 0.6711777])
             for nid in node_ids:
                 p_rel = np.array(decoded[nid][0])
-                w, x, y, z = decoded[nid][1]        # unpack your (w,x,y,z)
-                q_rel = np.array([x, y, z, w])      # reorder to [x,y,z,w]
+                w, x, y, z = decoded[nid][1]  # unpack your (w,x,y,z)
+                q_rel = np.array([x, y, z, w])  # reorder to [x,y,z,w]
                 p_abs, q_abs = self.compose(p_abs, q_abs, p_rel, q_rel)
             # reorder quat to [w, x, y, z]
             q_abs = np.array([q_abs[3], q_abs[0], q_abs[1], q_abs[2]])
@@ -204,7 +208,7 @@ class FingerPoseTransformer:
             # result[finger] = self.mapper.map(p_glove=p_abs,
             #                                  q_glove=q_abs)
         return result
-    
+
     def _euler_to_quaternion(self, roll_degrees, pitch_degrees, yaw_degrees):
         """Converts Euler angles in degrees to a unit quaternion.
 
@@ -224,21 +228,18 @@ class FingerPoseTransformer:
         yaw_rad = math.radians(yaw_degrees)
 
         # Get quaternion in (w, x, y, z) order
-        quat = transforms3d.euler.euler2quat(roll_rad, pitch_rad, yaw_rad, axes='syzx')
+        quat = transforms3d.euler.euler2quat(roll_rad, pitch_rad, yaw_rad, axes="syzx")
         # if (pitch_degrees != 0):
         #     quat = transforms3d.euler.euler2quat(pitch_rad, roll_rad, yaw_rad, axes='szyx')
         # if (yaw_degrees != 0):
         #     quat = transforms3d.euler.euler2quat(yaw_rad, roll_rad, pitch_rad, axes='sxyz')
-       
+
         # print(quat)
 
         # Normalize the quaternion (although euler2quat usually returns a normalized one)
-        # quat = transforms3d.quaternions.qnorm(quat) 
+        # quat = transforms3d.quaternions.qnorm(quat)
 
         return quat
-    
-
-
 
 
 # # example usage
@@ -250,7 +251,6 @@ class FingerPoseTransformer:
 #     absolute_poses = transformer.compute_absolute_poses(decoded)
 
 #     # absolute_poses['thumb'] → (np.array([x,y,z]), np.array([qx,qy,qz,qw]))
-
 
 
 # if __name__ == "__main__":
