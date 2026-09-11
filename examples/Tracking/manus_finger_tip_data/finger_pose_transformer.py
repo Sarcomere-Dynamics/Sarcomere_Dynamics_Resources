@@ -1,9 +1,9 @@
 """Computes absolute fingertip poses from relative per-node glove joint data."""
 
-import numpy as np
-
 import os
 import sys
+
+import numpy as np
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(
@@ -15,14 +15,11 @@ PROJECT_ROOT = os.path.dirname(
 print("PROJECT_ROOT: ", PROJECT_ROOT)
 
 sys.path.append(PROJECT_ROOT)
-from Isaac_Sim_Work.Hand_Simulation.ArtusLite_2025.logs.mapping import IndexFingerMapper
-
-
-from scipy.spatial.transform import Rotation as R
+import math
 
 import transforms3d.euler
 import transforms3d.quaternions
-import math
+from Isaac_Sim_Work.Hand_Simulation.ArtusLite_2025.logs.mapping import IndexFingerMapper
 
 
 class FingerPoseTransformer:

@@ -4,9 +4,10 @@ Shared mocks for ArtusAPI tests (no hardware).
 
 from __future__ import annotations
 
-import unittest.mock as mock
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any, Generator, Tuple, Type
+from typing import Any
+from unittest import mock
 
 from artusapi.communication.new_communication import ActuatorState
 
@@ -33,7 +34,7 @@ def make_communication_mock() -> mock.MagicMock:
 @contextmanager
 def patched_artus_api_v2_constructor(
     communication_mock: mock.MagicMock | None = None,
-) -> Generator[Tuple[Type, mock.MagicMock], None, None]:
+) -> Generator[tuple[type, mock.MagicMock], None, None]:
     """Patches NewCommunication, time.sleep, and signal.signal while constructing ArtusAPI.
 
     Args:

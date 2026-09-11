@@ -10,8 +10,8 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from ..bldc_robot.bldcrobot import BLDCRobot
 from ...sensors import ForceSensor
+from ..bldc_robot.bldcrobot import BLDCRobot
 
 
 class ArtusScorpion(BLDCRobot):

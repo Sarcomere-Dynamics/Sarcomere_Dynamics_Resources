@@ -18,10 +18,10 @@ pseudo-terminal device, so existing serial-based ArtusAPI code can talk
 to the ARTUS hand as if it were connected locally.
 """
 
-import os
 import subprocess
-import serial
 import time
+
+import serial
 
 
 class ArtusAPIPortForwarder:

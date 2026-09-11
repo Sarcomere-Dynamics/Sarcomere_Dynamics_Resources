@@ -10,10 +10,9 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from typing import Any
 import logging
 import struct
-import math
+from typing import Any
 
 from ..common.ModbusMap import ModbusMap
 

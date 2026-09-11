@@ -21,7 +21,6 @@ error reports).
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
 # ------------------------------------------------------------------------------
-import time
 import json
 
 # Add the desired path to the system path
@@ -38,7 +37,6 @@ sys.path.append(PROJECT_ROOT)
 from artusapi import ArtusConfig
 
 # new version of ArtusAPI use local version
-from artusapi.common import ModbusMap
 
 
 # ------------------------------------------------------------------------------
@@ -153,9 +151,9 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
         case "5":
             n = int(input("Enter joint to calibrate:"))
             if n not in range(
-                0, artusapi._robot_handler.robot.number_of_joints + 1
+                artusapi._robot_handler.robot.number_of_joints + 1
             ):  # because not inclusive range
-                logger.error(f"Invalid joint number, please try again")
+                logger.error("Invalid joint number, please try again")
                 return
             artusapi.calibrate(n)
         case "6":
@@ -216,7 +214,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
         case "f":
             if (
                 input(
-                    f"DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue: "
+                    "DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue: "
                 )
                 == "e"
             ):
@@ -225,13 +223,13 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
                     driver > artusapi._robot_handler.robot.number_of_controllers
                     or driver < 0
                 ):
-                    logger.error(f"Invalid driver number, please try again")
+                    logger.error("Invalid driver number, please try again")
                 else:
-                    file_location_ = input(f"enter file location of driver: ")
+                    file_location_ = input("enter file location of driver: ")
                     artusapi.update_firmware(
                         file_location=file_location_, drivers_to_flash=driver
                     )
-                    logger.info(f"Firmware flashed successfully")
+                    logger.info("Firmware flashed successfully")
 
 
 # -------------------------------------------------------------------------------
@@ -264,7 +262,6 @@ def example():
             handle_command(artusapi, user_input, logger, hand_poses_path)
         except Exception as e:
             logger.error(f"Error: {e}")
-            pass
 
 
 # ----------------------------------------------------------------------------------

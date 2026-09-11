@@ -12,12 +12,12 @@ See the LICENSE file in the repository for full details.
 
 import logging
 import time
-import struct
+
 from tqdm import tqdm
 
-from .RS485_RTU.rs485_rtu import RS485_RTU
+from ..common.ModbusMap import ActuatorState, CommandType, ModbusMap, TrajectoryReturn
 from .Modbus_TCP.modbus_tcp import ModbusTCP
-from ..common.ModbusMap import ModbusMap, ActuatorState, CommandType, TrajectoryReturn
+from .RS485_RTU.rs485_rtu import RS485_RTU
 
 
 class NewCommunication:
@@ -264,5 +264,5 @@ class NewCommunication:
                     break
 
         if result == ActuatorState.ACTUATOR_BUSY.value:
-            self.logger.error(f"Robot Busy")
+            self.logger.error("Robot Busy")
             # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")

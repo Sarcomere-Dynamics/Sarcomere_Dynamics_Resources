@@ -15,17 +15,13 @@ joint angles, including optional interactive calibration.
 """
 
 
-import re
-import numpy as np
-import threading
-from collections import deque
-
-
-import time
 import ast
-
-import sys
 import os
+import re
+import sys
+import threading
+import time
+from collections import deque
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -667,7 +663,7 @@ class ManusGlovesHandTrackingData:
 
         ############# Calibrating Finger Flex ###########################
         print(
-            f"Put LEFT fingers together flat on table, thumb outwards (Making L shape)"
+            "Put LEFT fingers together flat on table, thumb outwards (Making L shape)"
         )
         self.get_data("L")
 
@@ -685,7 +681,7 @@ class ManusGlovesHandTrackingData:
 
         self.user_hand_min_max_left["thumb"][6] = self.temp["thumb"][3]
 
-        print(f"Bend fingers 90 degrees")
+        print("Bend fingers 90 degrees")
         self.get_data("L")
 
         self.user_hand_min_max_left["index"][3] = self.temp["index"][1]
@@ -693,7 +689,7 @@ class ManusGlovesHandTrackingData:
         self.user_hand_min_max_left["ring"][3] = self.temp["ring"][1]
         self.user_hand_min_max_left["pinky"][3] = self.temp["pinky"][1]
 
-        print(f"Fully bend four fingers")
+        print("Fully bend four fingers")
         self.get_data("L")
 
         self.user_hand_min_max_left["index"][5] = self.temp["index"][2]
@@ -702,12 +698,12 @@ class ManusGlovesHandTrackingData:
         self.user_hand_min_max_left["pinky"][5] = self.temp["pinky"][2]
 
         ############# Calibrating Thumb Flex ###########################
-        print(f"Move thumb to the bottom of pinky")
+        print("Move thumb to the bottom of pinky")
         self.get_data("L")
 
         self.user_hand_min_max_left["thumb"][3] = self.temp["thumb"][1]
 
-        print(f"Curl Thumb")
+        print("Curl Thumb")
         self.get_data("L")
 
         self.user_hand_min_max_left["thumb"][5] = self.temp["thumb"][2]
@@ -743,7 +739,7 @@ class ManusGlovesHandTrackingData:
 
         ############# Calibrating Finger Flex ###########################
         print(
-            f"Put RIGHT fingers together flat on table, thumb outwards (Making L shape)"
+            "Put RIGHT fingers together flat on table, thumb outwards (Making L shape)"
         )
         self.get_data("R")
 
@@ -761,7 +757,7 @@ class ManusGlovesHandTrackingData:
 
         self.user_hand_min_max_right["thumb"][6] = self.temp["thumb"][3]
 
-        print(f"Bend fingers 90 degrees")
+        print("Bend fingers 90 degrees")
         self.get_data("R")
 
         self.user_hand_min_max_right["index"][3] = self.temp["index"][1]
@@ -769,7 +765,7 @@ class ManusGlovesHandTrackingData:
         self.user_hand_min_max_right["ring"][3] = self.temp["ring"][1]
         self.user_hand_min_max_right["pinky"][3] = self.temp["pinky"][1]
 
-        print(f"Fully bend four fingers")
+        print("Fully bend four fingers")
         self.get_data("R")
 
         self.user_hand_min_max_right["index"][5] = self.temp["index"][2]
@@ -778,12 +774,12 @@ class ManusGlovesHandTrackingData:
         self.user_hand_min_max_right["pinky"][5] = self.temp["pinky"][2]
 
         ############# Calibrating Thumb Flex ###########################
-        print(f"Move thumb to the bottom of pinky")
+        print("Move thumb to the bottom of pinky")
         self.get_data("R")
 
         self.user_hand_min_max_right["thumb"][3] = self.temp["thumb"][1]
 
-        print(f"Curl Thumb")
+        print("Curl Thumb")
         self.get_data("R")
 
         self.user_hand_min_max_right["thumb"][5] = self.temp["thumb"][2]

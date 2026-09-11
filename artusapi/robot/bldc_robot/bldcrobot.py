@@ -359,11 +359,9 @@ class BLDCRobot:
             The same ``joint_angles`` collection, with values clamped.
         """
         for joint in self.hand_joints:
-            if joint_angles[joint.index] > joint.max_force:
-                joint_angles[joint.index] = joint.max_force
+            joint_angles[joint.index] = min(joint_angles[joint.index], joint.max_force)
                 # TODO logging
-            if joint_angles[joint.index] < joint.min_force:
-                joint_angles[joint.index] = joint.min_force
+            joint_angles[joint.index] = max(joint_angles[joint.index], joint.min_force)
                 # TODO logging
         return joint_angles
 

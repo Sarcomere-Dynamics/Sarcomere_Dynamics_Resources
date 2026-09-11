@@ -4,6 +4,7 @@ import logging
 import struct
 import unittest
 from types import SimpleNamespace
+
 from artusapi.commands.new_commands import NewCommands
 
 

@@ -3,9 +3,9 @@
 import unittest
 
 from artusapi.common.ModbusMap import (
-    ModbusMap,
     ActuatorState,
     CommandType,
+    ModbusMap,
     TrajectoryReturn,
 )
 

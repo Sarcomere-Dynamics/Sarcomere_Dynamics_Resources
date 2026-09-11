@@ -15,15 +15,10 @@ fingertip poses per finger.
 """
 
 
-import re
-import numpy as np
-import threading
-from collections import deque
-import time
-
-
-import sys
 import os
+import re
+import sys
+import time
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(
@@ -35,9 +30,6 @@ PROJECT_ROOT = os.path.dirname(
 print("Root: ", PROJECT_ROOT)
 
 sys.path.append(str(PROJECT_ROOT))
-from Sarcomere_Dynamics_Resources.examples.Control.Tracking.manus_gloves_data.moving_average import (
-    MultiMovingAverage,
-)
 
 
 class FingerTipData:

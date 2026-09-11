@@ -22,22 +22,21 @@ smooths the angles with a per-joint Kalman filter, and streams the resulting
 joint commands to an ARTUS Lite hand via the ArtusAPI API.
 """
 
-import cv2
-import numpy as np
-import math
-import time
-import urllib.request
-
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
 # ------------------------------------------------------------------------------
-import json
+import math
 import os
 import sys
+import time
+import urllib.request
 
+import cv2
 import mediapipe as mp
+import numpy as np
 from mediapipe.tasks import python as mp_tasks
 from mediapipe.tasks.python import vision
+
 from artusapi import ArtusConfig
 
 PROJECT_ROOT = os.path.dirname(
@@ -289,8 +288,7 @@ def map_angle_for_artus(joint_name, flex_deg):
         cmd = map_range(flex, 9, 20, -17, 17, True)
 
     else:
-        if flex >= 90.0:
-            flex = 90.0
+        flex = min(90.0, flex)
         cmd = flex
 
     return int(round(cmd))
@@ -540,7 +538,7 @@ def calibrate_finger_lengths(cap, detector, target_samples=50):
     print("Press 'q' to abort.\n")
 
     collecting = False
-    samples = {finger: [] for finger in FINGER_CHAINS.keys()}
+    samples = {finger: [] for finger in FINGER_CHAINS}
 
     ts = MonotonicTimestampMS()
 
@@ -754,7 +752,7 @@ def main():
 
     kalman_filters = {
         name: AngleKalmanFilter(process_var=5.0, measurement_var=150.0)
-        for name in JOINTS.keys()
+        for name in JOINTS
     }
 
     last_print = 0.0

@@ -10,11 +10,13 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from pymodbus.client import ModbusTcpClient
-from pymodbus.exceptions import ModbusIOException, ConnectionException
 import logging
 import socket
 import time
+
+from pymodbus.client import ModbusTcpClient
+from pymodbus.exceptions import ConnectionException, ModbusIOException
+
 from ...common.ModbusMap import CommandType
 
 
@@ -162,11 +164,7 @@ class ModbusTCP:
                     result = self.client.write_registers(
                         data[0], data[1:], device_id=self.slave_address
                     )
-                elif command == CommandType.FIRMWARE_COMMAND.value:
-                    result = self.client.write_registers(
-                        0, data, device_id=self.slave_address
-                    )
-                elif command == CommandType.CONFIG_COMMAND.value:
+                elif command == CommandType.FIRMWARE_COMMAND.value or command == CommandType.CONFIG_COMMAND.value:
                     result = self.client.write_registers(
                         0, data, device_id=self.slave_address
                     )

@@ -21,8 +21,6 @@ and reading back feedback data.
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
 # ------------------------------------------------------------------------------
-import time
-import json
 
 # Add the desired path to the system path
 import os
@@ -35,21 +33,21 @@ print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # import the configuration file
-from artusapi import ArtusConfig
-
 # new version of ArtusAPI use local version
 from artusapi.artus_api_new import ArtusAPI
 
-# import ArtusAPIPortForwarder
-from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForwarder
+from artusapi import ArtusConfig
 
 # reuse the interactive menu, logger setup, and command dispatch from the
 # general example instead of duplicating them here
 from examples.general_example.general_example import (
+    handle_command,
     main_menu,
     setup_logger,
-    handle_command,
 )
+
+# import ArtusAPIPortForwarder
+from examples.UR_PortForward.artus_api_port_forwarder import ArtusAPIPortForwarder
 
 
 # -------------------------------------------------------------------------------
@@ -96,7 +94,6 @@ def example():
             handle_command(artusapi, user_input, logger, hand_poses_path)
         except Exception as e:
             logger.error(f"Error: {e}")
-            pass
 
 
 # ----------------------------------------------------------------------------------

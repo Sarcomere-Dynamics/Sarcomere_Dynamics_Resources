@@ -10,9 +10,9 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
+
 from ...sensors import ForceSensor
 from ..bldc_robot.bldcrobot import BLDCRobot
-import logging
 
 
 class ArtusTalos(BLDCRobot):

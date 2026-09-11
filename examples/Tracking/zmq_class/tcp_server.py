@@ -12,12 +12,10 @@ See the LICENSE file in the repository for full details.
 
 """Minimal single-client TCP server used to receive raw hand tracking data feeds."""
 
-import socket
-import time
-import threading
-
-
 import re
+import socket
+import threading
+import time
 
 
 class TCPServer:

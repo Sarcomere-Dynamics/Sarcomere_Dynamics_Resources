@@ -10,11 +10,11 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-import time
 import json
 import logging
 import os
 import sys
+import time
 
 # Configure logging only if it hasn't been configured yet
 if not logging.getLogger().handlers:
@@ -33,9 +33,9 @@ PROJECT_ROOT = os.path.dirname(
 )
 logger.info(f"Project Root: {PROJECT_ROOT}")
 sys.path.append(PROJECT_ROOT)
+
 from artusapi import ArtusConfig
 from examples.Tracking.zmq_class.zmq_class import ZMQPublisher, ZMQSubscriber
-from artusapi.artus_api_new import ArtusAPI
 
 
 class ArtusGUIController:
@@ -171,7 +171,7 @@ class ArtusGUIController:
             payload["force_sensors"] = force_sensor_payload
 
         self.zmq_publisher.send(topic="Feedback", message=json.dumps(payload))
-        self.logger.info(f"Published feedback to ZMQ")
+        self.logger.info("Published feedback to ZMQ")
 
     def _receive_feedback(self):
         """Triggers a feedback read from the robot for backward compatibility.
@@ -186,8 +186,8 @@ class ArtusGUIController:
             self.artus_api.get_hand_feedback_data()
         except Exception as e:
             self.logger.error(f"Error in _receive_feedback: {e}")
-            return None
-        return None
+            return
+        return
 
     def _receive_joint_anglesZMQ(self):
         """Receives target joint angles from the GUI over the ZMQ subscriber.

@@ -18,13 +18,10 @@ to whichever ARTUS hand(s) are marked as connected in the robot
 configuration.
 """
 
-import time
-import numpy as np
-
-
+import logging
 import os
 import sys
-import logging
+import time
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(
@@ -126,7 +123,6 @@ class ManusGloveController:
                 self._send_joint_angles(joint_angles_left, joint_angles_right)
             except Exception as e:
                 logging.error(e)
-                pass
 
     def _send_joint_angles(self, joint_angles_left=None, joint_angles_right=None):
         """Sends joint angle lists to the connected ARTUS hand(s).

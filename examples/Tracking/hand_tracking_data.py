@@ -16,14 +16,9 @@ Wraps a specific hand tracking backend (e.g. Manus gloves) behind a single
 interface for retrieving per-hand joint angles.
 """
 
-import re
-import numpy as np
-import threading
-from collections import deque
-import time
-
 import os
 import sys
+import time
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

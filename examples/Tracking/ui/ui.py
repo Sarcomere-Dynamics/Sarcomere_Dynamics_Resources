@@ -14,6 +14,7 @@ See the LICENSE file in the repository for full details.
 
 import os
 import sys
+
 from PySide6 import QtWidgets
 
 PROJECT_ROOT = os.path.dirname(

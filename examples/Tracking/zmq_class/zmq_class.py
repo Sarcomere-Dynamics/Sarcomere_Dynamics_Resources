@@ -12,8 +12,9 @@ See the LICENSE file in the repository for full details.
 
 """Thin ZMQ PUB/SUB wrappers used for topic-based messaging between components."""
 
-import zmq
 import time
+
+import zmq
 
 
 class ZMQPublisher:

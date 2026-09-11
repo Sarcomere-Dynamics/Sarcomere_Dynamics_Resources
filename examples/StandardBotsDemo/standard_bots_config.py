@@ -13,6 +13,7 @@ See the LICENSE file in the repository for full details.
 """Loads Standard Bots API credentials/IDs used by the StandardBotsDemo scripts."""
 
 import os
+
 import yaml
 
 CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))

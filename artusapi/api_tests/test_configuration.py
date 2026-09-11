@@ -18,7 +18,6 @@ from artusapi.configuration import (
     scan_port_for_robots,
 )
 
-
 _SAMPLE_YAML = """
 robots:
   left_hand_robot:
@@ -173,9 +172,8 @@ class TestAutoPortSelect(unittest.TestCase):
         robot_cfg = self.config.get_connected_robot()
         with patch(
             "ArtusAPI.configuration.serial.tools.list_ports.comports", return_value=[]
-        ):
-            with self.assertRaises(RuntimeError):
-                self.config._validate_port_or_select(robot_cfg, self.logger)
+        ), self.assertRaises(RuntimeError):
+            self.config._validate_port_or_select(robot_cfg, self.logger)
 
     def test_scans_each_port_then_each_robot(self):
         """Verifies discovery walks ports, then slave IDs, and records the first PASS."""

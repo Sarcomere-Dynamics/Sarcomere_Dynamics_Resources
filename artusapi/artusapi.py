@@ -12,21 +12,19 @@ See the LICENSE file in the repository for full details.
 
 """Top-level user-facing API for controlling ARTUS family robotic hands over Modbus."""
 
-import time
-import logging
 import signal
-from enum import Enum
-from tracemalloc import start
+import time
+
+from .commands import NewCommands
 from .common.ModbusMap import ModbusMap, TrajectoryReturn
 from .common.SlaveIDMap import expected_slave_id
-from .commands import NewCommands
 from .communication.new_communication import (
-    NewCommunication,
     ActuatorState,
     CommandType,
+    NewCommunication,
 )
-from .robot import Robot
 from .firmware_update import FirmwareUpdaterNew
+from .robot import Robot
 
 
 class ArtusAPI:
@@ -493,7 +491,7 @@ class ArtusAPI:
         """
         try:
             robot_state = self._communication_handler._check_robot_state()
-            actuator_state = ActuatorState((robot_state & 0b00001111)).name
+            actuator_state = ActuatorState(robot_state & 0b00001111).name
             trajectory_return = TrajectoryReturn((robot_state & 0b11110000) >> 4).name
             self.logger.info(
                 f"Actuator state: {actuator_state}, Trajectory return: {trajectory_return}"
@@ -1075,8 +1073,7 @@ class ArtusAPI:
             None. Always logs an error since this is not implemented in
             ArtusAPI.
         """
-        self.logger.error(f"get_streamed_joint_angles is not implemented in ArtusAPIv2")
-        return None
+        self.logger.error("get_streamed_joint_angles is not implemented in ArtusAPIv2")
 
     def reset(self, joints=None):
         """Sends a reset command for the given number of joints.
@@ -1177,11 +1174,11 @@ class ArtusAPI:
 
         time.sleep(0.5)
 
-        self.logger.info(f"next line is sending the firmware data")
+        self.logger.info("next line is sending the firmware data")
         # send firmware data
         self._firmware_updater.update_firmware(fw_size)
 
         # wait for hand state ready
         while self.get_robot_status()[0] == ActuatorState.ACTUATOR_FLASHING.name:
-            self.logger.info(f"Waiting for firmware update to complete")
+            self.logger.info("Waiting for firmware update to complete")
             time.sleep(2)

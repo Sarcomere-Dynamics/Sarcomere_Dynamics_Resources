@@ -5,7 +5,7 @@ enums, and the slave ID lookup helpers used to identify robot variants on
 the bus.
 """
 
-from .ModbusMap import ModbusMap, ActuatorState, CommandType
+from .ModbusMap import ActuatorState, CommandType, ModbusMap
 from .SlaveIDMap import (
     SLAVE_ID_BY_ROBOT_HAND,
     SLAVE_ID_TO_ROBOT_HAND,

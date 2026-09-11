@@ -12,10 +12,11 @@ See the LICENSE file in the repository for full details.
 
 """Qt widget providing manual joint/force/speed control of the ARTUS hand."""
 
-import os
 import json
-from PySide6 import QtCore, QtGui, QtWidgets
+import os
 import sys
+
+from PySide6 import QtCore, QtGui, QtWidgets
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,9 +25,9 @@ print("PROJECT_ROOT: ", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # dependencies
-from examples.Tracking.zmq_class.zmq_class import ZMQPublisher
 from artusapi import ArtusConfig
 from artusapi.robot.robot import Robot
+from examples.Tracking.zmq_class.zmq_class import ZMQPublisher
 
 
 class UIControl(QtWidgets.QWidget, ZMQPublisher):

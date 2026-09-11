@@ -10,16 +10,16 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from typing import NoReturn
 
 
+import logging
+import math
 import os
 import time
-import logging
-from tqdm import tqdm
-import math
 
-from ..common.ModbusMap import CommandType, ActuatorState
+from tqdm import tqdm
+
+from ..common.ModbusMap import ActuatorState, CommandType
 from ..communication.new_communication import NewCommunication
 
 BYTES_CHUNK = 64
@@ -90,7 +90,7 @@ class FirmwareUpdaterNew:
             ``ACTUATOR_ERROR`` is observed.
         """
         while True:
-            self.logger.info(f"entered flashing_ack_checker")
+            self.logger.info("entered flashing_ack_checker")
             try:
                 ret = self._communication_handler._check_robot_state()
                 self.logger.info(f"return from check_robot_state is: {ret}")
@@ -100,7 +100,7 @@ class FirmwareUpdaterNew:
                     self.logger.error(f"Error: {ret}")
                     return False
                 elif ret == ActuatorState.ACTUATOR_FLASHING.value:
-                    self.logger.info(f"Erasing Flash..")
+                    self.logger.info("Erasing Flash..")
             except Exception as e:
                 self.logger.error(f"Error checking robot state: {e}")
                 continue
@@ -230,17 +230,17 @@ class FirmwareUpdaterNew:
 
         file = open(self.file_location, "rb")
         file_data = file.read()
-        self.logger.info(f"file read complete")
+        self.logger.info("file read complete")
         file.close()
 
         time.sleep(1)
 
         # wait for the initial communication/erase function
         if not self.flashing_ack_checker():
-            self.logger.info(f"if NOT self.flashing_ack_checker()")
+            self.logger.info("if NOT self.flashing_ack_checker()")
             return False
 
-        self.logger.info(f"if self.flashing_ack_checker()")
+        self.logger.info("if self.flashing_ack_checker()")
         pages_required = math.ceil(file_size / 256)
         self.logger.info(f"Upload requires {pages_required} page writes")
 

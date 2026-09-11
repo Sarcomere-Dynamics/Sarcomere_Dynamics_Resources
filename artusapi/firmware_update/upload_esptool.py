@@ -14,9 +14,10 @@ Example:
 """
 
 import argparse
+import logging
 import sys
 from pathlib import Path
-import logging
+
 import esptool
 
 DEFAULT_CHIP = "esp32s3"

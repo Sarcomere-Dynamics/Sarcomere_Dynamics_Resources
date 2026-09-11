@@ -11,21 +11,20 @@ See the LICENSE file in the repository for full details.
 """
 
 # Artus Lite Hands
+# Artus Dex
+from .artus_dex.artus_dex_left import ArtusDex_Left
+from .artus_dex.artus_dex_right import ArtusDex_Right
 from .artus_lite.artus_lite_left import ArtusLite_LeftHand
-from .artus_lite.artus_lite_right import ArtusLite_RightHand
-from .artus_lite.artus_lite_plus_right import ArtusLite_Plus_RightHand
 from .artus_lite.artus_lite_plus_left import ArtusLite_Plus_LeftHand
-
-# Artus Talos
-from .artus_talos.artus_talos_left import ArtusTalos_Left
-from .artus_talos.artus_talos_right import ArtusTalos_Right
+from .artus_lite.artus_lite_plus_right import ArtusLite_Plus_RightHand
+from .artus_lite.artus_lite_right import ArtusLite_RightHand
 
 # Artus Scorpion
 from .artus_scorpion.artus_scorpion import ArtusScorpion
 
-# Artus Dex
-from .artus_dex.artus_dex_left import ArtusDex_Left
-from .artus_dex.artus_dex_right import ArtusDex_Right
+# Artus Talos
+from .artus_talos.artus_talos_left import ArtusTalos_Left
+from .artus_talos.artus_talos_right import ArtusTalos_Right
 
 """Factory that instantiates the correct robot model from robot/hand type strings."""
 

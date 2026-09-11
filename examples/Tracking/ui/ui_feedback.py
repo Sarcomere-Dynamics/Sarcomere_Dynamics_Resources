@@ -12,12 +12,13 @@ See the LICENSE file in the repository for full details.
 
 """Qt widget providing live plots of ARTUS hand feedback data."""
 
-import os
 import json
+import os
 import sys
-from PySide6 import QtCore, QtGui, QtWidgets
-import pyqtgraph as pg
+
 import numpy as np
+import pyqtgraph as pg
+from PySide6 import QtCore, QtWidgets
 
 PROJECT_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -26,9 +27,9 @@ print("PROJECT_ROOT: ", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # dependencies
-from examples.Tracking.zmq_class.zmq_class import ZMQSubscriber
 from artusapi import ArtusConfig
 from artusapi.robot.robot import Robot
+from examples.Tracking.zmq_class.zmq_class import ZMQSubscriber
 
 
 class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):

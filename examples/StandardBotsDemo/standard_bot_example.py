@@ -18,11 +18,11 @@ the script alternates grasping and opening the hand so its state tracks
 the arm's position through a repeating pick-drop cycle.
 """
 
-import time
 import json
+import logging
 import os
 import sys
-import logging
+import time
 
 try:
     from standardbots import StandardBotsRobot
