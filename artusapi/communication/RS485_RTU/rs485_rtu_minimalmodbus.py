@@ -11,6 +11,7 @@ See the LICENSE file in the repository for full details.
 """
 
 import logging
+import sys
 import time
 
 import minimalmodbus
@@ -93,7 +94,7 @@ class RS485_RTU:
         except Exception as e:
             self.logger.error(e)
             self.logger.error(f"Error opening {self.port} @ {self.baudrate} baudrate")
-            quit()
+            sys.exit()
 
     def send(self, data: list, command: int, max_retries=3, retry_delay=0.5):
         """Writes register values to the hand, retrying on Modbus errors.

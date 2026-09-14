@@ -17,25 +17,7 @@ from ..artus_base.artus_base import ArtusBase
 class ArtusTalos(ArtusBase):
     """ARTUS Talos hand model: 6 joints with per-finger force sensors."""
 
-    def __init__(
-        self,
-        joint_max_angles=[55, 90, 90, 90, 90, 90],
-        joint_min_angles=[-55, 0, 0, 0, 0, 0],
-        joint_default_angles=[],
-        joint_rotation_directions=[1, 1, 1, 1, 1, 1],
-        joint_forces=[],
-        joint_names=[
-            "thumb_spread",
-            "thumb_flex",
-            "index_flex",
-            "middle_flex",
-            "ring_flex",
-            "pinky_flex",
-        ],
-        number_of_joints=6,
-        number_of_controllers=6,
-        logger=None,
-    ):
+    def __init__(self, logger):
         """Initializes the ARTUS Talos joint model, force sensors, and defaults.
 
         Args:
@@ -51,15 +33,22 @@ class ArtusTalos(ArtusBase):
             logger: Optional logger instance passed through to ``ArtusBase``.
         """
         super().__init__(
-            joint_max_angles=joint_max_angles,
-            joint_min_angles=joint_min_angles,
-            joint_default_angles=joint_default_angles,
-            joint_rotation_directions=joint_rotation_directions,
-            joint_forces=joint_forces,
-            joint_names=joint_names,
-            number_of_joints=number_of_joints,
-            number_of_controllers=number_of_controllers,
-            logger=logger,
+            joint_max_angles=[55, 90, 90, 90, 90, 90],
+            joint_min_angles=[-55, 0, 0, 0, 0, 0],
+            joint_default_angles=[],
+            joint_rotation_directions=[1, 1, 1, 1, 1, 1],
+            joint_forces=[],
+            joint_names=[
+                "thumb_spread",
+                "thumb_flex",
+                "index_flex",
+                "middle_flex",
+                "ring_flex",
+                "pinky_flex",
+            ],
+            number_of_joints=6,
+            number_of_controllers=6,
+            logger=logger or None,
         )
 
         # force sensor init

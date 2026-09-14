@@ -23,7 +23,7 @@ from ..communication.communication_handler import CommunicationHandler
 BYTES_CHUNK = 64
 
 
-class FirmwareUpdaterNew:
+class FirmwareUpdater:
     """Uploads firmware binaries to an ARTUS hand over Modbus RTU/TCP.
 
     Streams a `.bin` file to the hand's master board in fixed-size
@@ -122,7 +122,6 @@ class FirmwareUpdaterNew:
         """
         byte_counter = 0
         page_counter = 0
-        ret = None
 
         file = open(self.file_location, "rb")
         file_data = file.read()
@@ -224,7 +223,6 @@ class FirmwareUpdaterNew:
         """
         byte_counter = 0
         page_counter = 0
-        ret = None
 
         file = open(self.file_location, "rb")
         file_data = file.read()

@@ -5,4 +5,6 @@ Exposes the legacy :class:`FirmwareUpdater` and the Modbus RTU based
 the bus.
 """
 
-from .FirmwareUpdaterNew import FirmwareUpdaterNew
+from .firmware_updater import FirmwareUpdater
+
+__all__ = ["FirmwareUpdater"]

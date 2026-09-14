@@ -22,7 +22,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
     def test_connect_opens_transport(self):
         """Verifies constructing the API opens the communication transport."""
         comm = MagicMock()
-        api, comm = build_api(communication_mock=comm)
+        _, comm = build_api(communication_mock=comm)
         comm.open_connection.assert_called()
 
     def test_disconnect_restores_signal(self):
@@ -217,8 +217,7 @@ logging:
 
     def test_set_joint_angles_by_list_delegates_to_set_joint_angles(self):
         """Verifies set_joint_angles_by_list builds an index-keyed target dict and delegates to set_joint_angles."""
-        comm = MagicMock()
-        api, comm = build_api()
+        api, _ = build_api()
         api.awake = True
         api.control_type = api.control_types["position"]
         api.last_time = 0.0
@@ -504,7 +503,7 @@ logging:
 
     def test_get_hand_feedback_data_covers_every_available_type(self):
         """Verifies get_hand_feedback_data issues one read per available feedback type."""
-        api, comm = build_api(robot_type="artus_lite_plus", hand_type="left")
+        api, _ = build_api(robot_type="artus_lite_plus", hand_type="left")
         api.awake = True
         with patch.object(api, "get_feedback_data") as gfd:
             self.assertTrue(api.get_hand_feedback_data())

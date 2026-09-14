@@ -17,18 +17,7 @@ from ..artus_base.artus_base import ArtusBase
 class ArtusScorpion(ArtusBase):
     """ARTUS Scorpion gripper model: single gripper joint with two force sensors."""
 
-    def __init__(
-        self,
-        joint_max_angles=[50],  # stroke mm
-        joint_min_angles=[0],
-        joint_default_angles=[],
-        joint_rotation_directions=[1],
-        joint_forces=[],
-        joint_names=["gripper_joint"],
-        number_of_joints=1,
-        number_of_controllers=1,
-        logger=None,
-    ):
+    def __init__(self, logger=None):
         """Initializes the Scorpion gripper joint model and defaults.
 
         Args:
@@ -43,15 +32,15 @@ class ArtusScorpion(ArtusBase):
             logger: Optional logger instance passed through to ``ArtusBase``.
         """
         super().__init__(
-            joint_max_angles=joint_max_angles,
-            joint_min_angles=joint_min_angles,
-            joint_default_angles=joint_default_angles,
-            joint_rotation_directions=joint_rotation_directions,
-            joint_forces=joint_forces,
-            joint_names=joint_names,
-            number_of_joints=number_of_joints,
-            number_of_controllers=number_of_controllers,
-            logger=logger,
+            joint_max_angles=[50],  # stroke mm
+            joint_min_angles=[0],
+            joint_default_angles=[],
+            joint_rotation_directions=[1],
+            joint_forces=[],
+            joint_names=["gripper_joint"],
+            number_of_joints=1,
+            number_of_controllers=1,
+            logger=logger or None,
         )
 
         # set sensors

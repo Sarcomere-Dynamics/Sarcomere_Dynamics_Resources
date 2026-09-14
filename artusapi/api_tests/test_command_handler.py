@@ -39,7 +39,8 @@ class TestNewCommands(unittest.TestCase):
     def test_get_calibration_command(self):
         """Verifies the calibration command is a single-element list."""
         self.assertEqual(
-            self.nc.get_calibration_command(), [self.nc.command_dict["calibrate_command"]]
+            self.nc.get_calibration_command(),
+            [self.nc.command_dict["calibrate_command"]],
         )
 
     def test_get_firmware_command(self):

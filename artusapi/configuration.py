@@ -510,7 +510,7 @@ class ArtusConfig:
             baudrate=getattr(robot_cfg, "baudrate", 115200),
         )
 
-    def get_robot_calibrate(self, hand_type: str = None) -> bool:
+    def get_robot_calibrate(self, hand_type: str | None = None) -> bool:
         """Reads the calibrate flag from config.
 
         Args:
@@ -532,7 +532,7 @@ class ArtusConfig:
         if hand_type == "right":
             return self.config.robots.right_hand_robot.calibrate
 
-    def get_robot_wake_up(self, hand_type: str = None) -> bool:
+    def get_robot_wake_up(self, hand_type: str | None = None) -> bool:
         """Reads the start_robot (wake up) flag from config.
 
         Args:

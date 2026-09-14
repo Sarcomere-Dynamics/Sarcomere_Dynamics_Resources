@@ -16,8 +16,8 @@ import signal
 import time
 
 from .commands import CommandHandler
-from .common.ModbusMap import ModbusMap, TrajectoryReturn
-from .common.SlaveIDMap import expected_slave_id
+from .common.modbus_map import ModbusMap, TrajectoryReturn
+from .common.slave_id_map import expected_slave_id
 from .communication.communication_handler import (
     ActuatorState,
     CommandType,
@@ -231,7 +231,7 @@ class ArtusAPI:
             ),
         }
 
-    def get_robot_calibrate(self, hand_type: str = None) -> bool:
+    def get_robot_calibrate(self, hand_type: str | None = None) -> bool:
         """Reads the calibrate flag from the loaded configuration.
 
         Args:
@@ -243,7 +243,7 @@ class ArtusAPI:
         """
         return self.config.get_robot_calibrate(hand_type or self.hand_type)
 
-    def get_robot_wake_up(self, hand_type: str = None) -> bool:
+    def get_robot_wake_up(self, hand_type: str | None = None) -> bool:
         """Reads the start_robot (wake up) flag from the loaded configuration.
 
         Args:
@@ -560,7 +560,9 @@ class ArtusAPI:
             joint_angles_dict, injected_control_type=control_type
         )
 
-    def set_joint_angles(self, joint_angles: dict, injected_control_type: int = None):
+    def set_joint_angles(
+        self, joint_angles: dict, injected_control_type: int | None = None
+    ):
         """Sends joint commands to the hand.
 
         Named ``set_joint_angles`` for consistency with the v1 API.
@@ -877,9 +879,7 @@ class ArtusAPI:
         """
         return self.get_feedback_data("feedback_voltage_start_reg")
 
-    def get_feedback_data(
-        self, start_reg=ModbusMap().modbus_reg_map["feedback_position_start_reg"]
-    ):
+    def get_feedback_data(self, start_reg: int | None = None):
         """Reads feedback data for a given feedback register range.
 
         Single entry point for every feedback field -- position, force,
@@ -905,16 +905,18 @@ class ArtusAPI:
             ValueError: If ``start_reg`` does not match a known key or
                 address in ``ModbusMap().modbus_reg_map``.
         """
+
         if not self._check_awake():
             return
+
+        if not start_reg:
+            start_reg = ModbusMap().modbus_reg_map["feedback_position_start_reg"]
 
         feedback_reg_key = self._resolve_feedback_key(start_reg)
         decoded_feedback_data = self._read_feedback(feedback_reg_key)
         return self._shape_feedback(feedback_reg_key, decoded_feedback_data)
 
-    def get_joint_angles(
-        self, start_reg=ModbusMap().modbus_reg_map["feedback_position_start_reg"]
-    ):
+    def get_joint_angles(self, start_reg: int | None = None):
         """Deprecated alias for :meth:`get_feedback_data`.
 
         Kept so code written against the previous release keeps working. The
@@ -927,10 +929,10 @@ class ArtusAPI:
         Returns:
             Same as :meth:`get_feedback_data`.
         """
-        if (
-            not self._warned_get_joint_angles
-            and start_reg != ModbusMap().modbus_reg_map["feedback_position_start_reg"]
-        ):
+        if not start_reg:
+            start_reg = ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+
+        if not self._warned_get_joint_angles:
             self.logger.warning(
                 "get_joint_angles() is deprecated and will be removed in a future release -- use get_feedback_data() instead"
             )

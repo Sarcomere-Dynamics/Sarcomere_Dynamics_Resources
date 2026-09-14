@@ -144,12 +144,3 @@ class Robot:
             else "feedback_position_start_reg"
         )
         return self.robot.get_feedback_data(joint_angles, modbus_key=modbus_key)
-
-
-def main():
-    """Demo entry point: instantiates a default (artus_lite, left) Robot."""
-    artus_robot = Robot(hand_type="left")
-
-
-if __name__ == "__main__":
-    main()

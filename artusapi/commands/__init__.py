@@ -5,3 +5,5 @@ serialize user-facing commands into register lists.
 """
 
 from .command_handler import CommandHandler
+
+__all__ = ["CommandHandler"]

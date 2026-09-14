@@ -23,17 +23,17 @@ class ModbusMap:  # Artus Generic Modbus Map
         FINGERTIP_AXES: Number of axes per fingertip sensor.
     """
 
-    SCALAR_FEEDBACK_KEYS = {
-        "feedback_voltage_start_reg": "Voltage",
-        "feedback_avg_temperature_start_reg": "Average temperature",
-        "slave_id_reg": "slave_id_reg",
-    }
-    FINGERTIP_FEEDBACK_KEY = "feedback_force_sensor_start_reg"
-    FINGERTIP_AXIS_NAMES = ("x", "y", "z")
-    FINGERTIP_AXES = 3
-
     def __init__(self):
         """Initializes the register address map and data-type multipliers."""
+        self.SCALAR_FEEDBACK_KEYS = {
+            "feedback_voltage_start_reg": "Voltage",
+            "feedback_avg_temperature_start_reg": "Average temperature",
+            "slave_id_reg": "slave_id_reg",
+        }
+        self.FINGERTIP_FEEDBACK_KEY = "feedback_force_sensor_start_reg"
+        self.FINGERTIP_AXIS_NAMES = ("x", "y", "z")
+        self.FINGERTIP_AXES = 3
+
         self.modbus_reg_map = {
             # size is 16b
             "command_register": 0,  # input command register

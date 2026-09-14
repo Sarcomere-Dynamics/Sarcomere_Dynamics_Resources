@@ -18,65 +18,6 @@ class ArtusLite(ArtusBase):
 
     def __init__(
         self,
-        joint_max_angles=[
-            40,
-            90,
-            90,
-            90,  # thumb
-            17,
-            90,
-            90,  # index
-            17,
-            90,
-            90,  # middle
-            17,
-            90,
-            90,  # ring
-            17,
-            90,
-            90,
-        ],  # pinky
-        joint_min_angles=[
-            -40,
-            0,
-            0,
-            0,  # thumb
-            -17,
-            0,
-            0,  # index
-            -17,
-            0,
-            0,  # middle
-            -17,
-            0,
-            0,  # ring
-            -17,
-            0,
-            0,
-        ],  # pinky
-        joint_default_angles=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        joint_rotation_directions=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-        joint_forces=[],
-        joint_names=[
-            "thumb_spread",
-            "thumb_flex",
-            "thumb_d2",
-            "thumb_d1",
-            "index_spread",
-            "index_flex",
-            "index_d2",
-            "middle_spread",
-            "middle_flex",
-            "middle_d2",
-            "ring_spread",
-            "ring_flex",
-            "ring_d2",
-            "pinky_spread",
-            "pinky_flex",
-            "pinky_d2",
-        ],
-        number_of_joints=16,
-        number_of_controllers=9,
         logger=None,
     ):
         """Initializes the ARTUS Lite joint model and speed/force/pwm defaults.
@@ -94,14 +35,65 @@ class ArtusLite(ArtusBase):
             logger: Optional logger instance passed through to ``BLDCRobot``.
         """
         super().__init__(
-            joint_max_angles=joint_max_angles,
-            joint_min_angles=joint_min_angles,
-            joint_default_angles=joint_default_angles,
-            joint_rotation_directions=joint_rotation_directions,
-            joint_forces=joint_forces,
-            joint_names=joint_names,
-            number_of_joints=number_of_joints,
-            number_of_controllers=number_of_controllers,
+            joint_max_angles=[
+                40,
+                90,
+                90,
+                90,  # thumb
+                17,
+                90,
+                90,  # index
+                17,
+                90,
+                90,  # middle
+                17,
+                90,
+                90,  # ring
+                17,
+                90,
+                90,
+            ],  # pinky
+            joint_min_angles=[
+                -40,
+                0,
+                0,
+                0,  # thumb
+                -17,
+                0,
+                0,  # index
+                -17,
+                0,
+                0,  # middle
+                -17,
+                0,
+                0,  # ring
+                -17,
+                0,
+                0,
+            ],  # pinky
+            joint_default_angles=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            joint_rotation_directions=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            joint_forces=[],
+            joint_names=[
+                "thumb_spread",
+                "thumb_flex",
+                "thumb_d2",
+                "thumb_d1",
+                "index_spread",
+                "index_flex",
+                "index_d2",
+                "middle_spread",
+                "middle_flex",
+                "middle_d2",
+                "ring_spread",
+                "ring_flex",
+                "ring_d2",
+                "pinky_spread",
+                "pinky_flex",
+                "pinky_d2",
+            ],
+            number_of_joints=16,
+            number_of_controllers=9,
             logger=logger,
         )
 

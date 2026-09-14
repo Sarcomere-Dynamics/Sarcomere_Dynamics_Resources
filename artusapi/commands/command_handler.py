@@ -102,7 +102,7 @@ class CommandHandler(ModbusMap):
             "target_position_start_reg"
         ]  # get starting register
 
-        for name, joint_data in hand_joints.items():
+        for joint_data in hand_joints.values():
             if joint_data.target_angle is not None:
                 # constrain target_angle to be size int8_t
                 int8_angle = int(joint_data.target_angle)
@@ -170,7 +170,7 @@ class CommandHandler(ModbusMap):
             "target_velocity_start_reg"
         ]  # get starting register
         tmp_list.append(starting_reg)
-        for name, joint_data in hand_joints.items():
+        for joint_data in hand_joints.values():
             if joint_data.target_velocity is not None:
                 # constrain target_velocity to be size int16_t
                 int16_velocity = int(joint_data.target_velocity)
@@ -205,7 +205,7 @@ class CommandHandler(ModbusMap):
             "target_force_start_reg"
         ]  # get starting register
         tmp_list.append(starting_reg)
-        for name, joint_data in hand_joints.items():
+        for joint_data in hand_joints.values():
             if joint_data.target_force is not None:
                 # round target force to 2 decimal places
                 tmp = round(joint_data.target_force, 2)
@@ -339,8 +339,6 @@ class CommandHandler(ModbusMap):
             else:
                 return (data + 2**15) % 2**16 - 2**15
 
-        # feedback type
-        estimated_feedback_type = None
         # get size of feedback data
         if isinstance(feedback_data, int):
             size_of_feedback_data = 1

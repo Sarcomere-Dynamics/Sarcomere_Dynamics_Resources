@@ -43,21 +43,14 @@ class ArtusBase:
 
     def __init__(
         self,
-        joint_max_angles=[55, 90, 90, 90, 90, 90],
-        joint_min_angles=[-55, 0, 0, 0, 0, 0],
-        joint_default_angles=[],
-        joint_rotation_directions=[1, 1, 1, 1, 1, 1],
-        joint_forces=[],
-        joint_names=[
-            "thumb_spread",
-            "thumb_flex",
-            "index_flex",
-            "middle_flex",
-            "ring_flex",
-            "pinky_flex",
-        ],
-        number_of_joints=6,
-        number_of_controllers=None,
+        joint_max_angles: list[int] | None = None,
+        joint_min_angles: list[int] | None = None,
+        joint_default_angles: list[int] | None = None,
+        joint_rotation_directions: list[int] | None = None,
+        joint_forces: list[int] | None = None,
+        joint_names: list[str] | None = None,
+        number_of_joints: int = 6,
+        number_of_controllers: int | None = None,
         logger=None,
     ):
         """Initializes joint limits/defaults and builds the joint dictionary.
@@ -92,12 +85,19 @@ class ArtusBase:
             "feedback_voltage_start_reg",
         ]
 
-        self.joint_max_angles = joint_max_angles
-        self.joint_min_angles = joint_min_angles
-        self.joint_default_angles = joint_default_angles
-        self.joint_rotation_directions = joint_rotation_directions
-        self.joint_forces = joint_forces
-        self.joint_names = joint_names
+        self.joint_max_angles = joint_max_angles or [55, 90, 90, 90, 90, 90]
+        self.joint_min_angles = joint_min_angles or [-55, 0, 0, 0, 0, 0]
+        self.joint_default_angles = joint_default_angles or [0, 0, 0, 0, 0, 0]
+        self.joint_rotation_directions = joint_rotation_directions or [1, 1, 1, 1, 1, 1]
+        self.joint_forces = joint_forces or []
+        self.joint_names = joint_names or [
+            "thumb_spread",
+            "thumb_flex",
+            "index_flex",
+            "middle_flex",
+            "ring_flex",
+            "pinky_flex",
+        ]
         self.number_of_joints = number_of_joints
 
         if number_of_controllers is None:
@@ -110,14 +110,14 @@ class ArtusBase:
 
             def __init__(
                 self,
-                index,
-                min_angle,
-                max_angle,
-                default_angle,
-                target_angle,
-                target_force,
-                temperature,
-                joint_rotation_direction,
+                index: int,
+                min_angle: int,
+                max_angle: int,
+                default_angle: int,
+                target_angle: int,
+                target_force: int,
+                temperature: int,
+                joint_rotation_direction: int,
             ):
                 """Initializes a joint's limits, targets, and feedback fields.
 
@@ -217,7 +217,7 @@ class ArtusBase:
         # sorted_items = sorted(joint_angles.items(), key=lambda x:x[1]['index'])
         ordered_joint_angles = {key: value for key, value in sorted_items}
         # set values based on index
-        for name, target_data in ordered_joint_angles.items():
+        for target_data in ordered_joint_angles.values():
             if (
                 target_data["index"] >= self.number_of_joints
             ):  # if trying to give more than the available joints, skip
@@ -411,7 +411,7 @@ class ArtusBase:
                 i = 0
                 axes = ModbusMap.FINGERTIP_AXIS_NAMES
                 n_axes = ModbusMap.FINGERTIP_AXES
-                for key, value in self.force_sensors.items():
+                for value in self.force_sensors.values():
                     for j, name in enumerate(axes):
                         setattr(value["data"], name, feedback_package[i + j])
                     i += n_axes

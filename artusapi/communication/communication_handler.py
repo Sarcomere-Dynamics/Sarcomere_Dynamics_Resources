@@ -180,7 +180,7 @@ class CommunicationHandler:
         # self.logger.info(f"finished receive_data")
 
         if isinstance(ret, int) and ret <= 0xFFFF:  # Check if ret is a 16-bit value
-            high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits
+            # high_byte = (ret >> 8) & 0xFF  # Extract upper 8 bits
             low_byte = ret & 0xFF  # Extract lower 8 bits
             # self.logger.info(f"high_byte: {high_byte}, low_byte: {low_byte}")
             return low_byte
