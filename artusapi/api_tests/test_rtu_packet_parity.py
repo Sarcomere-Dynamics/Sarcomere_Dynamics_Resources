@@ -22,7 +22,7 @@ from pymodbus.pdu.register_message import (
     WriteSingleRegisterRequest,
 )
 
-from artusapi.common.ModbusMap import CommandType
+from artusapi.common.modbus_map import CommandType
 
 try:
     import minimalmodbus  # noqa: F401  archived baseline, no longer a runtime dep

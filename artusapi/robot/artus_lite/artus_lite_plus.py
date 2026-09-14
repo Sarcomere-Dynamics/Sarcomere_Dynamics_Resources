@@ -14,12 +14,12 @@ from ...sensors import ForceSensor
 from .artus_lite import ArtusLite
 
 
-class ArtusLite_Plus(ArtusLite):
+class ArtusLitePlus(ArtusLite):
     """
     Artus Lite Plus: 16 joints with force sensors per finger.
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, type: str, logger=None):
         """Initializes the ARTUS Lite Plus and its per-finger force sensors.
 
         Args:
@@ -27,10 +27,7 @@ class ArtusLite_Plus(ArtusLite):
                 (16 values), passed through to ``ArtusLite``.
             logger: Optional logger instance passed through to ``ArtusLite``.
         """
-        super().__init__(
-            joint_rotation_directions=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            logger=logger or None,
-        )
+        super().__init__(type=type, logger=logger or None)
 
         # Force sensor init (one per finger, 3 axes each)
         self.force_sensors = {}

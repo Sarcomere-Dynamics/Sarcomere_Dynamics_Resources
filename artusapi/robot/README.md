@@ -11,7 +11,7 @@ You do not need to memorize every joint name on day one. What matters for onboar
 ## Subfolders
 
 | Folder | What it represents |
-|--------|---------------------|
+| -------- | --------------------- |
 | [`artus_lite/`](artus_lite/) | ARTUS Lite and ARTUS Lite+ (Plus adds Contactile force sensors; same folder, separate classes). |
 | [`artus_talos/`](artus_talos/) | ARTUS Talos. |
 | [`artus_scorpion/`](artus_scorpion/) | ARTUS Scorpion (single-DOF parallel gripper — no left/right). |
@@ -23,10 +23,10 @@ You do not need to memorize every joint name on day one. What matters for onboar
 This is the exact string pairing [`robot.py`](robot.py)'s factory (and `examples/config/robot_config.yaml`) expects. Anything else raises `ValueError("Unknown robot type")` or `ValueError("Unknown hand")`.
 
 | `robot_type` | Valid `hand_type` | Class instantiated |
-|---|---|---|
-| `artus_lite` | `left`, `right` | `ArtusLite_LeftHand` / `ArtusLite_RightHand` |
-| `artus_lite_plus` | `left`, `right` | `ArtusLite_Plus_LeftHand` / `ArtusLite_Plus_RightHand` |
-| `artus_talos` | `left`, `right` | `ArtusTalos_Left` / `ArtusTalos_Right` |
+| --- | --- | --- |
+| `artus_lite` | `left`, `right` | `ArtusLiteLeft` / `ArtusLiteRight` |
+| `artus_lite_plus` | `left`, `right` | `ArtusLitePlusLeft` / `ArtusLitePlusRight` |
+| `artus_talos` | `left`, `right` | `ArtusTalosLeft` / `ArtusTalosRight` |
 | `artus_scorpion` | ignored | `ArtusScorpion` |
 | `artus_dex` | `left`, `right` | `ArtusDex_Left` / `ArtusDex_Right` |
 

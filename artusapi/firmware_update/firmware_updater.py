@@ -17,7 +17,7 @@ import time
 
 from tqdm import tqdm
 
-from ..common.ModbusMap import ActuatorState, CommandType
+from ..common.modbus_map import ActuatorState, CommandType
 from ..communication.communication_handler import CommunicationHandler
 
 BYTES_CHUNK = 64

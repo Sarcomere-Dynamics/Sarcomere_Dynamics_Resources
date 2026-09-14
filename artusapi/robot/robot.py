@@ -14,19 +14,38 @@ See the LICENSE file in the repository for full details.
 # Artus Dex
 from .artus_dex.artus_dex_left import ArtusDex_Left
 from .artus_dex.artus_dex_right import ArtusDex_Right
-from .artus_lite.artus_lite_left import ArtusLite_LeftHand
-from .artus_lite.artus_lite_plus_left import ArtusLite_Plus_LeftHand
-from .artus_lite.artus_lite_plus_right import ArtusLite_Plus_RightHand
-from .artus_lite.artus_lite_right import ArtusLite_RightHand
+from .artus_lite.artus_lite_left import ArtusLiteLeft
+from .artus_lite.artus_lite_plus_left import ArtusLitePlusLeft
+from .artus_lite.artus_lite_plus_right import ArtusLitePlusRight
+from .artus_lite.artus_lite_right import ArtusLiteRight
 
 # Artus Scorpion
 from .artus_scorpion.artus_scorpion import ArtusScorpion
 
 # Artus Talos
-from .artus_talos.artus_talos_left import ArtusTalos_Left
-from .artus_talos.artus_talos_right import ArtusTalos_Right
+from .artus_talos.artus_talos_left import ArtusTalosLeft
+from .artus_talos.artus_talos_right import ArtusTalosRight
 
 """Factory that instantiates the correct robot model from robot/hand type strings."""
+
+ROBOT_DICT = {
+    "artus_lite": {
+        "left": ArtusLiteLeft,
+        "right": ArtusLiteRight,
+    },
+    "artus_lite_plus": {
+        "left": ArtusLitePlusLeft,
+        "right": ArtusLitePlusRight,
+    },
+    "artus_talos": {
+        "left": ArtusTalosLeft,
+        "right": ArtusTalosRight,
+    },
+    "artus_dex": {
+        "left": ArtusDex_Left,
+        "right": ArtusDex_Right,
+    },
+}
 
 
 class Robot:
@@ -52,6 +71,7 @@ class Robot:
         self.robot_type = robot_type
         self.hand_type = hand_type
         self.logger = logger
+
         # setup robot
         self.robot = None
         self._setup_robot()
@@ -64,40 +84,16 @@ class Robot:
                 ``hand_type`` is unrecognized for a robot type that requires
                 a left/right hand.
         """
-        # setup robot based on the hand
-        if self.robot_type == "artus_lite":
-            if self.hand_type == "left":
-                self.robot = ArtusLite_LeftHand(logger=self.logger)
-            elif self.hand_type == "right":
-                self.robot = ArtusLite_RightHand(logger=self.logger)
-            else:
-                raise ValueError("Unknown hand")
 
-        elif self.robot_type == "artus_lite_plus":
-            if self.hand_type == "right":
-                self.robot = ArtusLite_Plus_RightHand(logger=self.logger)
-            elif self.hand_type == "left":
-                self.robot = ArtusLite_Plus_LeftHand(logger=self.logger)
-            else:
-                raise ValueError("Unknown hand")
-        elif self.robot_type == "artus_talos":
-            if self.hand_type == "right":
-                self.robot = ArtusTalos_Right(logger=self.logger)
-            elif self.hand_type == "left":
-                self.robot = ArtusTalos_Left(logger=self.logger)
-            else:
-                raise ValueError("Unknown hand")
-        elif self.robot_type == "artus_scorpion":
-            self.robot = ArtusScorpion(logger=self.logger)
-        elif self.robot_type == "artus_dex":
-            if self.hand_type == "right":
-                self.robot = ArtusDex_Right(logger=self.logger)
-            elif self.hand_type == "left":
-                self.robot = ArtusDex_Left(logger=self.logger)
-            else:
-                raise ValueError("Unknown hand")
+        if self.robot_type == "artus_scorpion":
+            robot_class = ArtusScorpion
         else:
-            raise ValueError("Unknown robot type")
+            try:
+                robot_class = ROBOT_DICT[self.robot_type][self.hand_type]
+            except KeyError:
+                raise ValueError(f"Unknown robot: {self.robot_type}/{self.hand_type}")
+
+        self.robot = robot_class(logger=self.logger)
 
     def set_joint_angles(self, joint_angles: dict, name: bool):
         """Sets the joint angles of the hand.

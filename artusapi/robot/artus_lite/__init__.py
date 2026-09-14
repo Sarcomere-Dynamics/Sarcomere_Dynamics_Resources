@@ -1,17 +1,17 @@
 """Re-exports the ARTUS Lite / Lite Plus robot models and their hand variants."""
 
 from .artus_lite import ArtusLite
-from .artus_lite_left import ArtusLite_LeftHand
-from .artus_lite_plus import ArtusLite_Plus
-from .artus_lite_plus_left import ArtusLite_Plus_LeftHand
-from .artus_lite_plus_right import ArtusLite_Plus_RightHand
-from .artus_lite_right import ArtusLite_RightHand
+from .artus_lite_left import ArtusLiteLeft
+from .artus_lite_plus import ArtusLitePlus
+from .artus_lite_plus_left import ArtusLitePlusLeft
+from .artus_lite_plus_right import ArtusLitePlusRight
+from .artus_lite_right import ArtusLiteRight
 
 __all__ = [
     "ArtusLite",
-    "ArtusLite_LeftHand",
-    "ArtusLite_Plus",
-    "ArtusLite_Plus_LeftHand",
-    "ArtusLite_Plus_RightHand",
-    "ArtusLite_RightHand",
+    "ArtusLiteLeft",
+    "ArtusLitePlus",
+    "ArtusLitePlusLeft",
+    "ArtusLitePlusRight",
+    "ArtusLiteRight",
 ]

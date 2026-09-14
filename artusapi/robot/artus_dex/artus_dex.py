@@ -10,7 +10,7 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from ..artus_base.artus_base import ArtusBase
+from ..artus_base import ArtusBase
 
 
 class ArtusDex(ArtusBase):

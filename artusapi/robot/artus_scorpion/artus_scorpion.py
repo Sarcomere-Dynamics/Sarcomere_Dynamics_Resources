@@ -52,7 +52,7 @@ class ArtusScorpion(ArtusBase):
 
         # force sensor init
         self.force_sensors = {}
-        fingers = ["gripper_join_left", "gripper_join_right"]
+        fingers = ["gripper_joint_left", "gripper_joint_right"]
         indices = [[0], [1]]
 
         for i in range(len(fingers)):
@@ -75,11 +75,6 @@ class ArtusScorpion(ArtusBase):
         self.max_force = 100  # N
         self.min_force = 0  # N
         self.default_force = 20  # N
-
-        # pwm (legacy)
-        self.default_pwm = None
-        self.max_pwm = None
-        self.min_pwm = None
 
     def set_joint_angles_by_name(self, joint_angles: dict):
         """Sets target angle/velocity/force on the single gripper joint.

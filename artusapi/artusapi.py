@@ -23,7 +23,7 @@ from .communication.communication_handler import (
     CommandType,
     CommunicationHandler,
 )
-from .firmware_update import FirmwareUpdaterNew
+from .firmware_update import FirmwareUpdater
 from .robot import Robot
 
 
@@ -1146,7 +1146,7 @@ class ArtusAPI:
             self.logger.error(f"Invalid file location: {file_location}")
             return
 
-        self._firmware_updater = FirmwareUpdaterNew(
+        self._firmware_updater = FirmwareUpdater(
             communication_handler=self._communication_handler,
             command_handler=self._command_handler,
             file_location=file_location,

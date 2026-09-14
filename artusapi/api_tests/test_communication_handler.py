@@ -3,7 +3,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from artusapi.common.ModbusMap import ModbusMap, TrajectoryReturn
+from artusapi.common.modbus_map import ModbusMap, TrajectoryReturn
 from artusapi.communication.communication_handler import (
     ActuatorState,
     CommunicationHandler,

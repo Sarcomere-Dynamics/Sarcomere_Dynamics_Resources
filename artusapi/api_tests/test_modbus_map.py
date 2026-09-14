@@ -1,8 +1,8 @@
-"""Tests for ArtusAPI.common.ModbusMap."""
+"""Tests for ArtusAPI.common.modbus_map."""
 
 import unittest
 
-from artusapi.common.ModbusMap import (
+from artusapi.common.modbus_map import (
     ActuatorState,
     CommandType,
     ModbusMap,

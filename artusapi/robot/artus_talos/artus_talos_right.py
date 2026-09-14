@@ -13,7 +13,7 @@ See the LICENSE file in the repository for full details.
 from .artus_talos import ArtusTalos
 
 
-class ArtusTalos_Right(ArtusTalos):
+class ArtusTalosRight(ArtusTalos):
     """Right-hand variant of the ARTUS Talos."""
 
     def __init__(self, logger):
@@ -22,12 +22,4 @@ class ArtusTalos_Right(ArtusTalos):
         Args:
             logger: Logger instance passed through to ``ArtusTalos``.
         """
-        super().__init__(
-            joint_max_angles=[35, 90, 90, 90, 90, 90],
-            joint_min_angles=[-35, 0, 0, 0, 0, 0],
-            joint_default_angles=[0, 0, 0, 0, 0, 0],
-            joint_rotation_directions=[1, 1, 1, 1, 1, 1],
-            joint_forces=[],
-            number_of_joints=6,
-            logger=logger,
-        )
+        super().__init__(type="right", logger=logger)

@@ -15,7 +15,7 @@ import time
 
 from tqdm import tqdm
 
-from ..common.ModbusMap import ActuatorState, CommandType, ModbusMap, TrajectoryReturn
+from ..common.modbus_map import ActuatorState, CommandType, ModbusMap, TrajectoryReturn
 from .Modbus_TCP.modbus_tcp import ModbusTCP
 from .RS485_RTU.rs485_rtu import RS485_RTU
 

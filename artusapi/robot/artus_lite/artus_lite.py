@@ -18,9 +18,10 @@ class ArtusLite(ArtusBase):
 
     def __init__(
         self,
+        type: str,
         logger=None,
     ):
-        """Initializes the ARTUS Lite joint model and speed/force/pwm defaults.
+        """Initializes the ARTUS Lite joint model and speed/velocity/force defaults.
 
         Args:
             joint_max_angles: Maximum angle per joint (16 values across
@@ -34,45 +35,91 @@ class ArtusLite(ArtusBase):
             number_of_joints: Total number of joints (16).
             logger: Optional logger instance passed through to ``BLDCRobot``.
         """
+
+        self.LEFT_ROTATION_DIRECTIONS = [
+            -1,
+            1,
+            1,
+            1,
+            -1,
+            1,
+            1,
+            -1,
+            1,
+            1,
+            -1,
+            1,
+            1,
+            -1,
+            1,
+            1,
+        ]
+
+        self.RIGHT_ROTATION_DIRECTIONS = [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+        ]
+        match type:
+            case "left":
+                self.joint_rotation_directions = self.LEFT_ROTATION_DIRECTIONS
+            case "right":
+                self.joint_rotation_directions = self.RIGHT_ROTATION_DIRECTIONS
+            case _:
+                self.joint_rotation_directions = self.LEFT_ROTATION_DIRECTIONS
+
         super().__init__(
             joint_max_angles=[
                 40,
                 90,
                 90,
-                90,  # thumb
-                17,
                 90,
-                90,  # index
-                17,
-                90,
-                90,  # middle
-                17,
-                90,
-                90,  # ring
                 17,
                 90,
                 90,
-            ],  # pinky
+                17,
+                90,
+                90,
+                17,
+                90,
+                90,
+                17,
+                90,
+                90,
+            ],
             joint_min_angles=[
                 -40,
                 0,
                 0,
-                0,  # thumb
-                -17,
                 0,
-                0,  # index
-                -17,
-                0,
-                0,  # middle
-                -17,
-                0,
-                0,  # ring
                 -17,
                 0,
                 0,
-            ],  # pinky
+                -17,
+                0,
+                0,
+                -17,
+                0,
+                0,
+                -17,
+                0,
+                0,
+            ],
             joint_default_angles=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            joint_rotation_directions=[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            joint_rotation_directions=self.joint_rotation_directions,
             joint_forces=[],
             joint_names=[
                 "thumb_spread",
@@ -113,8 +160,3 @@ class ArtusLite(ArtusBase):
         self.max_force = 150
         self.min_force = 0
         self.default_force = 57
-
-        # pwm (legacy)
-        self.max_pwm = 100
-        self.min_pwm = 40
-        self.default_pwm = 70

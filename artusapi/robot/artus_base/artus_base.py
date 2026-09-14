@@ -12,7 +12,7 @@ See the LICENSE file in the repository for full details.
 
 import logging
 
-from ...common.ModbusMap import ModbusMap
+from ...common.modbus_map import ModbusMap
 
 """Base robot model shared by all ARTUS BLDC-actuated hand variants."""
 
@@ -43,14 +43,14 @@ class ArtusBase:
 
     def __init__(
         self,
-        joint_max_angles: list[int] | None = None,
-        joint_min_angles: list[int] | None = None,
-        joint_default_angles: list[int] | None = None,
-        joint_rotation_directions: list[int] | None = None,
-        joint_forces: list[int] | None = None,
-        joint_names: list[str] | None = None,
-        number_of_joints: int = 6,
-        number_of_controllers: int | None = None,
+        joint_max_angles: list[int],
+        joint_min_angles: list[int],
+        joint_default_angles: list[int],
+        joint_rotation_directions: list[int],
+        joint_forces: list[int],
+        joint_names: list[str],
+        number_of_joints: int,
+        number_of_controllers: int,
         logger=None,
     ):
         """Initializes joint limits/defaults and builds the joint dictionary.
@@ -85,25 +85,14 @@ class ArtusBase:
             "feedback_voltage_start_reg",
         ]
 
-        self.joint_max_angles = joint_max_angles or [55, 90, 90, 90, 90, 90]
-        self.joint_min_angles = joint_min_angles or [-55, 0, 0, 0, 0, 0]
-        self.joint_default_angles = joint_default_angles or [0, 0, 0, 0, 0, 0]
-        self.joint_rotation_directions = joint_rotation_directions or [1, 1, 1, 1, 1, 1]
-        self.joint_forces = joint_forces or []
-        self.joint_names = joint_names or [
-            "thumb_spread",
-            "thumb_flex",
-            "index_flex",
-            "middle_flex",
-            "ring_flex",
-            "pinky_flex",
-        ]
+        self.joint_max_angles = joint_max_angles
+        self.joint_min_angles = joint_min_angles
+        self.joint_default_angles = joint_default_angles
+        self.joint_rotation_directions = joint_rotation_directions
+        self.joint_forces = joint_forces
+        self.joint_names = joint_names
         self.number_of_joints = number_of_joints
-
-        if number_of_controllers is None:
-            self.number_of_controllers = number_of_joints
-        else:
-            self.number_of_controllers = number_of_controllers
+        self.number_of_controllers = number_of_controllers
 
         class Joint:
             """Mutable state container for a single joint's targets and feedback."""

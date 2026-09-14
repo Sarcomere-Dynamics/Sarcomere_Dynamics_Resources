@@ -13,7 +13,7 @@ See the LICENSE file in the repository for full details.
 from .artus_lite import ArtusLite
 
 
-class ArtusLite_LeftHand(ArtusLite):
+class ArtusLiteLeft(ArtusLite):
     """Left-hand variant of the ARTUS Lite."""
 
     def __init__(self, logger=None):
@@ -22,24 +22,4 @@ class ArtusLite_LeftHand(ArtusLite):
         Args:
             logger: Optional logger instance passed through to ``ArtusLite``.
         """
-        super().__init__(
-            joint_rotation_directions=[
-                -1,
-                1,
-                1,
-                1,  # thumb
-                -1,
-                1,
-                1,  # index
-                -1,
-                1,
-                1,  # middle
-                -1,
-                1,
-                1,  # ring
-                -1,
-                1,
-                1,
-            ],  # pinky
-            logger=logger,
-        )
+        super().__init__(type="left", logger=logger)

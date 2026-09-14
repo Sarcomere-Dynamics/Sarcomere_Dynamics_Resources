@@ -10,10 +10,10 @@ Licensed under the Sarcomere Dynamics Software License.
 See the LICENSE file in the repository for full details.
 """
 
-from .artus_lite_plus import ArtusLite_Plus
+from .artus_lite_plus import ArtusLitePlus
 
 
-class ArtusLite_Plus_RightHand(ArtusLite_Plus):
+class ArtusLitePlusRight(ArtusLitePlus):
     """Right-hand variant of the ARTUS Lite Plus."""
 
     def __init__(self, logger=None):
@@ -21,26 +21,6 @@ class ArtusLite_Plus_RightHand(ArtusLite_Plus):
 
         Args:
             logger: Optional logger instance passed through to
-                ``ArtusLite_Plus``.
+                ``ArtusLitePlus``.
         """
-        super().__init__(
-            joint_rotation_directions=[
-                -1,
-                1,
-                1,
-                1,  # thumb
-                -1,
-                1,
-                1,  # index
-                -1,
-                1,
-                1,  # middle
-                -1,
-                1,
-                1,  # ring
-                -1,
-                1,
-                1,
-            ],  # pinky
-            logger=logger,
-        )
+        super().__init__(type="right", logger=logger)

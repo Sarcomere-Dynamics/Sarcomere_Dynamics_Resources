@@ -23,9 +23,9 @@ import yaml
 from pymodbus.client import ModbusSerialClient
 from pymodbus.exceptions import ModbusException
 
-from .common.ModbusMap import ModbusMap
-from .common.SlaveIDMap import (
+from .common import (
     SLAVE_ID_BY_ROBOT_HAND,
+    ModbusMap,
     expected_slave_id,
     robot_hand_from_slave_id,
 )

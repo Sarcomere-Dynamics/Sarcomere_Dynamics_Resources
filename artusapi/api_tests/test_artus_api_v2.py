@@ -11,7 +11,7 @@ from artusapi.api_tests.mocks import (
     make_communication_mock,
     patched_artus_api_v2_constructor,
 )
-from artusapi.common.ModbusMap import ModbusMap
+from artusapi.common.modbus_map import ModbusMap
 from artusapi.common.SlaveIDMap import expected_slave_id
 from artusapi.communication.communication_handler import ActuatorState, CommandType
 

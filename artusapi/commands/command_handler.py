@@ -14,7 +14,7 @@ import logging
 import struct
 from typing import Any
 
-from ..common.ModbusMap import ModbusMap
+from ..common.modbus_map import ModbusMap
 
 """
 New Commands Class based on Modbus RTU for RS485 Communication

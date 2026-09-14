@@ -17,7 +17,7 @@ import time
 from pymodbus.client import ModbusTcpClient
 from pymodbus.exceptions import ConnectionException, ModbusIOException
 
-from ...common.ModbusMap import CommandType
+from ...common.modbus_map import CommandType
 
 
 class ModbusTCP:
