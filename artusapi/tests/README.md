@@ -6,12 +6,12 @@ These tests use **mocks only** (no serial, no hand). They are meant for local or
 
 ```bash
 cd /path/to/Sarcomere_Dynamics_Resources
-PYTHONPATH=. python3 -m unittest discover -s ArtusAPI/api_tests -p "test_*.py" -v
+PYTHONPATH=. python3 -m unittest discover -s artusapi/tests -p "test_*.py" -v
 ```
 
 With pytest (optional):
 
 ```bash
 pip install pytest
-PYTHONPATH=. python3 -m pytest ArtusAPI/api_tests -v
+PYTHONPATH=. python3 -m pytest artusapi/tests -v
 ```

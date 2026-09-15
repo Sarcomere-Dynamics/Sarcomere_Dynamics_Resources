@@ -27,7 +27,7 @@ Your application chooses parameters such as **robot type**, **left or right hand
 | [`common/`](common/) | Shared definitions used across transports: the Modbus register map (`ModbusMap.py`) and per-hand slave ID table (`SlaveIDMap.py`). |
 | [`firmware_update/`](firmware_update/) | Tools and firmware binaries for flashing hand controllers from Python (`update_firmware()` on `ArtusAPI`). |
 | [`sensors/`](sensors/) | `ForceSensor` — the fingertip/contactile force reading structure used by Talos, Scorpion, and Lite+. |
-| [`api_tests/`](api_tests/) | Hardware-free unit tests (mocks only, no serial connection). See [api_tests/README.md](api_tests/README.md) to run them. |
+| [`tests/`](tests/) | Hardware-free unit tests (mocks only, no serial connection). See [tests/README.md](tests/README.md) to run them. |
 
 When in doubt, follow the **example that matches your hand model** under [`examples/`](../examples/).
 
