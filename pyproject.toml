@@ -43,6 +43,7 @@ dependencies = [
     "pymodbus>=3.5.0",
     "pyserial>=3.5",
     "pyyaml>=6.0.3",
+    "ruff>=0.16.7",
     "tqdm>=4.70.1",
 ]
 
