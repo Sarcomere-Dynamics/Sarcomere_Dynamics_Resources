@@ -10,9 +10,9 @@ This guide covers flashing **actuator (brushless driver) firmware** on an ARTUS 
 
 ## Prerequisites
 
-* The general example set up and running. See the [General Example README](/examples/general_example/README.md) for installing requirements, finding the USB device, and configuring [`robot_config.yaml`](/examples/config/robot_config.yaml).
-* The correct actuator firmware `.bin` file, supplied by Sarcomere Dynamics. Note its absolute path.
-* Know which driver(s) you need to flash (a specific actuator, or all of them).
+- The general example set up and running. See the [General Example README](/examples/general_example/README.md) for installing requirements, finding the USB device, and configuring [`robot_config.yaml`](/examples/config/robot_config.yaml).
+- The correct actuator firmware `.bin` file, supplied by Sarcomere Dynamics. Note its absolute path.
+- Know which driver(s) you need to flash (a specific actuator, or all of them).
 
 ## Procedure
 
@@ -31,12 +31,12 @@ python3 general_example.py
 
 4. Enter the **driver to flash** when prompted:
 
-| Value | Meaning |
-| --- | --- |
+| Value                         | Meaning                                         |
+| ----------------------------- | ----------------------------------------------- |
 | `1`-`<number of controllers>` | A specific actuator, mapped to its joint number |
-| `0` | All actuators |
+| `0`                           | All actuators                                   |
 
-   The value is validated against the robot model's `number_of_controllers`; an out-of-range value is rejected and you can try again.
+The value is validated against the robot model's `number_of_controllers`; an out-of-range value is rejected and you can try again.
 
 1. Enter the **absolute path** to the firmware `.bin` file when prompted (e.g. `/home/user/firmware/driver.bin`).
 
@@ -59,7 +59,7 @@ artusapi.update_firmware(file_location=file_location_, drivers_to_flash=driver)
 
 ## Troubleshooting
 
-* **The update stalls at the start** — the hand never sent a flashing acknowledgment (`flashing_ack_checker` returns `False`). Verify the connection is healthy and that the hand is in an idle/ready state before pressing `f`.
-* **`Invalid driver number`** — the driver you entered exceeds the number of controllers on the connected hand. Re-enter a valid value.
-* **The hand reports an error state** — flashing failed. Do not power-cycle mid-flash; contact the Sarcomere Dynamics team.
-* Power-cycle the hand after a successful update if parameter changes are expected to take effect.
+- **The update stalls at the start** — the hand never sent a flashing acknowledgment (`flashing_ack_checker` returns `False`). Verify the connection is healthy and that the hand is in an idle/ready state before pressing `f`.
+- **`Invalid driver number`** — the driver you entered exceeds the number of controllers on the connected hand. Re-enter a valid value.
+- **The hand reports an error state** — flashing failed. Do not power-cycle mid-flash; contact the Sarcomere Dynamics team.
+- Power-cycle the hand after a successful update if parameter changes are expected to take effect.
