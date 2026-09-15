@@ -52,4 +52,3 @@ Repository = "https://github.com/Sarcomere-Dynamics/Sarcomere_Dynamics_Resources
 
 [tool.uv.build-backend]
 module-root = ""
-data = {"artusapi" = ["robot_config.yaml"]}
