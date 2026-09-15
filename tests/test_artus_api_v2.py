@@ -6,13 +6,13 @@ import struct
 import unittest
 from unittest.mock import MagicMock, patch
 
-from artusapi.api_tests.mocks import (
+from artusapi.tests.mocks import (
     build_api,
     make_communication_mock,
     patched_artus_api_v2_constructor,
 )
 from artusapi.common.modbus_map import ModbusMap
-from artusapi.common.SlaveIDMap import expected_slave_id
+from artusapi.common.slave_id_map import expected_slave_id
 from artusapi.communication.communication_handler import ActuatorState, CommandType
 
 
