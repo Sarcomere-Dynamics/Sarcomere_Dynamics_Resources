@@ -16,8 +16,8 @@ Rows are sorted newest-first, same convention as Revision Control.
 
 | Firmware version | Compatible API version(s) | Notes                          |
 | ---------------- | ------------------------- | ------------------------------ |
-| v9.x             | v1.x                      | legacy api                     |
 | v10.x            | v2.1                      | v2, pos, vel and force control |
+| v9.x             | v1.x                      | legacy api                     |
 
 ## Artus Talos
 

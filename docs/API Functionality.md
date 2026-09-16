@@ -53,17 +53,18 @@ artusapi.set_joint_angles(pinky_dict)
 On models with many DOF (for example Artus Lite), joints can be set together or in a subset. If you only need to curl the pinky, a shorter dictionary can be passed to `set_joint_angles`:
 
 ```
-pinky_dict = {"pinky_flex" :
-                            {
-                                "index": 14,
-                                "target_angle" : 90
-                            },
-              "pinky_d2" :
-                            {
-                                "index":15,
-                                "target_angle" : 90
-                            }
-            }
+pinky_dict = {
+    "pinky_flex" :
+    {
+        "index": 14,
+        "target_angle" : 90
+    },
+    "pinky_d2" :
+    {
+        "index":15,
+        "target_angle" : 90
+    }
+}
 
 hand.set_joint_angles(pinky_dict)
 ```
