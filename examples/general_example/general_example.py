@@ -208,9 +208,11 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
         case "c":
             artusapi.clear_errors()
         case "r":
-            artusapi.reset()
+            joint = int(input("Enter joint to soft reset:"))
+            artusapi.reset(joint)
         case "sr":
-            artusapi.soft_reset()
+            joint = int(input("Enter joint to reset:"))
+            artusapi.soft_reset(joint)
         case "f":
             if (
                 input(
