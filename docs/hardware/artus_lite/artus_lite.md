@@ -1,13 +1,16 @@
-<img src='../../../data/images/SarcomereLogoHorizontal.svg'>
-
 # Artus Lite
+
+![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
 Everything needed to wire, power, and command the ARTUS Lite (and Lite+) hand. For general API usage (installing the library, `set_joint_angles`, feedback), see the [main repository README](/README.md) and [API Functionality](/docs/API%20Functionality.md) — this file covers what's specific to this hand model.
 
+> [!NOTE]
+> For ARTUS **Lite+** owners, please review the [supplementary information found at the bottom of this document](#artus-lite-1)
+
 ## Reference Documents
 
-- [Quick Start PDF (Wiring Diagram)](data/Artus%20Lite.pdf)
-- [Technical Specification Sheet](data/Artus%20Lite%20Technical%20Specification%20Sheet.pdf)
+- [Quick Start PDF (Wiring Diagram)](/docs/hardware/artus_lite/Artus_Lite.pdf)
+- [Technical Specification Sheet](/docs/hardware/artus_lite/Artus_Lite_Technical_Specification_Sheet.pdf)
 
 ## Table of Contents
 
@@ -23,8 +26,11 @@ Everything needed to wire, power, and command the ARTUS Lite (and Lite+) hand. F
 
 ## Safety
 
-> [!IMPORTANT]
-> The hand contains pinch points at every joint. Keep fingers, hair, and loose clothing clear while powered, and never reach into the hand while it is executing a motion command. Disconnect power immediately if a joint behaves unexpectedly.
+> [!CAUTION]
+> The hand contains pinch points at every joint.
+> Keep fingers, hair, and loose clothing clear while powered.
+> Never reach into the hand while it is executing a motion command.
+> Disconnect power immediately if a joint behaves unexpectedly.
 
 ## Power Requirement
 
@@ -58,8 +64,8 @@ Below is a joint index guide mapped to a normal human hand, with the naming conv
 
 ## Joint Limits
 
-- D2, D1 and Flex joints have a range of [0,90]
-- Spread joints are normally [-17,17] with the thumb being the exception [-40,40]
+- D2, D1 and Flex joints have a range of \[0, 90\] degrees
+- Spread joints are normally \[-17, 17\] degrees with the thumb being the exception \[-40, 40\] degrees.
 - For spreading, the positive spread value will be towards the right hand thumb, negative spread value is towards the pinky
 
 ## Default Speed and Force Values
@@ -69,7 +75,7 @@ Below is a joint index guide mapped to a normal human hand, with the naming conv
 | Velocity  | 150     | 0 - 300 | degrees/second |
 | Force     | 10      | 0 - 20  | Newtons (N)    |
 
-These apply to both **ARTUS Lite** and **ARTUS Lite+** — Lite+ inherits them unchanged from the base Lite model.
+These default values apply to both **ARTUS Lite** and **ARTUS Lite+** — Lite+ inherits them unchanged from the base Lite model.
 
 They live as attributes on the robot model, not as hardcoded constants in the API:
 
@@ -92,3 +98,17 @@ Here is a detailed table of the LED states during normal operation and a descrip
 | Red           | Error state                                                                       |
 | Orange/Yellow | Shutdown/Sleep mode, may require power cycle for parameter changes to take effect |
 | Purple        | Flashing Actuators                                                                |
+
+## Artus Lite+
+
+The Artus Lite+ has the same basic control and characteristics as the Artus Lite. However, it is equipped with fingertip force sensors. Here are the sensors that have been integrated to date:
+
+- Contactile — Data integrated
+
+### Difference Between Artus Lite and Artus Lite+
+
+Mechanically, there is no difference between the two hands — the sole difference is the feedback data and fingertip sensors.
+
+### Feedback Data Differences
+
+- Artus Lite+ also outputs the x, y, z vector forces from the 5 fingertips instead on top of the other general feedback telemetry data consistent with the Artus Lite.

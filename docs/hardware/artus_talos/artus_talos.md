@@ -1,6 +1,6 @@
-<img src='../../../data/images/SarcomereLogoHorizontal.svg'>
-
 # Artus Talos
+
+![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
 Everything needed to wire, power, and command the ARTUS Talos hand. For general API usage (installing the library, `set_joint_angles`, feedback), see the [main repository README](/README.md) and [API Functionality](/docs/API%20Functionality.md) — this file covers what's specific to this hand model.
 
@@ -34,7 +34,7 @@ The Artus Talos runs off a 24 VDC power supply, with a nominal power draw of 35W
 
 Hands are shipped with USBC and RS485 capabilities.
 
-The system utilizes the MODBUS RTU communication protocol. See the [ModbusMap PDF](data/ModbusMap_Talos_r1.pdf) for register-level detail if you are developing your own communication application.
+The system utilizes the Modbus RTU communication protocol. See the [ModbusMap PDF](/docs/hardware/artus_talos/ModbusMap_Talos_r1.pdf) for register-level detail if you are developing your own communication application.
 
 ## Startup Procedure
 

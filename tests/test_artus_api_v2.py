@@ -313,7 +313,7 @@ logging:
         comm.receive_data.return_value = [(192 << 8) | 168, (1 << 8) | 50]
         api, comm = build_api(communication_mock=comm)
 
-        api.get_config("SSID", "PASS")
+        api.get_wifi_config("SSID", "PASS")
 
         # 2 send_data calls per config value (trigger + payload) x 2 values
         self.assertEqual(comm.send_data.call_count, 4)

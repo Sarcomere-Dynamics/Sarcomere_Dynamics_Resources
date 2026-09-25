@@ -1,6 +1,6 @@
-<img src='../../../data/images/SarcomereLogoHorizontal.svg'>
-
 # Artus Scorpion - Parallel Gripper
+
+![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
 A backdriveable single motor parallel gripper. Everything needed to wire, power, and command it is below. For general API usage (installing the library, `set_joint_angles`, feedback), see the [main repository README](/README.md) and [API Functionality](/docs/API%20Functionality.md) — this file covers what's specific to this hand model.
 
@@ -33,7 +33,7 @@ The Artus Scorpion requires a 24V DC power supply, idle/nominal 2.4W, maximum 72
 
 Hands are shipped with USBC and RS485 capabilities.
 
-The system utilizes the MODBUS RTU communication protocol. See the [ModbusMap PDF](data/ModbusMap_Scorpion.pdf) for register-level detail if you are developing your own communication application.
+The system utilizes the Modbus RTU communication protocol. See the [ModbusMap PDF](/docs/hardware/artus_scorpion/ModbusMap_Scorpion.pdf) for register-level detail if you are developing your own communication application.
 
 ## Startup Procedure
 

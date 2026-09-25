@@ -28,11 +28,12 @@ There is a button protected by silicone located between the two nano M8 connecto
 #### SW Button
 
 1. Take off the 3x bolts on both sides of the base plate shown in the image below. (Requires a 2.5mm Hex bit)
-<img src='../../data/images/baseplate_bolts.jpg'>
+
+![Baseplate Bolts](/docs/assets/images/hardware/artus_lite/baseplate_bolts.jpg)
+
 2. Locate SW2 and toggle the switch.
 
-<img src='../../data/images/boot_toggle.jpg'>
-3. Power on the device
+![Boot Mode Switch](/docs/assets/images/hardware/artus_lite/boot_toggle.jpg) 3. Power on the device
 
 ## Usage
 

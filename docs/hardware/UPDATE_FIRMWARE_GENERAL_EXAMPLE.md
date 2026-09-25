@@ -1,6 +1,6 @@
 # Updating Actuator Firmware via the General Example
 
-This guide covers flashing **actuator (brushless driver) firmware** on an ARTUS hand using the interactive [`general_example.py`](/examples/general_example/general_example.py) menu. The firmware binary is streamed to the driver(s) through the masterboard over the existing Modbus RTU/TCP connection — no extra tools are required.
+This guide covers flashing **actuator firmware** on an ARTUS hand using the interactive [`general_example.py`](/examples/general_example/general_example.py) menu. The firmware binary is streamed to the driver(s) through the masterboard over the existing Modbus RTU/TCP connection — no extra tools are required.
 
 > [!IMPORTANT]
 > This is **not** the same as flashing the masterboard ESP32-S3. For that, see [UPLOAD_ESPTOOL.md](UPLOAD_ESPTOOL.md). This process updates the firmware running on the finger actuators / brushless drivers.

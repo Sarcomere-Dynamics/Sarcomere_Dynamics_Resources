@@ -378,7 +378,7 @@ class ArtusAPI:
         self._communication_handler.send_data(clear_errors_command)
         self.last_time = time.perf_counter()
 
-    def get_config(self, wifi_name: str, wifi_pass: str):
+    def get_wifi_config(self, wifi_name: str, wifi_pass: str):
         """Writes new WiFi credentials to the hand and reads back its IP.
 
         Writes new WiFi credentials to the hand's onboard config over Modbus and
@@ -1063,19 +1063,6 @@ class ArtusAPI:
             None if the hand is not awake.
         """
         return self.get_feedback_data("feedback_actuator_error_reg")
-
-    # for compatibility
-    def get_streamed_joint_angles(self, dat_type=0):
-        """Stub retained for v1 API compatibility.
-
-        Args:
-            dat_type: Unused; kept for signature compatibility with v1.
-
-        Returns:
-            None. Always logs an error since this is not implemented in
-            ArtusAPI.
-        """
-        self.logger.error("get_streamed_joint_angles is not implemented in ArtusAPIv2")
 
     def reset(self, joints=None):
         """Sends a reset command for the given number of joints.

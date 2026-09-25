@@ -29,7 +29,7 @@ if config.get_robot_wake_up():
 
 ## Configuration fields
 
-Edit [`robot_config.yaml`](robot_config.yaml) and set the fields for each robot. Common fields:
+Edit [`robot_config.yaml`](robot_config_example.yaml) and set the fields for each robot. Common fields:
 
 - `robot_connected`: `true` for the single connected robot.
 - `robot_type`: e.g. `artus_talos`, `artus_scorpion`, `artus_lite`.
