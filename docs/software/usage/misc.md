@@ -9,7 +9,7 @@ Beyond joint control and retrieving feedback, `ArtusAPI` exposes the following m
 | `clear_errors()`                                             | Explicitly clears any latched actuator errors.                                                                                    | s   |
 | `set_control_type(control_type)`                             | Switch the hand's active control type (position/velocity/torque) without performing a full `wake_up()`.                           |
 | `get_wifi_config(wifi_name, wifi_pass)`                      | Writes new WiFi credentials to the hand and reads back its assigned IP.                                                           |
-| `update_firmware(file_location=None, drivers_to_flash=None)` | Flashes new firmware to one or all actuator drivers on the hand. See [`docs/COMPATIBILITY.md`](COMPATIBILITY.md) before updating. |
+| `update_actuator(file_location=None, drivers_to_flash=None)` | Flashes new firmware to one or all actuator drivers on the hand. See [`docs/COMPATIBILITY.md`](COMPATIBILITY.md) before updating. |
 
 ## SD Card Interactions
 

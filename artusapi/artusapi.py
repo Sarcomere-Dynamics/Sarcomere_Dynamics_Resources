@@ -23,7 +23,7 @@ from .communication.communication_handler import (
     CommandType,
     CommunicationHandler,
 )
-from .firmware_update import FirmwareUpdater
+from .firmware_update import ActuatorUpdater
 from .robot import Robot
 
 
@@ -65,7 +65,7 @@ class ArtusAPI:
             logger: Optional logger instance shared across handlers. When
                 omitted, the logger created by the configuration is used.
             communication_method: Transport override, e.g. 'RS485_RTU' or
-                'Modbus_TCP'. Passing this does not skip port discovery
+                'ModbusTCP'. Passing this does not skip port discovery
                 unless *communication_channel_identifier* is also set.
             communication_channel_identifier: Serial port override (e.g.
                 'COM9'). When given, automatic port/robot discovery is
@@ -185,11 +185,11 @@ class ArtusAPI:
 
         skip_preflight = (
             communication_channel_identifier is not None
-            or communication_method == "Modbus_TCP"
+            or communication_method == "ModbusTCP"
             or (
                 robot_cfg is not None
                 and getattr(robot_cfg, "communication_method", "RS485_RTU")
-                == "Modbus_TCP"
+                == "ModbusTCP"
             )
         )
         if robot_cfg is not None and not skip_preflight:
@@ -384,7 +384,7 @@ class ArtusAPI:
         Writes new WiFi credentials to the hand's onboard config over Modbus and
         reads back the IP address it was assigned. Applicable to hands with a
         WiFi-capable communication module; on wired transports (RS485_RTU,
-        Modbus_TCP) this still exercises the onboard config write/ack flow but
+        ModbusTCP) this still exercises the onboard config write/ack flow but
         the reported IP reflects the WiFi radio regardless of the transport
         used to send this command.
 
@@ -1114,7 +1114,7 @@ class ArtusAPI:
         else:
             self.logger.info("Hand ready")
 
-    def update_firmware(self, file_location=None, drivers_to_flash=0):
+    def update_actuator(self, file_location=None, drivers_to_flash=0):
         """Flashes new firmware to one or all actuator drivers on the hand.
 
         Prompts on stdin for any missing arguments (binary file path and/or
@@ -1133,7 +1133,7 @@ class ArtusAPI:
             self.logger.error(f"Invalid file location: {file_location}")
             return
 
-        self._firmware_updater = FirmwareUpdater(
+        self._firmware_updater = ActuatorUpdater(
             communication_handler=self._communication_handler,
             command_handler=self._command_handler,
             file_location=file_location,
@@ -1159,13 +1159,13 @@ class ArtusAPI:
         self.last_time = time.perf_counter()
 
         # send firmware data
-        # self._firmware_updater.update_firmware_piecewise(fw_size)
+        # self._firmware_updater.update_actuator_piecewise(fw_size)
 
         time.sleep(0.5)
 
         self.logger.info("next line is sending the firmware data")
         # send firmware data
-        self._firmware_updater.update_firmware(fw_size)
+        self._firmware_updater.update_actuator(fw_size)
 
         # wait for hand state ready
         while self.get_robot_status()[0] == ActuatorState.ACTUATOR_FLASHING.name:

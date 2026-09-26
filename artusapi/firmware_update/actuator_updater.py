@@ -23,7 +23,7 @@ from ..communication.communication_handler import CommunicationHandler
 BYTES_CHUNK = 64
 
 
-class FirmwareUpdater:
+class ActuatorUpdater:
     """Uploads firmware binaries to an ARTUS hand over Modbus RTU/TCP.
 
     Streams a `.bin` file to the hand's master board in fixed-size
@@ -104,7 +104,7 @@ class FirmwareUpdater:
                 continue
             time.sleep(5)
 
-    def update_firmware_piecewise(self, file_size):
+    def update_actuator_piecewise(self, file_size):
         """Uploads firmware to brushless drivers through the masterboard, one page at a time.
 
         Reads the binary at ``self.file_location``, and for each 256-byte
@@ -202,7 +202,7 @@ class FirmwareUpdater:
 
     # this function is only managing sending the actuatl binary data to the master
     # it is not managing starting the firmware update process on the master
-    def update_firmware(self, file_size):
+    def update_actuator(self, file_size):
         """Uploads firmware binary data to the master board in half-page chunks.
 
         Only manages sending the actual binary data to the master; it

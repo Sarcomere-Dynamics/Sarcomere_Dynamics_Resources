@@ -13,12 +13,7 @@ from artusapi import ArtusAPI
 
 lite = ArtusAPI(...)
 
-pinky_dict = {
-    "pinky_d2" : {
-        "index":15,
-        "target_angle" : 90
-    }
-}
+pinky_dict = {"pinky_d2": {"index": 15, "target_angle": 90}}
 
 lite.set_joint_angles(pinky_dict)
 ```

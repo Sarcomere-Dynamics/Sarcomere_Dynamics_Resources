@@ -228,7 +228,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
                     logger.error("Invalid driver number, please try again")
                 else:
                     file_location_ = input("enter file location of driver: ")
-                    artusapi.update_firmware(
+                    artusapi.update_actuator(
                         file_location=file_location_, drivers_to_flash=driver
                     )
                     logger.info("Firmware flashed successfully")

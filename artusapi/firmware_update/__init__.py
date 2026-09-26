@@ -1,10 +1,10 @@
 """Firmware update package.
 
-Exposes the legacy :class:`FirmwareUpdater` and the Modbus RTU based
-:class:`FirmwareUpdater` used to flash firmware onto ARTUS hands over
+Exposes the legacy :class:`ActuatorUpdater` and the Modbus RTU based
+:class:`ActuatorUpdater` used to flash firmware onto ARTUS hands over
 the bus.
 """
 
-from .firmware_updater import FirmwareUpdater
+from .actuator_updater import ActuatorUpdater
 
-__all__ = ["FirmwareUpdater"]
+__all__ = ["ActuatorUpdater"]

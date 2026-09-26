@@ -72,7 +72,7 @@ They live as attributes on the robot model, not as hardcoded constants in the AP
 
 ```python
 hand._robot_handler.robot.default_velocity  # 200
-hand._robot_handler.robot.default_force     # 16
+hand._robot_handler.robot.default_force  # 16
 ```
 
 > [!IMPORTANT]

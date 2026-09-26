@@ -16,7 +16,7 @@ import time
 from tqdm import tqdm
 
 from ..common.modbus_map import ActuatorState, CommandType, ModbusMap, TrajectoryReturn
-from .Modbus_TCP.modbus_tcp import ModbusTCP
+from .ModbusTCP.modbus_tcp import ModbusTCP
 from .RS485_RTU.rs485_rtu import RS485_RTU
 
 
@@ -29,11 +29,11 @@ class CommunicationHandler:
 
     Attributes:
         port: Serial device path (RS485_RTU) or `host`/`host:tcp_port`
-            string (Modbus_TCP).
+            string (ModbusTCP).
         baudrate: Serial baud rate, used only for RS485_RTU.
         logger: Logger instance used for status and error messages.
         slave_address: Modbus slave/unit address of the target hand.
-        communication_method: Either "RS485_RTU" or "Modbus_TCP".
+        communication_method: Either "RS485_RTU" or "ModbusTCP".
         communicator: The underlying transport instance (RS485_RTU or
             ModbusTCP) created by `_setup_communication`.
         ntrips: Running count of state-polling round trips performed by
@@ -52,13 +52,13 @@ class CommunicationHandler:
 
         Args:
             port: Serial device for RS485_RTU (e.g. '/dev/ttyUSB0'), or
-                'host' / 'host:tcp_port' for Modbus_TCP (e.g.
+                'host' / 'host:tcp_port' for ModbusTCP (e.g.
                 '192.168.2.8:502').
             baudrate: Serial baud rate, used only for RS485_RTU.
             logger: Logger to use; a module-level logger is created if None.
             slave_address: Modbus slave/unit address of the target hand.
             communication_method: Transport to construct, either
-                "RS485_RTU" or "Modbus_TCP".
+                "RS485_RTU" or "ModbusTCP".
         """
         self.port = port
         self.baudrate = baudrate
@@ -79,7 +79,7 @@ class CommunicationHandler:
 
         Raises:
             ValueError: If `communication_method` is not "RS485_RTU" or
-                "Modbus_TCP".
+                "ModbusTCP".
         """
         if self.communication_method == "RS485_RTU":
             self.communicator = RS485_RTU(
@@ -89,7 +89,7 @@ class CommunicationHandler:
                 logger=self.logger,
                 slave_address=self.slave_address,
             )
-        elif self.communication_method == "Modbus_TCP":
+        elif self.communication_method == "ModbusTCP":
             host, _, tcp_port = str(self.port).partition(":")
             # 0.5s: first connect after idle needs firmware-side ARP resolution; 0.2s flakes
             self.communicator = ModbusTCP(

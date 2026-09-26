@@ -47,14 +47,14 @@ The upload then begins. A progress bar (`Uploading Actuator Firmware`) shows pag
 The `f` handler in `handle_command()` calls:
 
 ```python
-artusapi.update_firmware(file_location=file_location_, drivers_to_flash=driver)
+artusapi.update_actuator(file_location=file_location_, drivers_to_flash=driver)
 ```
 
-`ArtusAPI.update_firmware()` (in [`artus_api_new.py`](/ArtusAPI/artus_api_new.py)) then:
+`ArtusAPI.update_actuator()` (in [`artus_api_new.py`](/ArtusAPI/artus_api_new.py)) then:
 
-1. Reads the binary size via `FirmwareUpdater.get_bin_file_info()`.
+1. Reads the binary size via `ActuatorUpdater.get_bin_file_info()`.
 2. Sends the firmware command (with the selected driver) to the command register.
-3. Streams the binary to the masterboard in 128-byte half-page chunks using [`FirmwareUpdater.update_firmware()`](FirmwareUpdater.py), waiting for the initial flashing acknowledgment before starting and sending a terminating `[0x0, 0x0]` chunk when done.
+3. Streams the binary to the masterboard in 128-byte half-page chunks using [`ActuatorUpdater.update_actuator()`](ActuatorUpdater.py), waiting for the initial flashing acknowledgment before starting and sending a terminating `[0x0, 0x0]` chunk when done.
 4. Polls `get_robot_status()` until the hand is no longer in the `ACTUATOR_FLASHING` state.
 
 ## Troubleshooting
