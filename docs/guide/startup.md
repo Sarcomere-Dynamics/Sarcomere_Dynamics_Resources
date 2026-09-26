@@ -1,13 +1,13 @@
 # Startup Procedures
 
-## Cascaded PID Control
+## Wakeup (Cascaded PID Control)
 
-Let us review the [previous example](/docs/software/usage/usage.md#example-rs485-style-serial):
+Let us review the [previous example](/docs/guide/usage.md#example-rs485-style-serial):
 
 ```python
 from artusapi import ArtusAPI
 
-# Instantiate a right-handed Artus Lite
+# Instantiate a right-handed ARTUS Lite
 hand = ArtusAPI(
     communication_method="RS485_RTU",
     communication_channel_identifier="/dev/ttyUSB0",
@@ -23,8 +23,7 @@ hand.wake_up(control_type=3)
 
 As of **artusapi** v2.0.0 and onwards, all ARTUS products implement a cascaded PID control scheme.
 
-> [!CAUTION]
-> TODO: Add PID control asset image
+![Cascaded PID Control Block Diagram](/docs/assets/images/hardware/cascaded_pid.svg)
 
 By implementing cascaded PID control, operators may have precise, accurate, and reliable control over the motion behaviour of their robot hands.
 
@@ -56,10 +55,6 @@ As mentioned previously, the `connect()` method is automatically invoked when an
 
 Thus, `connect()` must only be explicitly called **after** the `disconnect()` method has been invoked.
 
-## Resets
+## Next steps: Commanding Motion
 
-
-
-## Next steps: Preparing for motion
-
-[The following document describes the next steps to move an ARTUS product.](/docs/software/usage/motion.md)
+[The following document describes the next steps to move an ARTUS product.](/docs/guide/motion.md)

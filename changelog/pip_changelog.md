@@ -1,5 +1,11 @@
 # Pip Changelog
 
+## 3.0.0
+
+- Solidified future code development from ArtusAPI_V2 as **artusapi**
+- Refactored repository to focus solely on software
+- Refactored class names
+
 ## 2.0.0
 
 - Officially published ArtusAPI_V2 to PyPI

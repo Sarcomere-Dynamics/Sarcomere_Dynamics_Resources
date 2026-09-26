@@ -2,7 +2,6 @@ import math
 from enum import Enum
 
 
-# in-house link https://sarcomere-my.sharepoint.com/:x:/g/personal/ryan_lee_sarcomeredynamics_com/EZc0Efig0G1FmhJh-1EKzkMBEruf7tcIM2OreEytxHWceA?e=opvYYD
 class ModbusMap:  # Artus Generic Modbus Map
     """Generic Modbus RTU/TCP register map shared by all ARTUS hands.
 

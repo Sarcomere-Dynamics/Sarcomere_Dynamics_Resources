@@ -1,7 +1,7 @@
 
-# Controlling Artus Hand on UR Arm
+# Controlling ARTUS Hand on UR Arm
 
-In order to control the Artus Hand on UR Arm, you need to connect the Artus Hand to the UR Arm using the RS485 connector.
+In order to control the ARTUS Hand on UR Arm, you need to connect the ARTUS Hand to the UR Arm using the RS485 connector.
 
 After that, setup the software communication on the UR Arm and on the PC.
 
@@ -9,7 +9,7 @@ After that, setup the software communication on the UR Arm and on the PC.
 ## 1. Setup on UR Arm
 
 The setup on the UR Arm forwards the RS485 port (/dev/ttyTool) to a TCP port (54329) on the UR Arm.
-This allows the PC to communicate with the Artus Hand over the network.
+This allows the PC to communicate with the ARTUS Hand over the network.
 
 Communication Interface also needs to be enabled on polyscope with default the following settings, leave others default:
 * No Parity
@@ -22,7 +22,7 @@ Communication Interface also needs to be enabled on polyscope with default the f
 sudo apt install socat
 ```
 
-2. Connect the Artus Hand to the UR Arm using the RS485 connetor.
+2. Connect the ARTUS Hand to the UR Arm using the RS485 connetor.
 3. Run the following command to forward the UR Arm's RS485 port to a TCP port:
 ```
 sudo socat tcp-l:54329,reuseaddr,fork file:/dev/ttyTool,nonblock,raw,b921600,waitlock=/var/run/tty
@@ -64,7 +64,7 @@ sudo apt install socat
 
     example:
     ```python
-    # Artus API Port Forwarder
+    # ARTUS API Port Forwarder
     ROBOT_IP = "192.168.194.129"
     artusAPIPortForwarder = ArtusAPIPortForwarder(robot_ip=ROBOT_IP)
     ```

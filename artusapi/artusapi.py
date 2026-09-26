@@ -530,36 +530,6 @@ class ArtusAPI:
             self.logger.info("Hand ready")
             self.state = ActuatorState.ACTUATOR_IDLE.value
 
-    def set_joint_angles_by_list(self, joint_angles: list, control_type: int = 3):
-        """Sends joint commands to the hand from an ordered list of angles.
-
-        Named ``set_joint_angles_by_list`` for consistency with the v1 API.
-        Internally converts the list into the indexed dict form expected by
-        ``set_joint_angles``.
-
-        Args:
-            joint_angles: List of joint angles to set. Values must all be of
-                the same type based on ``control_type``, and the list must be
-                in order of joint index.
-            control_type: Control type to use for the joint angles -- 3 for
-                position control, 2 for velocity control, 1 for torque
-                control.
-
-        Returns:
-            True if the command was sent successfully, False otherwise. None
-            if the hand is not awake.
-        """
-        if not self._check_awake():
-            return
-
-        # create dict of joint angles
-        joint_angles_dict = {
-            f"{i}": {"target_angle": joint_angles[i]} for i in range(len(joint_angles))
-        }
-        return self.set_joint_angles(
-            joint_angles_dict, injected_control_type=control_type
-        )
-
     def set_joint_angles(
         self, joint_angles: dict, injected_control_type: int | None = None
     ):

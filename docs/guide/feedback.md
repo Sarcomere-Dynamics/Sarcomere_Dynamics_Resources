@@ -45,15 +45,15 @@ These values are identifiable by their corresponding joint labels, which may dif
 
 ## Per-joint Feedback
 
-| Method                     | Description                                                                                                 |                                  Units                                  |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------: |
-| `get_joint_angles()`       | Returns dictionary mapping joint name to angular position at each joint                                     |        **degrees** (Lite) OR **radians** (Talos, Scorpion, Dex)         |
-| `get_joint_speeds()`       | Returns dictionary mapping joint name to angular velocity at each joint                                     | **degrees per second** OR **radians per second** (Talos, Scorpion, Dex) |
-| `get_joint_forces()`       | Returns dictionary mapping joint name to angular force at each joint                                        |                               **Newtons**                               |
-| `get_joint_temperatures()` | Returns dictionary mapping joint name to temperature at each joint                                          |                               **Celsius**                               |
-| `get_fingertip_forces()`   | Returns dictionary mapping joint name to dictionary of force values retrieved from dedicated force sensors. |                               **Newtons**                               |
-| `get_error_report()`       | Returns the hand's actuator and trajectory state                                                            |                                    -                                    |
+| Method                     | Description                                                                                                 |         Units          |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- | :--------------------: |
+| `get_joint_angles()`       | Returns dictionary mapping joint name to angular position at each joint                                     |      **degrees**       |
+| `get_joint_speeds()`       | Returns dictionary mapping joint name to angular velocity at each joint                                     | **degrees per second** |
+| `get_joint_forces()`       | Returns dictionary mapping joint name to angular force at each joint                                        |      **Newtons**       |
+| `get_joint_temperatures()` | Returns dictionary mapping joint name to temperature at each joint                                          |      **Celsius**       |
+| `get_fingertip_forces()`   | Returns dictionary mapping joint name to dictionary of force values retrieved from dedicated force sensors. |      **Newtons**       |
+| `get_error_report()`       | Returns the hand's actuator and trajectory state                                                            |           -            |
 
 ## Next Steps: Miscellaneous Methods
 
-[The following document describes all other methods of interacting with an ARTUS product.](/docs/software/usage/misc.md)
+[The following document describes all other methods of interacting with an ARTUS product.](/docs/guide/misc.md)

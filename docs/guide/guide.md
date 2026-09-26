@@ -1,4 +1,4 @@
-# Introduction to artusapi
+# Guide to artusapi
 
 The following document provides an introduction to the software implementation of **artusapi** and recommended practices for application development.
 
@@ -6,7 +6,7 @@ The following document provides an introduction to the software implementation o
 
 > [!WARNING]
 > All ARTUS products require correct **power, cabling, and safety practices**.
-> Please review the product-specific documentation located in the [top-level README](/README.md) before attempting to use any applications involving artusapi.
+> Please refer to the relevant [product-specific documentation](https://github.com/Sarcomere-Dynamics/.github/blob/main/docs/hardware/quickstart.md) before attempting to use any applications involving **artusapi**.
 
 The package exports the **`ArtusAPI`** and **`ArtusConfig`** base classes.
 
@@ -40,4 +40,4 @@ For more details on the individual modules that comprise **artusapi**, please re
 
 ## Next steps: Usage
 
-[Instructions on how to interact with an ARTUS product via an **ArtusAPI** object can be found in the next document](/docs/software/usage/usage.md)
+[Instructions on how to interact with an ARTUS product via an **ArtusAPI** object can be found in the next document](/docs/guide/usage.md)
