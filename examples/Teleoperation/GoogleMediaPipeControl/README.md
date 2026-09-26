@@ -2,7 +2,7 @@
 
 ![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
-This guide provides instructions on how to use the Google MediaPipe Control to control the Artus robots.
+This guide provides instructions on how to use the Google MediaPipe Control to control the ARTUS robots.
 
 ## Requirements
 

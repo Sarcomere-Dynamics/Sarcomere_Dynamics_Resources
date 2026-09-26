@@ -1,13 +1,13 @@
 # Startup Procedures
 
-## Cascaded PID Control
+## Wakeup (Cascaded PID Control)
 
 Let us review the [previous example](/docs/software/usage/usage.md#example-rs485-style-serial):
 
 ```python
 from artusapi import ArtusAPI
 
-# Instantiate a right-handed Artus Lite
+# Instantiate a right-handed ARTUS Lite
 hand = ArtusAPI(
     communication_method="RS485_RTU",
     communication_channel_identifier="/dev/ttyUSB0",
@@ -56,10 +56,6 @@ As mentioned previously, the `connect()` method is automatically invoked when an
 
 Thus, `connect()` must only be explicitly called **after** the `disconnect()` method has been invoked.
 
-## Resets
-
-
-
-## Next steps: Preparing for motion
+## Next steps: Commanding Motion
 
 [The following document describes the next steps to move an ARTUS product.](/docs/software/usage/motion.md)

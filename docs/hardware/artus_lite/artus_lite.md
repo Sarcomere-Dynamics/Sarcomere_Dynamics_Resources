@@ -1,4 +1,4 @@
-# Artus Lite
+# ARTUS Lite
 
 ![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
@@ -34,7 +34,7 @@ Everything needed to wire, power, and command the ARTUS Lite (and Lite+) hand. F
 
 ## Power Requirement
 
-The Artus Lite should be connected to a 24 VDC power supply, requiring a maximum instantaneous draw of 200W, minimum 48W and typical 100W.
+The ARTUS Lite should be connected to a 24 VDC power supply, requiring a maximum instantaneous draw of 200W, minimum 48W and typical 100W.
 
 ## Communication Methods
 
@@ -99,16 +99,16 @@ Here is a detailed table of the LED states during normal operation and a descrip
 | Orange/Yellow | Shutdown/Sleep mode, may require power cycle for parameter changes to take effect |
 | Purple        | Flashing Actuators                                                                |
 
-## Artus Lite+
+## ARTUS Lite+
 
-The Artus Lite+ has the same basic control and characteristics as the Artus Lite. However, it is equipped with fingertip force sensors. Here are the sensors that have been integrated to date:
+The ARTUS Lite+ has the same basic control and characteristics as the ARTUS Lite. However, it is equipped with fingertip force sensors. Here are the sensors that have been integrated to date:
 
 - Contactile — Data integrated
 
-### Difference Between Artus Lite and Artus Lite+
+### Difference Between ARTUS Lite and ARTUS Lite+
 
 Mechanically, there is no difference between the two hands — the sole difference is the feedback data and fingertip sensors.
 
 ### Feedback Data Differences
 
-- Artus Lite+ also outputs the x, y, z vector forces from the 5 fingertips instead on top of the other general feedback telemetry data consistent with the Artus Lite.
+- ARTUS Lite+ also outputs the x, y, z vector forces from the 5 fingertips instead on top of the other general feedback telemetry data consistent with the ARTUS Lite.

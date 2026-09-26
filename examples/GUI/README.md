@@ -1,8 +1,8 @@
-# Artus GUI Controller
+# ARTUS GUI Controller
 
 ![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
-This guide provides instructions on how to use the GUI to control the Artus robots.
+This guide provides instructions on how to use the GUI to control the ARTUS robots.
 
 ## Requirements
 
@@ -23,4 +23,4 @@ Another indication that the system is ready, is seeing the feedback data start t
 - **Set Joint Angles**: Using the sliders or the input box to set the input target angle.
 - **Send Joint Angles**: Send one-shot inputs to the robot using the send button.
 - **Stream**: Stream joint angles to the robot without the need to press the send button.
-- **Feedback Graphs**: Feedback graphs can be switched between Position, Velocity, and Force. Feeedback is specific to the Artus robot model and may not be the same across all models. If the robot is equipped with fingertip force sensors, the data will also be shown on in their own graphs.
+- **Feedback Graphs**: Feedback graphs can be switched between Position, Velocity, and Force. Feeedback is specific to the ARTUS robot model and may not be the same across all models. If the robot is equipped with fingertip force sensors, the data will also be shown on in their own graphs.

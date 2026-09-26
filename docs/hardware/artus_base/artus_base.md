@@ -1,13 +1,13 @@
-# Artus BLDC Driver
+# ARTUS BLDC Driver
 
 ![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
 The following document provides information on the core of our new products, the ARTUS Brushless DC (BLDC) motor driver.
 This information pertains to the following systems:
 
-- [Artus Scorpion](/docs/hardware/artus_scorpion/artus_scorpion.md)
-- [Artus Talos](/docs/hardware/artus_talos/artus_talos.md)
-- [Artus Dex](<>)
+- [ARTUS Scorpion](/docs/hardware/artus_scorpion/artus_scorpion.md)
+- [ARTUS Talos](/docs/hardware/artus_talos/artus_talos.md)
+- [ARTUS Dex](<>)
 
 ## Startup
 

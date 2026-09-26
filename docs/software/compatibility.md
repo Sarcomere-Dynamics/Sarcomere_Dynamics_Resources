@@ -13,27 +13,27 @@ For example, an ARTUS Lite Mk. 9 purchased in September 2026 may have its **cont
 
 Rows are sorted newest-first, same convention as Revision Control.
 
-## Artus Lite / Lite+
+## ARTUS Lite / Lite+
 
-| Control Board Firmware Version | Compatible API Version(s) | Notes                                       |
+| Mainboard Firmware Version | Compatible API Version(s) | Notes                                       |
 | :----------------------------: | :-----------------------: | ------------------------------------------- |
 |            vX.10.x+            |          v2.0.0+          | Updated communication, Cascaded PID Control |
 |             vX.9.x             |          v1.X.X           | Legacy API                                  |
 
-## Artus Talos
+## ARTUS Talos
 
-| Control Board Firmware Version | Compatible API Version(s) | Notes                                                                                            |
+| Mainboard Firmware Version | Compatible API Version(s) | Notes                                                                                            |
 | :----------------------------: | :-----------------------: | ------------------------------------------------------------------------------------------------ |
 |               -                |          v2.0.0+          | Requires `calibrate()` on boot. See [ARTUS_TALOS.MD](/docs/hardware/artus_talos/artus_talos.md). |
 
-## Artus Scorpion
+## ARTUS Scorpion
 
-| Control Board Firmware Version | Compatible API Version(s) | Notes                                                                                                     |
+| Mainboard Firmware Version | Compatible API Version(s) | Notes                                                                                                     |
 | :----------------------------: | :-----------------------: | --------------------------------------------------------------------------------------------------------- |
 |               -                |          v2.0.0+          | Requires `calibrate()` on boot. See [ARTUS_SCORPION.md](/docs/hardware/artus_scorpion/artus_scorpion.md). |
 
-## Artus Dex
+## ARTUS Dex
 
-| Control Board Firmware Version | Compatible API Version(s) | Notes |
+| Mainboard Firmware Version | Compatible API Version(s) | Notes |
 | :----------------------------: | :-----------------------: | ----- |
 |               -                |          v2.0.0+          | TBD   |

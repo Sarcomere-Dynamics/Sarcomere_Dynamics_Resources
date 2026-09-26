@@ -1,4 +1,4 @@
-# General Example for Artus API
+# General Example for ARTUS API
 
 ![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
@@ -6,7 +6,7 @@ The general example is a command-line introduction to **`ArtusAPI`** for ARTUS r
 
 ## Requirements
 
-Make sure you have read through and installed the requirements for the Artus API. Refer back to the [Repository Readme](../../README.md).
+Make sure you have read through and installed the requirements for the ARTUS API. Refer back to the [Repository Readme](../../README.md).
 
 ## Finding the USB Device
 
@@ -23,19 +23,19 @@ Before running the example, ensure that the [configuratino file](../config/robot
 
 ## Using the example with different robots
 
-This example is design to work with all of the Artus hands/end effectors. Please refer to the robots respective documents for startup procedure requirements.
+This example is design to work with all of the ARTUS hands/end effectors. Please refer to the robots respective documents for startup procedure requirements.
 
-- [Artus Lite](../../ArtusAPI/robot/artus_lite/ARTUS_LITE.md)
-- [Artus Talos](../../ArtusAPI/robot/artus_talos/ARTUS_TALOS.md)
-- [Artus Scorpion](../../ArtusAPI/robot/artus_scorpion/ARTUS_SCORPION.md)
+- [ARTUS Lite](../../ArtusAPI/robot/artus_lite/ARTUS_LITE.md)
+- [ARTUS Talos](../../ArtusAPI/robot/artus_talos/ARTUS_TALOS.md)
+- [ARTUS Scorpion](../../ArtusAPI/robot/artus_scorpion/ARTUS_SCORPION.md)
 
 ### Setting targets
 
-The example uses two main json files to set the targets for the robot. They are located in the `data/hand_poses` folder. These files are set up for the **Artus Lite** hand, with all 16 joints.
-For other grippers, such as the **Artus Talos**, there are varying amounts of active degrees of freedom.
+The example uses two main json files to set the targets for the robot. They are located in the `data/hand_poses` folder. These files are set up for the **ARTUS Lite** hand, with all 16 joints.
+For other grippers, such as the **ARTUS Talos**, there are varying amounts of active degrees of freedom.
 
 To utilize the files for the different hands, please set the targets in the json file to match the joint names of the robot.
 
-e.g. for the **Artus Talos**, the joint names are available in the [Artus Talos Joint Map](../../ArtusAPI/robot/artus_talos/data/images/talos_hand_joint_map.png). Setting the targets in the json file with keys that match the joint names will ensure that the correct targets are set for the robot. The other joints are parsed out, and will not be sent to the robot.
+e.g. for the **ARTUS Talos**, the joint names are available in the [ARTUS Talos Joint Map](../../ArtusAPI/robot/artus_talos/data/images/talos_hand_joint_map.png). Setting the targets in the json file with keys that match the joint names will ensure that the correct targets are set for the robot. The other joints are parsed out, and will not be sent to the robot.
 
-For the **Artus Scorpion**, there is only a single active degree of freedom, and the gripper uses the `thumb_spread` joint key from the available json files.
+For the **ARTUS Scorpion**, there is only a single active degree of freedom, and the gripper uses the `thumb_spread` joint key from the available json files.

@@ -56,6 +56,6 @@ For the latest development version of **artusapi**, this repository may be clone
 | Apr. 22, 2025 |  v1.1.1  |           readmes/documentation updated            |      -      |
 | Nov. 14, 2024 |   v1.1   |               firmware v1.1 release                |    v1.1     |
 | Oct. 23, 2024 |  v1.0.2  | awake parameter added, wake up function in connect |   v1.0.1    |
-| Oct. 09, 2024 |   v1.0   |                 Artus Lite Release                 |    v1.0     |
-| Apr. 23, 2024 |  v1.1b   |           Beta release - Artus Lite Mk 6           |      -      |
-| Nov. 14, 2023 |  v1.0b   |         Initial release - Artus Lite Mk 5          |      -      |
+| Oct. 09, 2024 |   v1.0   |                 ARTUS Lite Release                 |    v1.0     |
+| Apr. 23, 2024 |  v1.1b   |           Beta release - ARTUS Lite Mk 6           |      -      |
+| Nov. 14, 2023 |  v1.0b   |         Initial release - ARTUS Lite Mk 5          |      -      |

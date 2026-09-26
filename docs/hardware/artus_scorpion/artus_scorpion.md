@@ -1,4 +1,4 @@
-# Artus Scorpion - Parallel Gripper
+# ARTUS Scorpion - Parallel Gripper
 
 ![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
@@ -27,7 +27,7 @@ A backdriveable single motor parallel gripper. Everything needed to wire, power,
 
 ## Power Requirements
 
-The Artus Scorpion requires a 24V DC power supply, idle/nominal 2.4W, maximum 72W.
+The ARTUS Scorpion requires a 24V DC power supply, idle/nominal 2.4W, maximum 72W.
 
 ## Communication Methods
 

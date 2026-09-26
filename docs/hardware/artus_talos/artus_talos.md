@@ -1,4 +1,4 @@
-# Artus Talos
+# ARTUS Talos
 
 ![Sarcomere Dynamics Inc. Logo](/docs/assets/images/logo.svg)
 
@@ -28,7 +28,7 @@ Everything needed to wire, power, and command the ARTUS Talos hand. For general 
 
 ## Power Requirements
 
-The Artus Talos runs off a 24 VDC power supply, with a nominal power draw of 35W, 100W maximum draw, and 6W at idle.
+The ARTUS Talos runs off a 24 VDC power supply, with a nominal power draw of 35W, 100W maximum draw, and 6W at idle.
 
 ## Communication Methods
 

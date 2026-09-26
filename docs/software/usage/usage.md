@@ -35,7 +35,7 @@ Instead of loading a robot configuration via a `.yaml`, the following parameters
 ```python
 from artusapi import ArtusAPI
 
-# Instantiate a right-handed Artus Lite
+# Instantiate a right-handed ARTUS Lite
 hand = ArtusAPI(
     communication_method="RS485_RTU",
     communication_channel_identifier="/dev/ttyUSB0",
@@ -69,6 +69,6 @@ E.g., all left-handed ARTUS Lites will share the same Modbus ID, which differs f
 
 Thus, to control multiple ARTUS products with a common Modbus ID, they must be identified via separate, and unique serial channels.
 
-## Next steps: Startup
+## Next steps: Startup Procedures
 
 [The following document describes the next steps for performing startup procedures on the ArtusAPI object.](/docs/software/usage/startup.md)

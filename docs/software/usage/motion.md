@@ -70,19 +70,6 @@ Please refer to the product-specific documentation located in the [top-level REA
 | `target_velocity` | An integer value representing the desired angular velocity setpoint. When in **position control mode**, the velocity setpoint is treated as an **absolute value**. When in **velocity control mode**, a positive value corresponds to a **closing motion**, while a negative value represents an **opening motion**         | Degrees per second |
 | `target_force`    | A float value representing the desired force setpoint from the joint. When in **position OR velocity control mode**, the force setpoint is treated as an **absolute value**. When in **torque control mode**, a positive value corresponds to a **closing motion**, while a negative value represents an **opening motion** |      Newtons       |
 
-## Resetting Joints
-
-If the hand becomes obstructed, the following methods may be used to force the actuators into an open position.
-This makes it easier to perform inspection and maintennance on the device.
-
-Once these methods are uesd, it is recommended to power cycle the device after returning the robot into an operable position.
-
-| Method                | Description                                                                              |
-| --------------------- | ---------------------------------------------------------------------------------------- |
-| `reset()`             | Pulses the actuators in the open direction.                                              |
-| `soft_reset()`        | Opens the actuators towards the open endstop. Then, applies pretensioning if applicable. |
-| `set_home_position()` | Moves the hand to its home position at the default velocity.                             |
-
 ## Next steps: Retrieving Feedback
 
 [The following document describes the next steps to retrieve feedback from an ARTUS product.](/docs/software/usage/feedback.md)
