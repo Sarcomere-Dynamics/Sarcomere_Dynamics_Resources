@@ -27,7 +27,7 @@ from .common import (
     expected_slave_id,
     robot_hand_from_slave_id,
 )
-from .communication.RS485_RTU.rs485_rtu import find_port_holders
+from .communication.ModbusRTU.modbus_rtu import find_port_holders
 
 CONFIG_ENV_VAR = "ARTUS_CONFIG"
 PACKAGED_CONFIG_NAME = "robot_config_default.yaml"
@@ -399,7 +399,7 @@ class ArtusConfig:
         Returns:
             The (possibly corrected) robot_cfg.
         """
-        if getattr(robot_cfg, "communication_method", "RS485_RTU") == "Modbus_TCP":
+        if getattr(robot_cfg, "communication_method", "ModbusRTU") == "Modbus_TCP":
             return robot_cfg
         return self._validate_port_or_select(robot_cfg, logger)
 

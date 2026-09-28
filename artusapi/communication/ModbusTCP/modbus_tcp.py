@@ -22,7 +22,7 @@ class ModbusTCP:
     """Modbus TCP transport for communicating with an ARTUS hand over Ethernet/WiFi.
 
     Wraps a `pymodbus` `ModbusTcpClient`, exposing the same open/send/receive/
-    close interface as `RS485_RTU`, with connection retry logic in `send`
+    close interface as `ModbusRTU`, with connection retry logic in `send`
     and `receive`.
 
     Attributes:
@@ -84,7 +84,7 @@ class ModbusTCP:
             except Exception:
                 pass
         try:
-            # retries=0: retry policy is owned by send()/receive() loops, same as RS485_RTU
+            # retries=0: retry policy is owned by send()/receive() loops, same as ModbusRTU
             self.client = ModbusTcpClient(
                 host=self.host, port=self.port, timeout=self.timeout, retries=0
             )

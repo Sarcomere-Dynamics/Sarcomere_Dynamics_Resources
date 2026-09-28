@@ -63,7 +63,7 @@ class ArtusAPI:
             config: An already-loaded :class:`~ArtusAPI.configuration.ArtusConfig`.
             logger: Optional logger instance shared across handlers. When
                 omitted, the logger created by the configuration is used.
-            communication_method: Transport override, e.g. 'RS485_RTU' or
+            communication_method: Transport override, e.g. 'ModbusRTU' or
                 'ModbusTCP'. Passing this does not skip port discovery
                 unless *communication_channel_identifier* is also set.
             communication_channel_identifier: Serial port override (e.g.
@@ -74,8 +74,7 @@ class ArtusAPI:
                 'artus_dex'.
             hand_type: Hand side override, e.g. 'left' or 'right'.
             communication_frequency: Maximum command send frequency in Hz.
-            baudrate: Serial baudrate override (115200 for RS485, 250000
-                for UART).
+            baudrate: Serial baudrate override (typically 115200).
         """
         from .configuration import ArtusConfig
 
@@ -187,7 +186,7 @@ class ArtusAPI:
             or communication_method == "ModbusTCP"
             or (
                 robot_cfg is not None
-                and getattr(robot_cfg, "communication_method", "RS485_RTU")
+                and getattr(robot_cfg, "communication_method", "ModbusRTU")
                 == "ModbusTCP"
             )
         )
@@ -213,7 +212,7 @@ class ArtusAPI:
             "robot_type": resolved_robot_type,
             "hand_type": resolved_hand_type,
             "communication_method": pick(
-                communication_method, "communication_method", "RS485_RTU"
+                communication_method, "communication_method", "ModbusRTU"
             ),
             "communication_channel_identifier": pick(
                 communication_channel_identifier,
@@ -1043,7 +1042,7 @@ class ArtusAPI:
 
         Writes new WiFi credentials to the hand's onboard config over Modbus and
         reads back the IP address it was assigned. Applicable to hands with a
-        WiFi-capable communication module; on wired transports (RS485_RTU,
+        WiFi-capable communication module; on wired transports (ModbusRTU,
         ModbusTCP) this still exercises the onboard config write/ack flow but
         the reported IP reflects the WiFi radio regardless of the transport
         used to send this command.

@@ -2,14 +2,14 @@
 
 ## Wakeup (Cascaded PID Control)
 
-Let us review the [previous example](/docs/guide/usage.md#example-rs485-style-serial):
+Let us review the [previous example](/docs/guide/usage.md#example-modbusrtu-serial):
 
 ```python
 from artusapi import ArtusAPI
 
 # Instantiate a right-handed ARTUS Lite
 hand = ArtusAPI(
-    communication_method="RS485_RTU",
+    communication_method="ModbusRTU",
     communication_channel_identifier="/dev/ttyUSB0",
     robot_type="artus_lite",
     hand_type="right",

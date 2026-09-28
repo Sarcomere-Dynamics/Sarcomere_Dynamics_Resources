@@ -2,7 +2,7 @@
 
 Two layers of verification:
 
-1. Call-level: both RS485_RTU implementations hand the same function code,
+1. Call-level: both ModbusRTU implementations hand the same function code,
    register address and payload values to their Modbus library for every
    CommandType and for reads.
 
@@ -94,18 +94,18 @@ def build_pymodbus_frame(kind, address, payload, count=None):
 
 
 class MinimalmodbusCallCapture:
-    """Run the archived minimalmodbus RS485_RTU against a mocked Instrument."""
+    """Run the archived minimalmodbus ModbusRTU against a mocked Instrument."""
 
     def __init__(self):
-        """Builds the archived minimalmodbus RS485_RTU with its Instrument mocked out."""
-        from artusapi.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
+        """Builds the archived minimalmodbus ModbusRTU with its Instrument mocked out."""
+        from artusapi.communication.ModbusRTU.rs485_rtu_minimalmodbus import ModbusRTU
 
         self.instrument = MagicMock()
         with patch(
-            "ArtusAPI.communication.RS485_RTU.rs485_rtu_minimalmodbus.minimalmodbus.Instrument",
+            "ArtusAPI.communication.ModbusRTU.rs485_rtu_minimalmodbus.minimalmodbus.Instrument",
             return_value=self.instrument,
         ):
-            self.rtu = RS485_RTU(port="MOCK", baudrate=115200, slave_address=SLAVE_ID)
+            self.rtu = ModbusRTU(port="MOCK", baudrate=115200, slave_address=SLAVE_ID)
             self.rtu.open()
 
     def send(self, data, command):
@@ -151,11 +151,11 @@ class MinimalmodbusCallCapture:
 
 
 class PymodbusCallCapture:
-    """Run the pymodbus RS485_RTU against a mocked ModbusSerialClient."""
+    """Run the pymodbus ModbusRTU against a mocked ModbusSerialClient."""
 
     def __init__(self):
-        """Builds the pymodbus-backed RS485_RTU with its ModbusSerialClient mocked out."""
-        from artusapi.communication.RS485_RTU.rs485_rtu import RS485_RTU
+        """Builds the pymodbus-backed ModbusRTU with its ModbusSerialClient mocked out."""
+        from artusapi.communication.ModbusRTU.modbus_rtu import ModbusRTU
 
         self.client = MagicMock()
         self.client.connect.return_value = True
@@ -164,10 +164,10 @@ class PymodbusCallCapture:
         self.client.write_register.return_value = ok
         self.client.write_registers.return_value = ok
         with patch(
-            "ArtusAPI.communication.RS485_RTU.rs485_rtu.ModbusSerialClient",
+            "ArtusAPI.communication.ModbusRTU.rs485_rtu.ModbusSerialClient",
             return_value=self.client,
         ):
-            self.rtu = RS485_RTU(port="MOCK", baudrate=115200, slave_address=SLAVE_ID)
+            self.rtu = ModbusRTU(port="MOCK", baudrate=115200, slave_address=SLAVE_ID)
             self.rtu.open()
 
     def send(self, data, command):
@@ -324,7 +324,7 @@ class TestWireFrameParity(unittest.TestCase):
         """Runs an operation against the real minimalmodbus framing code and captures the raw bytes written.
 
         Args:
-            run: Callable invoked with the constructed RS485_RTU instance to
+            run: Callable invoked with the constructed ModbusRTU instance to
                 trigger the send/receive operation being captured.
 
         Returns:
@@ -332,7 +332,7 @@ class TestWireFrameParity(unittest.TestCase):
         """
         import minimalmodbus
 
-        from artusapi.communication.RS485_RTU.rs485_rtu_minimalmodbus import RS485_RTU
+        from artusapi.communication.ModbusRTU.rs485_rtu_minimalmodbus import ModbusRTU
 
         written = []
         mock_serial = MagicMock()
@@ -345,7 +345,7 @@ class TestWireFrameParity(unittest.TestCase):
         # minimalmodbus framing code runs, but bytes land in `written` and the
         # empty response raises NoResponseError after the request is sent.
         with patch("minimalmodbus.serial.Serial", return_value=mock_serial):
-            rtu = RS485_RTU(port="MOCK", baudrate=115200, slave_address=SLAVE_ID)
+            rtu = ModbusRTU(port="MOCK", baudrate=115200, slave_address=SLAVE_ID)
             rtu.open()
         with self.assertRaises(minimalmodbus.ModbusException):
             run(rtu)

@@ -33,7 +33,7 @@ Edit [`robot_config.yaml`](robot_config_example.yaml) and set the fields for eac
 
 - `robot_connected`: `true` for the single connected robot.
 - `robot_type`: e.g. `artus_talos`, `artus_scorpion`, `artus_lite`.
-- `communication_method`: e.g. `RS485_RTU`, `UDP`, `WiFi`.
+- `communication_method`: e.g. `ModbusRTU`, `UDP`, `WiFi`.
 - `communication_channel_identifier`: Port or address (e.g. `/dev/ttyUSB0`).
 - `hand_type`: `left` or `right`.
 - `start_robot`: Whether to wake on start.

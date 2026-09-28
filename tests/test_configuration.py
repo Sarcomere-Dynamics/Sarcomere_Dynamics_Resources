@@ -23,7 +23,7 @@ robots:
   left_hand_robot:
     robot_connected: true
     robot_type: artus_lite
-    communication_method: RS485_RTU
+    communication_method: ModbusRTU
     baudrate: 115200
     communication_channel_identifier: /dev/ttyUSB0
     hand_type: left
@@ -34,7 +34,7 @@ robots:
   right_hand_robot:
     robot_connected: false
     robot_type: artus_lite
-    communication_method: RS485_RTU
+    communication_method: ModbusRTU
     baudrate: 115200
     communication_channel_identifier: /dev/ttyUSB1
     hand_type: right

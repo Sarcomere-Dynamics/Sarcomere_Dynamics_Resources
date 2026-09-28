@@ -2,7 +2,7 @@
 
 ![Banner](docs/assets/images/common/logo.svg)
 
-**artusapi** is a Python API for controlling the Sarcomere Dynamics ARTUS family of robotic hands over RS485/Modbus RTU or TCP.
+**artusapi** is a Python API for controlling the Sarcomere Dynamics ARTUS family of robotic hands over ModbusRTU/ModbusTCP.
 
 See the Sarcomere Dynamics Inc. [Software License](LICENSE) for terms and conditions of use.
 

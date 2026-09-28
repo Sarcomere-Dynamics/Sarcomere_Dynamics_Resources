@@ -1,4 +1,4 @@
-"""Tests for CommunicationHandler with RS485_RTU mocked (no serial port)."""
+"""Tests for CommunicationHandler with ModbusRTU mocked (no serial port)."""
 
 import unittest
 from unittest.mock import MagicMock, patch
@@ -11,25 +11,25 @@ from artusapi.communication.communication_handler import (
 
 
 class TestNewCommunicationMocked(unittest.TestCase):
-    """Verifies CommunicationHandler delegates to a mocked RS485_RTU transport."""
+    """Verifies CommunicationHandler delegates to a mocked ModbusRTU transport."""
 
     def _make_nc(self, mock_inst: MagicMock) -> CommunicationHandler:
-        """Builds a CommunicationHandler with RS485_RTU patched to return the given mock.
+        """Builds a CommunicationHandler with ModbusRTU patched to return the given mock.
 
         Args:
-            mock_inst: Mock to substitute for the real RS485_RTU instance.
+            mock_inst: Mock to substitute for the real ModbusRTU instance.
 
         Returns:
             A CommunicationHandler instance wired to the mock transport.
         """
         with patch(
-            "ArtusAPI.communication.communication_handler.RS485_RTU",
+            "ArtusAPI.communication.communication_handler.ModbusRTU",
             return_value=mock_inst,
         ):
             nc = CommunicationHandler(
                 port="MOCK",
                 baudrate=115200,
-                communication_method="RS485_RTU",
+                communication_method="ModbusRTU",
             )
         return nc
 

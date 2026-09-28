@@ -78,7 +78,7 @@ def example():
     # find robot type from robot config
     robot_type = config.find_single_robot_type()
     artusapi = ArtusAPI(
-        communication_method="RS485_RTU",
+        communication_method="ModbusRTU",
         communication_channel_identifier=local_device_name,
         robot_type=robot_type,
         hand_type=config.config.robots.left_hand_robot.hand_type,

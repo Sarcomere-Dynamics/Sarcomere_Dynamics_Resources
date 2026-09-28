@@ -14,7 +14,7 @@ Their implementations can be found in [`artusapi.py`](/artusapi/artusapi.py) and
 
 An application using **artusapi** begins by listing parameters that define how the host will interact with the ARTUS product, including but not limited to:
 
-- Communication Method: The host-device communication protocol (e.g., RS485_RTU, ModbusTCP)
+- Communication Method: The host-device communication protocol (e.g., ModbusRTU, ModbusTCP)
 - Robot Type: The selected ARTUS product (e.g. ARTUS Lite, ARTUS Talos, ARTUS Scorpion)
 - Hand Type: Left or Right
 
@@ -33,7 +33,7 @@ For more details on the individual modules that comprise **artusapi**, please re
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
 | [`commands/`](/artusapi/commands/)               | Low-level Modbus commands for invoking actions from the control board.                                                             |
 | [`common/`](/artusapi/common/)                   | Shared definitions used across transports: the Modbus register map (`ModbusMap.py`) and per-hand slave ID table (`SlaveIDMap.py`). |
-| [`communication/`](/artusapi/communication/)     | RS485 RTU and Modbus TCP transports for host-to-hand communication                                                                 |
+| [`communication/`](/artusapi/communication/)     | ModbusRTU and ModbusTCP transports for host-to-hand communication                                                                  |
 | [`firmware_update/`](/artusapi/firmware_update/) | Tools for updating **control board** and **actuator** firmware.                                                                    |
 | [`robot/`](/artusapi/robot/)                     | Software definitions for each supported hand.                                                                                      |
 | [`sensors/`](/artusapi/sensors/)                 | `ForceSensor` — the fingertip/Contactile force reading structure used by Talos, Scorpion, and Lite+.                               |

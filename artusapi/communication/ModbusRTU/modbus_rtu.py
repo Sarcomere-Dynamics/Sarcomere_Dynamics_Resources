@@ -59,7 +59,7 @@ def find_port_holders(port):
     return holders
 
 
-class RS485_RTU:
+class ModbusRTU:
     """Modbus RTU transport for RS485 communication with an ARTUS hand.
 
     Wraps a `pymodbus` `ModbusSerialClient` to send and receive data over
@@ -100,7 +100,7 @@ class RS485_RTU:
             self.logger = logger
 
     def open(self):
-        """Opens the RS485 serial connection.
+        """Opens the ModbusRTU serial connection.
 
         Raises:
             ConnectionError: If the port could not be opened; the error

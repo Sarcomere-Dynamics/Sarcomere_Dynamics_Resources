@@ -35,7 +35,7 @@ class TestArtusAPIV2Mocked(unittest.TestCase):
                 api = api_mod.ArtusAPI(
                     robot_type="artus_lite",
                     hand_type="left",
-                    communication_method="RS485_RTU",
+                    communication_method="ModbusRTU",
                     communication_channel_identifier="MOCK",
                 )
                 api.disconnect()
@@ -59,7 +59,7 @@ robots:
   left_hand_robot:
     robot_connected: true
     robot_type: artus_scorpion
-    communication_method: RS485_RTU
+    communication_method: ModbusRTU
     baudrate: 115200
     communication_channel_identifier: /dev/ttyUSB0
     hand_type: left
@@ -70,7 +70,7 @@ robots:
   right_hand_robot:
     robot_connected: false
     robot_type: artus_lite
-    communication_method: RS485_RTU
+    communication_method: ModbusRTU
     baudrate: 115200
     communication_channel_identifier: /dev/ttyUSB1
     hand_type: right
@@ -159,7 +159,7 @@ logging:
                     api_mod.ArtusAPI(
                         robot_type="artus_talos",
                         hand_type="right",
-                        communication_method="RS485_RTU",
+                        communication_method="ModbusRTU",
                         communication_channel_identifier="MOCK",
                     )
         nc_cls.assert_called_once()

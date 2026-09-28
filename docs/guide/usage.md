@@ -18,7 +18,7 @@ artusapi = ArtusAPI(config_file=<path to configuration .yaml file>)
 
 Instead of loading a robot configuration via a `.yaml`, the following parameters may be defined manually:
 
-- `communication_method` — How the host device communicates with the ARTUS product: `RS485_RTU` | `ModbusTCP`
+- `communication_method` — How the host device communicates with the ARTUS product: `ModbusRTU` | `ModbusTCP`
 - `communication_channel_identifier` — Port or device path (for example `COM7` on Windows or `/dev/ttyUSB0` on Linux).
 - `robot_type` — The required ARTUS product (`artus_lite` | `artus_lite_plus` | `artus_talos` | `artus_scorpion` | `artus_dex`).
 - `hand_type` — `left` or `right`
@@ -26,7 +26,7 @@ Instead of loading a robot configuration via a `.yaml`, the following parameters
 - `logger` — Optional Python `logging.Logger`; if `None`, the API creates its own.
 - `baudrate` — Serial baud rate (default `115200` in `ArtusAPI`; match your harness and firmware).
 
-#### Example (RS485-style serial)
+#### Example (ModbusRTU serial)
 
 **By default, the ArtusAPI constructor automatically calls `connect()`, opening communication with the chosen transport.**
 
@@ -37,7 +37,7 @@ from artusapi import ArtusAPI
 
 # Instantiate a right-handed ARTUS Lite
 hand = ArtusAPI(
-    communication_method="RS485_RTU",
+    communication_method="ModbusRTU",
     communication_channel_identifier="/dev/ttyUSB0",
     robot_type="artus_lite",
     hand_type="right",

@@ -15,24 +15,24 @@ from tqdm import tqdm
 
 from ..common.modbus_map import ActuatorState, CommandType, ModbusMap, TrajectoryReturn
 from .ModbusTCP.modbus_tcp import ModbusTCP
-from .RS485_RTU.rs485_rtu import RS485_RTU
+from .ModbusRTU.modbus_rtu import ModbusRTU
 
 
 class CommunicationHandler:
     """Transport-agnostic wrapper used by ArtusAPI to talk to an ARTUS hand.
 
-    Selects and owns a concrete communicator (RS485_RTU or ModbusTCP) based on
+    Selects and owns a concrete communicator (ModbusRTU or ModbusTCP) based on
     `communication_method` and exposes a uniform send/receive/state-polling
     interface on top of it.
 
     Attributes:
-        port: Serial device path (RS485_RTU) or `host`/`host:tcp_port`
+        port: Serial device path (ModbusRTU) or `host`/`host:tcp_port`
             string (ModbusTCP).
-        baudrate: Serial baud rate, used only for RS485_RTU.
+        baudrate: Serial baud rate, used only for ModbusRTU.
         logger: Logger instance used for status and error messages.
         slave_address: Modbus slave/unit address of the target hand.
-        communication_method: Either "RS485_RTU" or "ModbusTCP".
-        communicator: The underlying transport instance (RS485_RTU or
+        communication_method: Either "ModbusRTU" or "ModbusTCP".
+        communicator: The underlying transport instance (ModbusRTU or
             ModbusTCP) created by `_setup_communication`.
         ntrips: Running count of state-polling round trips performed by
             `wait_for_ready`.
@@ -44,19 +44,19 @@ class CommunicationHandler:
         baudrate=115200,
         logger=None,
         slave_address=1,
-        communication_method="RS485_RTU",
+        communication_method="ModbusRTU",
     ):
         """Initializes the communication wrapper and constructs the transport.
 
         Args:
-            port: Serial device for RS485_RTU (e.g. '/dev/ttyUSB0'), or
+            port: Serial device for ModbusRTU (e.g. '/dev/ttyUSB0'), or
                 'host' / 'host:tcp_port' for ModbusTCP (e.g.
                 '192.168.2.8:502').
-            baudrate: Serial baud rate, used only for RS485_RTU.
+            baudrate: Serial baud rate, used only for ModbusRTU.
             logger: Logger to use; a module-level logger is created if None.
             slave_address: Modbus slave/unit address of the target hand.
             communication_method: Transport to construct, either
-                "RS485_RTU" or "ModbusTCP".
+                "ModbusRTU" or "ModbusTCP".
         """
         self.port = port
         self.baudrate = baudrate
@@ -76,11 +76,11 @@ class CommunicationHandler:
         """Instantiates the concrete communicator for `communication_method`.
 
         Raises:
-            ValueError: If `communication_method` is not "RS485_RTU" or
+            ValueError: If `communication_method` is not "ModbusRTU" or
                 "ModbusTCP".
         """
-        if self.communication_method == "RS485_RTU":
-            self.communicator = RS485_RTU(
+        if self.communication_method == "ModbusRTU":
+            self.communicator = ModbusRTU(
                 port=self.port,
                 baudrate=self.baudrate,
                 timeout=0.2,

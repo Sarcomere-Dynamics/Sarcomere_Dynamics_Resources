@@ -97,7 +97,7 @@ class ArtusGUIController:
             time.sleep(0.5)
         # test robot
         # self.artus_api = ArtusAPI(robot_type='artus_talos',
-        #                         communication_method='RS485_RTU',
+        #                         communication_method='ModbusRTU',
         #                         communication_channel_identifier='/dev/ttyUSB0',
         #                         communication_frequency=20,
         #                         logger=self.logger)

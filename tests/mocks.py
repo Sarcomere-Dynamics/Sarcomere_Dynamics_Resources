@@ -80,7 +80,7 @@ def build_api(
         api = Cls(
             robot_type=robot_type,
             hand_type=hand_type,
-            communication_method="RS485_RTU",
+            communication_method="ModbusRTU",
             communication_channel_identifier="MOCK",
             **kwargs,
         )
