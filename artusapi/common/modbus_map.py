@@ -55,7 +55,7 @@ class ModbusMap:  # Artus Generic Modbus Map
             # size is uint32 (2 registers per joint) — see data_type_multiplier_map below
             "feedback_actuator_error_reg": 500,  # feedback error reports
             # size is byte
-            "feedback_atuator_motor_mode_reg": 600,  # feedback motor mode
+            "feedback_actuator_motor_mode_reg": 600,  # feedback motor mode
             # size is float
             "feedback_force_sensor_start_reg": 650,  # input feedback fingertip force sensors
             # size is float
@@ -89,7 +89,7 @@ class ModbusMap:  # Artus Generic Modbus Map
             # Decoded as uint32 (not IEEE float) — see CommandHandler.get_decoded_feedback_data.
             "feedback_actuator_error_reg": 2,  # feedback error reports (uint32 per joint)
             # size is byte
-            "feedback_atuator_motor_mode_reg": 0.5,  # feedback motor mode
+            "feedback_actuator_motor_mode_reg": 0.5,  # feedback motor mode
             # size is float
             "feedback_force_sensor_start_reg": 2,  # input feedback fingertip force sensors
             # size is float
