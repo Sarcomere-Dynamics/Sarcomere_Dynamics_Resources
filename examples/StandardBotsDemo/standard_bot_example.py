@@ -84,7 +84,7 @@ def execute_grasp():
 
     Loads the pose from data/hand_poses/grasp_example.json, fills in each
     joint's target_velocity and target_force from the robot's configured
-    defaults, and sends the resulting pose via artusapi.set_joint_angles.
+    defaults, and sends the resulting pose via artusapi.set_joint_targets.
     """
     logger.info("Executing Grasp")
     with open(os.path.join(hand_poses_path, "grasp_example.json"), "r") as file:
@@ -94,7 +94,7 @@ def execute_grasp():
             artusapi._robot_handler.robot.default_velocity
         )
         pose_dict[key]["target_force"] = artusapi._robot_handler.robot.default_force
-    artusapi.set_joint_angles(pose_dict)
+    artusapi.set_joint_targets(pose_dict)
 
 
 def execute_open():
@@ -102,7 +102,7 @@ def execute_open():
 
     Loads the pose from data/hand_poses/grasp_open.json, fills in each
     joint's target_velocity and target_force from the robot's configured
-    defaults, and sends the resulting pose via artusapi.set_joint_angles.
+    defaults, and sends the resulting pose via artusapi.set_joint_targets.
     """
     logger.info("Executing Open")
     with open(os.path.join(hand_poses_path, "grasp_open.json"), "r") as file:
@@ -112,7 +112,7 @@ def execute_open():
             artusapi._robot_handler.robot.default_velocity
         )
         pose_dict[key]["target_force"] = artusapi._robot_handler.robot.default_force
-    artusapi.set_joint_angles(pose_dict)
+    artusapi.set_joint_targets(pose_dict)
 
 
 # ------------------------------------------------------------------------------

@@ -169,7 +169,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
                 grasp_example_dict[key]["target_force"] = (
                     artusapi._robot_handler.robot.default_force
                 )
-            artusapi.set_joint_angles(grasp_example_dict)
+            artusapi.set_joint_targets(grasp_example_dict)
         case "7":
             logger.info(artusapi.get_robot_status())
         case "8":
@@ -185,7 +185,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
                 grasp_dict[key]["target_force"] = (
                     artusapi._robot_handler.robot.default_force
                 )
-            artusapi.set_joint_angles(grasp_dict)
+            artusapi.set_joint_targets(grasp_dict)
         case "9":
             artusapi.get_feedback_data()
         case "10":

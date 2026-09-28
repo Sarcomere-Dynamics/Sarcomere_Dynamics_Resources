@@ -95,11 +95,11 @@ class Robot:
 
         self.robot = robot_class(logger=self.logger)
 
-    def set_joint_angles(self, joint_angles: dict, name: bool):
+    def set_joint_targets(self, joints: dict, name: bool):
         """Sets the joint angles of the hand.
 
         Args:
-            joint_angles: Dictionary of target joint data, keyed by joint
+            joints: Dictionary of target joint data, keyed by joint
                 name or index depending on ``name``.
             name: If True, dispatches by joint name (used for hands with
                 named joints, e.g. Scorpion which has a single unnamed
@@ -107,12 +107,12 @@ class Robot:
 
         Returns:
             Bitmask of available control types that were set (see
-            ``ArtusBase.set_joint_angles``).
+            ``ArtusBase.set_joint_targets``).
         """
         if name:  # scorpion has no name for joints because just 1 joint
-            return self.robot.set_joint_angles_by_name(joint_angles)
+            return self.robot.set_joint_targets_by_name(joints)
         else:
-            return self.robot.set_joint_angles(joint_angles)
+            return self.robot.set_joint_targets(joints)
 
     def set_home_position(self):
         """Moves the hand to its home position.
@@ -122,11 +122,11 @@ class Robot:
         """
         return self.robot.set_home_position()
 
-    def get_feedback_data(self, joint_angles, feedback_type=None):
+    def get_feedback_data(self, joints, feedback_type=None):
         """Populates the robot's joint feedback fields from decoded data.
 
         Args:
-            joint_angles: Decoded feedback data (list).
+            joints: Decoded feedback data (list).
             feedback_type: Modbus key string (e.g.
                 'feedback_position_start_reg'). Defaults to
                 'feedback_position_start_reg' if not provided.
@@ -139,4 +139,4 @@ class Robot:
             if feedback_type is not None
             else "feedback_position_start_reg"
         )
-        return self.robot.get_feedback_data(joint_angles, modbus_key=modbus_key)
+        return self.robot.get_feedback_data(joints, modbus_key=modbus_key)

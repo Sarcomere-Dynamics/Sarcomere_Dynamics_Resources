@@ -203,25 +203,25 @@ logging:
             self.assertEqual(d[n], data[i])
 
     def test_set_joint_angles_sends_position_command(self):
-        """Verifies set_joint_angles sends a TARGET_COMMAND for a single joint target."""
+        """Verifies set_joint_targets sends a TARGET_COMMAND for a single joint target."""
         comm = MagicMock()
         api, comm = build_api()
         api.awake = True
         api.control_type = api.control_types["position"]
         api.last_time = 0.0
         with patch("ArtusAPI.artus_api_new.time.perf_counter", return_value=10.0):
-            api.set_joint_angles({"thumb_spread": {"target_angle": 5}})
+            api.set_joint_targets({"thumb_spread": {"target_angle": 5}})
         comm.send_data.assert_called()
         args = comm.send_data.call_args[0]
         self.assertEqual(args[1], CommandType.TARGET_COMMAND.value)
 
     def test_set_joint_angles_by_list_delegates_to_set_joint_angles(self):
-        """Verifies set_joint_angles_by_list builds an index-keyed target dict and delegates to set_joint_angles."""
+        """Verifies set_joint_angles_by_list builds an index-keyed target dict and delegates to set_joint_targets."""
         api, _ = build_api()
         api.awake = True
         api.control_type = api.control_types["position"]
         api.last_time = 0.0
-        with patch.object(api, "set_joint_angles", return_value=True) as m:
+        with patch.object(api, "set_joint_targets", return_value=True) as m:
             api.set_joint_angles_by_list([0, 0], control_type=3)
         m.assert_called_once()
         call_kw = m.call_args[0][0]
@@ -394,7 +394,7 @@ logging:
 
     def test_set_get_joint_angles_partial_dict_still_sends_full_command(self):
         """Verifies a single-joint update still packs/writes all joints (unset joints default to 0),
-        matching the behavior of the existing write-only set_joint_angles path."""
+        matching the behavior of the existing write-only set_joint_targets path."""
         comm = MagicMock()
         comm.send_receive_data.return_value = [0] * 8
         api, comm = build_api(communication_mock=comm)

@@ -4,7 +4,7 @@
 
 Each joint within an ARTUS product may be commanded with a target angular position, angular velocity, and force.
 
-This is achieved by writing a nested dictionary and calling the `set_joint_angles()` method.
+This is achieved by writing a nested dictionary and calling the `set_joint_targets()` method.
 
 For example, to move the pinky of an ARTUS Lite into its closed state, this may look like:
 
@@ -15,7 +15,7 @@ lite = ArtusAPI(...)
 
 pinky_dict = {"pinky_d2": {"index": 15, "target_angle": 90}}
 
-lite.set_joint_angles(pinky_dict)
+lite.set_joint_targets(pinky_dict)
 ```
 
 As seen in the example above, every joint is keyed by its **name**, with sub-keys for the **joint index** and the desired **angular position**, **angular velocity**, and **force output**.

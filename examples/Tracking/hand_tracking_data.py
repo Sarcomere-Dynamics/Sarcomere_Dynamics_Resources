@@ -109,8 +109,8 @@ def test_hand_tracking_data():
     )
     while True:
         try:
-            joint_angles = hand_tracking_data.receive_joint_angles()
-            print(joint_angles)
+            joints = hand_tracking_data.receive_joint_angles()
+            print(joints)
             time.sleep(0.5)
         except:
             pass

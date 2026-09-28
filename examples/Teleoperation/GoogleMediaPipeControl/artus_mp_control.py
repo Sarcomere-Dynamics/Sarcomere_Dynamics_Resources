@@ -743,7 +743,7 @@ def main():
     artus.wake_up()
 
     # Real ARTUS joint names, in the same order as JOINT_ORDER above, used
-    # to build the name-keyed dict ArtusAPI.set_joint_angles expects.
+    # to build the name-keyed dict ArtusAPI.set_joint_targets expects.
     joint_names = artus._robot_handler.robot.joint_names
 
     detector = create_hand_landmarker()
@@ -840,17 +840,17 @@ def main():
                 for joint_name in JOINT_ORDER
             ]
 
-            joint_angles = angles_mapped
+            joints = angles_mapped
 
             hand_joints = {
                 joint_names[i]: {
                     "target_angle": angle,
                     "target_velocity": artus._robot_handler.robot.default_velocity,
                 }
-                for i, angle in enumerate(joint_angles)
+                for i, angle in enumerate(joints)
             }
 
-            artus.set_joint_angles(hand_joints)
+            artus.set_joint_targets(hand_joints)
 
             if now - last_print > print_interval:
                 print(f"\n{handedness_label} Hand Joint Flex Angles (IK + Kalman):")
@@ -859,13 +859,13 @@ def main():
 
                 print("Mapped joint angles (Artus order):")
                 print("JOINT_ORDER:", JOINT_ORDER)
-                print("angles_mapped:", joint_angles)
+                print("angles_mapped:", joints)
 
                 last_print = now
 
             mapped_angle_dict = {
                 joint_name: float(angle)
-                for joint_name, angle in zip(JOINT_ORDER, joint_angles)
+                for joint_name, angle in zip(JOINT_ORDER, joints)
             }
 
             draw_finger_angles(frame, mapped_angle_dict)

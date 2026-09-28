@@ -76,15 +76,15 @@ class ArtusScorpion(ArtusBase):
         self.min_force = 0  # N
         self.default_force = 20  # N
 
-    def set_joint_angles_by_name(self, joint_angles: dict):
+    def set_joint_targets_by_name(self, joints: dict):
         """Sets target angle/velocity/force on the single gripper joint.
 
-        Looks up ``'gripper_joint'`` in ``joint_angles``; if absent, falls
+        Looks up ``'gripper_joint'`` in ``joints``; if absent, falls
         back to using the ``'thumb_spread'`` entry as the target data
         (compatibility with generic multi-finger joint dicts).
 
         Args:
-            joint_angles: Dict keyed by joint name, expected to contain
+            joints: Dict keyed by joint name, expected to contain
                 'gripper_joint' (or 'thumb_spread' as a fallback key) mapped
                 to a dict with any combination of ``target_angle``,
                 ``target_velocity``, ``target_force``.
@@ -97,18 +97,16 @@ class ArtusScorpion(ArtusBase):
         # verify that items are in order of index
         available_control = 0
 
-        # INSERT_YOUR_CODE
         target_data = None
-        # look for gripper_joint in joint_angles
-        if "gripper_joint" not in joint_angles:
+        # look for gripper_joint in joints
+        if "gripper_joint" not in joints:
             self.logger.info(
-                "Gripper joint not found in joint angles, defaulting to thumb_spread"
+                '"gripper_joint" not found in joint angles, defaulting to thumb_spread'
             )
-            target_data = joint_angles[
-                "thumb_spread"
-            ]  # use the zero index joint as default
+            # use the zero index joint as default
+            target_data = joints["thumb_spread"]
         else:
-            target_data = joint_angles["gripper_joint"]
+            target_data = joints["gripper_joint"]
         name = "gripper_joint"
         # fill data based on control type
         if "target_angle" in target_data:
@@ -137,19 +135,19 @@ class ArtusScorpion(ArtusBase):
 
         return available_control
 
-    def set_joint_angles(self, joint_angles: dict):
+    def set_joint_targets(self, joints: dict):
         """Sets target joint data for the gripper (delegates by name).
 
         The Scorpion has a single named joint, so index-based addressing is
         not meaningful; this simply forwards to
-        ``set_joint_angles_by_name``.
+        ``set_joint_targets_by_name``.
 
         Args:
-            joint_angles: Dict keyed by joint name (see
-                ``set_joint_angles_by_name``).
+            joints: Dict keyed by joint name (see
+                ``set_joint_targets_by_name``).
 
         Returns:
             Bitmask of which control types were set (see
-            ``set_joint_angles_by_name``).
+            ``set_joint_targets_by_name``).
         """
-        return self.set_joint_angles_by_name(joint_angles)
+        return self.set_joint_targets_by_name(joints)

@@ -105,16 +105,16 @@ class ArtusGUIController:
         #                         logger=self.logger)
         # self.logger.info("Robot connected")
 
-    def _send_joint_angles(self, joint_angles: dict = None):
+    def _send_joint_angles(self, joints: dict = None):
         """Sends a dict of target joint angles to the robot.
 
         Args:
-            joint_angles: Mapping of joint name/index to target angle
-                data, as expected by ArtusAPI.set_joint_angles. If
+            joints: Mapping of joint name/index to target angle
+                data, as expected by ArtusAPI.set_joint_targets. If
                 None, logs an error and returns without sending anything.
         """
-        if joint_angles is not None:
-            self.artus_api.set_joint_angles(joint_angles=joint_angles)
+        if joints is not None:
+            self.artus_api.set_joint_targets(joints=joints)
         else:
             self.logger.error("No joint angles received")
             return
@@ -204,20 +204,20 @@ class ArtusGUIController:
         package = self.zmq_subscriber.receive()
         if package is not None:
             package = json.loads(package)
-            joint_angles = package["joint_values"]
+            joints = package["joint_values"]
             force = package["force"]
             speed = package["speed"]
 
             # joint angles with key and float value but I want key: {'target_angle': int(value)}
-            joint_angles = {
-                key: {"target_angle": int(value)} for key, value in joint_angles.items()
+            joints = {
+                key: {"target_angle": int(value)} for key, value in joints.items()
             }
 
-            for key, value in joint_angles.items():
-                joint_angles[key]["target_force"] = force
-                joint_angles[key]["target_velocity"] = speed
+            for key, value in joints.items():
+                joints[key]["target_force"] = force
+                joints[key]["target_velocity"] = speed
 
-            return joint_angles
+            return joints
         else:
             self.logger.error("No joint angles received")
             return None
@@ -232,9 +232,9 @@ class ArtusGUIController:
         """
         while True:
             try:
-                joint_angles = self._receive_joint_anglesZMQ()
-                if joint_angles is not None:
-                    self._send_joint_angles(joint_angles=joint_angles)
+                joints = self._receive_joint_anglesZMQ()
+                if joints is not None:
+                    self._send_joint_angles(joints=joints)
 
                 time.sleep(0.02)
 

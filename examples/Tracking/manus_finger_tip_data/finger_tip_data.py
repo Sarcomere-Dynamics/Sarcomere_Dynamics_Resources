@@ -87,7 +87,7 @@ class FingerTipData:
             nothing.
         """
         raw_data = self.tcp_server.receive()  # receive encoded data
-        # print("1. Original Data: ", joint_angles)
+        # print("1. Original Data: ", joints)
         clean_data = self.parse_fingertip_data(raw_data)  # parse the data
 
         if clean_data != {}:

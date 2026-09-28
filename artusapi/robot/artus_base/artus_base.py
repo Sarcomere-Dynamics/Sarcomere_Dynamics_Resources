@@ -178,7 +178,7 @@ class ArtusBase:
             self.joint_forces,
         )
 
-    def set_joint_angles(self, joint_angles: dict):
+    def set_joint_targets(self, joints: dict):
         """Sets target angle/velocity/force on joints, addressed by index.
 
         Sorts the input by joint index (skipping the sort for a single-item
@@ -186,7 +186,7 @@ class ArtusBase:
         clamps the results to the configured joint limits.
 
         Args:
-            joint_angles: Dict keyed by arbitrary key, each value a dict
+            joints: Dict keyed by arbitrary key, each value a dict
                 containing an ``index`` and any combination of
                 ``target_angle``, ``target_velocity``, ``target_force``.
                 Entries whose index is out of range are skipped.
@@ -199,11 +199,11 @@ class ArtusBase:
         # verify that items are in order of index
         available_control = 0
         # INSERT_YOUR_CODE
-        if len(joint_angles) == 1:
-            sorted_items = joint_angles.items()
+        if len(joints) == 1:
+            sorted_items = joints.items()
         else:
-            sorted_items = sorted(joint_angles.items(), key=lambda x: x[1]["index"])
-        # sorted_items = sorted(joint_angles.items(), key=lambda x:x[1]['index'])
+            sorted_items = sorted(joints.items(), key=lambda x: x[1]["index"])
+        # sorted_items = sorted(joints.items(), key=lambda x:x[1]['index'])
         ordered_joint_angles = {key: value for key, value in sorted_items}
         # set values based on index
         for target_data in ordered_joint_angles.values():
@@ -249,14 +249,14 @@ class ArtusBase:
 
         return available_control
 
-    def set_joint_angles_by_name(self, joint_angles: dict):
+    def set_joint_targets_by_name(self, joints: dict):
         """Sets target angle/velocity/force on joints, addressed by name.
 
         Applies each joint's rotation direction to target_angle and clamps
         the results to the configured joint limits.
 
         Args:
-            joint_angles: Dict keyed by joint name, each value a dict
+            joints: Dict keyed by joint name, each value a dict
                 containing any combination of ``target_angle``,
                 ``target_velocity``, ``target_force``. Names not in
                 ``self.joint_names`` are skipped.
@@ -268,7 +268,7 @@ class ArtusBase:
         """
         available_control = 0
         # set values based on names
-        for name, target_data in joint_angles.items():
+        for name, target_data in joints.items():
             if (
                 name not in self.joint_names
             ):  # if trying to give more than the available joints, skip
@@ -304,55 +304,55 @@ class ArtusBase:
 
         return available_control
 
-    def _check_joint_limits(self, joint_angles):
+    def _check_joint_limits(self, joints):
         """Clamps each joint's target_angle to its configured min/max limits.
 
         Args:
-            joint_angles: Dict mapping joint name to ``Joint`` instance
+            joints: Dict mapping joint name to ``Joint`` instance
                 (typically ``self.hand_joints``); mutated in place. Note the
                 lookup for limits is keyed against ``self.hand_joints``
-                regardless of the ``joint_angles`` argument passed in.
+                regardless of the ``joints`` argument passed in.
 
         Returns:
-            The same ``joint_angles`` dict, with target_angle clamped.
+            The same ``joints`` dict, with target_angle clamped.
         """
         for name, joint in self.hand_joints.items():
-            if joint_angles[name].target_angle > joint.max_angle:
-                joint_angles[name].target_angle = joint.max_angle
+            if joints[name].target_angle > joint.max_angle:
+                joints[name].target_angle = joint.max_angle
                 self.logger.warning(
                     f"Joint {name} target angle is greater than the max angle, setting to {joint.max_angle}"
                 )
                 # TODO logging
-            if joint_angles[name].target_angle < joint.min_angle:
-                joint_angles[name].target_angle = joint.min_angle
+            if joints[name].target_angle < joint.min_angle:
+                joints[name].target_angle = joint.min_angle
                 self.logger.warning(
                     f"Joint {name} target angle is less than the min angle, setting to {joint.min_angle}"
                 )
                 # TODO logging
-        return joint_angles
+        return joints
 
-    def _check_joint_forces(self, joint_angles):
+    def _check_joint_forces(self, joints):
         """Clamps joint force values to each joint's max_force/min_force.
 
         Note:
             Iterates ``self.hand_joints`` as ``Joint`` objects but indexes
-            ``joint_angles`` positionally via ``joint.index`` and reads
+            ``joints`` positionally via ``joint.index`` and reads
             ``joint.max_force``/``joint.min_force``, which are not set by
             the base ``Joint`` class.
 
         Args:
-            joint_angles: Indexable collection of force values, addressed by
+            joints: Indexable collection of force values, addressed by
                 ``joint.index``; mutated in place.
 
         Returns:
-            The same ``joint_angles`` collection, with values clamped.
+            The same ``joints`` collection, with values clamped.
         """
         for joint in self.hand_joints:
-            joint_angles[joint.index] = min(joint_angles[joint.index], joint.max_force)
+            joints[joint.index] = min(joints[joint.index], joint.max_force)
             # TODO logging
-            joint_angles[joint.index] = max(joint_angles[joint.index], joint.min_force)
+            joints[joint.index] = max(joints[joint.index], joint.min_force)
             # TODO logging
-        return joint_angles
+        return joints
 
     def set_home_position(self):
         """Builds a joint command dict targeting each joint's default angle.
@@ -361,10 +361,10 @@ class ArtusBase:
         velocity for every joint.
 
         Returns:
-            Result of ``self.set_joint_angles`` for the generated command.
+            Result of ``self.set_joint_targets`` for the generated command.
         """
         default_velocity = getattr(self, "default_velocity", 0)
-        joint_angles = {
+        joints = {
             key: {
                 "index": value.index,
                 "target_angle": value.default_angle,
@@ -372,7 +372,7 @@ class ArtusBase:
             }
             for key, value in self.hand_joints.items()
         }
-        return self.set_joint_angles(joint_angles)
+        return self.set_joint_targets(joints)
 
     def get_feedback_data(
         self, feedback_package: list, modbus_key: str = "feedback_position_start_reg"

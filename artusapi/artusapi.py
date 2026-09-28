@@ -530,21 +530,17 @@ class ArtusAPI:
             self.logger.info("Hand ready")
             self.state = ActuatorState.ACTUATOR_IDLE.value
 
-    def set_joint_angles(
-        self, joint_angles: dict, injected_control_type: int | None = None
-    ):
+    def set_joint_targets(self, joints: dict, injected_control_type: int | None = None):
         """Sends joint commands to the hand.
 
-        Named ``set_joint_angles`` for consistency with the v1 API.
-
         Args:
-            joint_angles: Dictionary of joint angles to set. Can have any
+            joints: Dictionary of joints to set. Can have any
                 combination of target_angle, target_velocity, or
                 target_force -- converted to the correct command based on the
                 control type.
             injected_control_type: If provided, overrides the derived
                 available-control bitmask with this control type instead of
-                using what ``joint_angles`` implies.
+                using what ``joints`` implies.
 
         Returns:
             True if the command was sent successfully, False if the joint
@@ -554,9 +550,7 @@ class ArtusAPI:
         if not self._check_awake():
             return
 
-        available_control = self._robot_handler.set_joint_angles(
-            joint_angles, name=True
-        )
+        available_control = self._robot_handler.set_joint_targets(joints, name=True)
         self.logger.info(f"Available control: {available_control}")
 
         if available_control == 0:
@@ -703,13 +697,11 @@ class ArtusAPI:
             return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
-    def _set_get_joint_field(
-        self, joint_angles: dict, target_packer, feedback_reg_key: str
-    ):
+    def _set_get_joint_field(self, joints: dict, target_packer, feedback_reg_key: str):
         """Shared FC 0x17 path: write one target field and read matching feedback.
 
         Args:
-            joint_angles: Joint dict consumed by ``Robot.set_joint_angles``.
+            joints: Joint dict consumed by ``Robot.set_joint_targets``.
             target_packer: ``CommandHandler`` method that packs
                 ``[start_reg, *values]`` for the target field.
             feedback_reg_key: ModbusMap key for the feedback start register.
@@ -721,9 +713,7 @@ class ArtusAPI:
         if not self._check_awake():
             return
 
-        available_control = self._robot_handler.set_joint_angles(
-            joint_angles, name=True
-        )
+        available_control = self._robot_handler.set_joint_targets(joints, name=True)
         if available_control == 0:
             self.logger.warning("No valid data in joint dictionary to send")
             return False
@@ -746,50 +736,50 @@ class ArtusAPI:
         self._record_feedback(feedback_reg_key, decoded)
         return self._shape_feedback(feedback_reg_key, decoded)
 
-    def set_get_joint_angles(self, joint_angles: dict):
+    def set_get_joint_angles(self, joints: dict):
         """Writes target positions and reads feedback positions in one FC 0x17.
 
         Args:
-            joint_angles: Dictionary of joint targets (must include angles).
+            joints: Dictionary of joint targets (must include angles).
 
         Returns:
             Dict mapping joint name to feedback position, False if no valid
             data, or None if the hand is not awake.
         """
         return self._set_get_joint_field(
-            joint_angles,
+            joints,
             self._command_handler.get_target_position_command,
             "feedback_position_start_reg",
         )
 
-    def set_get_joint_speeds(self, joint_angles: dict):
+    def set_get_joint_speeds(self, joints: dict):
         """Writes target velocities and reads feedback velocities in one FC 0x17.
 
         Args:
-            joint_angles: Dictionary of joint targets (must include velocities).
+            joints: Dictionary of joint targets (must include velocities).
 
         Returns:
             Dict mapping joint name to feedback velocity, False if no valid
             data, or None if the hand is not awake.
         """
         return self._set_get_joint_field(
-            joint_angles,
+            joints,
             self._command_handler.get_target_velocity_command,
             "feedback_velocity_start_reg",
         )
 
-    def set_get_joint_forces(self, joint_angles: dict):
+    def set_get_joint_forces(self, joints: dict):
         """Writes target forces and reads feedback forces in one FC 0x17.
 
         Args:
-            joint_angles: Dictionary of joint targets (must include forces).
+            joints: Dictionary of joint targets (must include forces).
 
         Returns:
             Dict mapping joint name to feedback force, False if no valid
             data, or None if the hand is not awake.
         """
         return self._set_get_joint_field(
-            joint_angles,
+            joints,
             self._command_handler.get_target_force_command,
             "feedback_force_start_reg",
         )
@@ -880,34 +870,21 @@ class ArtusAPI:
             return
 
         if not start_reg:
-            start_reg = ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+            self.logger.error("No register provided.")
+            return
 
         feedback_reg_key = self._resolve_feedback_key(start_reg)
         decoded_feedback_data = self._read_feedback(feedback_reg_key)
         return self._shape_feedback(feedback_reg_key, decoded_feedback_data)
 
     def get_joint_angles(self, start_reg: int | None = None):
-        """Deprecated alias for :meth:`get_feedback_data`.
-
-        Kept so code written against the previous release keeps working. The
-        name was misleading -- this reads any feedback field, not just
-        angles. Prefer ``get_feedback_data``.
-
-        Args:
-            start_reg: Same as :meth:`get_feedback_data`.
-
+        """Reads joint angular position feedback from the hand.
+        
         Returns:
-            Same as :meth:`get_feedback_data`.
+            Dict mapping joint name to feedback position value, or None if
+            the hand is not awake.
         """
-        if not start_reg:
-            start_reg = ModbusMap().modbus_reg_map["feedback_position_start_reg"]
-
-        if not self._warned_get_joint_angles:
-            self.logger.warning(
-                "get_joint_angles() is deprecated and will be removed in a future release -- use get_feedback_data() instead"
-            )
-            self._warned_get_joint_angles = True
-        return self.get_feedback_data(start_reg)
+        return self.get_feedback_data("feedback_position_start_reg")
 
     def helper_fill_dict_from_feedback_data(self, feedback_data: list):
         """Maps a decoded feedback list to a dict keyed by joint name.

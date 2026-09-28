@@ -148,13 +148,13 @@ class ManusGlovesHandTrackingData:
             or the current left/right joint angle dicts if no new data was
             available.
         """
-        joint_angles = self.tcp_server.receive()  # receive encoded data
-        # print("1. Original Data: ", joint_angles)
-        if joint_angles is None or joint_angles == "[]" or joint_angles == "":
+        joints = self.tcp_server.receive()  # receive encoded data
+        # print("1. Original Data: ", joints)
+        if joints is None or joints == "[]" or joints == "":
             return self.joint_angles_dict_L, self.joint_angles_dict_R
-        # print("1. Original Data: ", joint_angles)
-        self._joint_angles_manus_to_joint_streamer(joint_angles)
-        return joint_angles
+        # print("1. Original Data: ", joints)
+        self._joint_angles_manus_to_joint_streamer(joints)
+        return joints
 
     def get_left_hand_joint_angles(self):
         """Gets the most recently computed left-hand joint angles.
@@ -174,7 +174,7 @@ class ManusGlovesHandTrackingData:
         """
         return self.joint_angles_right
 
-    def manus_data_to_dict(self, joint_angles):
+    def manus_data_to_dict(self, joints):
         """Parses the raw Manus data string into per-finger joint angle dicts.
 
         Extracts the "L[...]" and "R[...]" segments from the raw data,
@@ -184,7 +184,7 @@ class ManusGlovesHandTrackingData:
         second joint value for both hands.
 
         Args:
-            joint_angles: Raw data string received from the TCP server,
+            joints: Raw data string received from the TCP server,
                 expected to contain "L[...]" and "R[...]" segments of
                 space-separated angle values.
         """
@@ -195,10 +195,10 @@ class ManusGlovesHandTrackingData:
 
         temp_L = None
         temp_R = None
-        match_L = re.search(pattern_L, joint_angles, re.DOTALL)
+        match_L = re.search(pattern_L, joints, re.DOTALL)
         if match_L:
             temp_L = match_L.group(1).strip()
-        match_R = re.search(pattern_R, joint_angles, re.DOTALL)
+        match_R = re.search(pattern_R, joints, re.DOTALL)
         if match_R:
             temp_R = match_R.group(1).strip()
 
@@ -251,7 +251,7 @@ class ManusGlovesHandTrackingData:
         # self.joint_angles_dict_R['thumb'][0] = (self.joint_angles_dict_R['thumb'][0] - 20)
         self.joint_angles_dict_R["thumb"][1] = 70 - self.joint_angles_dict_R["thumb"][1]
 
-    def _joint_angles_manus_to_joint_streamer(self, joint_angles):
+    def _joint_angles_manus_to_joint_streamer(self, joints):
         """Decodes raw Manus data into the joint angle format used by the application.
 
         Parses the raw data, maps user-hand values to the ARTUS hand's
@@ -261,7 +261,7 @@ class ManusGlovesHandTrackingData:
         self.joint_angles_right as a side effect.
 
         Args:
-            joint_angles: Raw data string received from the TCP server.
+            joints: Raw data string received from the TCP server.
 
         Returns:
             A tuple (joint_angles_left, joint_angles_right) of the
@@ -270,7 +270,7 @@ class ManusGlovesHandTrackingData:
 
         # decode received data and split to left and right
 
-        self.manus_data_to_dict(joint_angles)
+        self.manus_data_to_dict(joints)
         # print("2. Joint angle Dicts: ", self.joint_angles_dict_L, self.joint_angles_dict_R)
 
         joint_angles_L, joint_angles_R = self.map_user_hand_to_artus_hand("LR")
@@ -629,11 +629,11 @@ class ManusGlovesHandTrackingData:
             The raw joint angle data received from the TCP server, or None
             if no data was available.
         """
-        joint_angles = self.tcp_server.receive()  # receive encoded data
-        if joint_angles == None:
+        joints = self.tcp_server.receive()  # receive encoded data
+        if joints == None:
             return None
-        self.manus_data_to_dict(joint_angles)
-        return joint_angles
+        self.manus_data_to_dict(joints)
+        return joints
 
     def calibrate_L(self):
         """Runs the interactive left-hand calibration sequence.
@@ -842,9 +842,9 @@ def test_hand_tracking_data():
     hand_tracking_data = ManusGlovesHandTrackingData(port="65432")
     while True:
         # Receive joint angles from Manus core exe
-        joint_angles = hand_tracking_data.receive_joint_angles()
+        joints = hand_tracking_data.receive_joint_angles()
 
-        if joint_angles is not None:
+        if joints is not None:
             # left and right hand joitn angles for the application
             joint_angles_left = hand_tracking_data.get_left_hand_joint_angles()
             joint_angles_right = hand_tracking_data.get_right_hand_joint_angles()
