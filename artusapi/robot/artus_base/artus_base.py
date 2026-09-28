@@ -381,7 +381,7 @@ class ArtusBase:
 
         Args:
             feedback_package: Decoded feedback values. For
-                ``ModbusMap.FINGERTIP_FEEDBACK_KEY`` this is a flat list of
+                ``ModbusMap().FINGERTIP_FEEDBACK_KEY`` this is a flat list of
                 x/y/z triples per force sensor; otherwise it is indexed per
                 joint via ``joint_data.index``.
             modbus_key: Which feedback field to populate -- a key from
@@ -394,10 +394,11 @@ class ArtusBase:
         """
         # TODO logging
         try:
-            if modbus_key == ModbusMap.FINGERTIP_FEEDBACK_KEY:
+            modbus_map = ModbusMap()
+            if modbus_key == modbus_map.FINGERTIP_FEEDBACK_KEY:
                 i = 0
-                axes = ModbusMap.FINGERTIP_AXIS_NAMES
-                n_axes = ModbusMap.FINGERTIP_AXES
+                axes = modbus_map.FINGERTIP_AXIS_NAMES
+                n_axes = modbus_map.FINGERTIP_AXES
                 for value in self.force_sensors.values():
                     for j, name in enumerate(axes):
                         setattr(value["data"], name, feedback_package[i + j])

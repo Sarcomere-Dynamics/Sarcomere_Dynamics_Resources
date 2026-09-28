@@ -34,9 +34,7 @@ print("Project Root", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # import the configuration file
-from artusapi import ArtusConfig
-
-# new version of ArtusAPI use local version
+from artusapi import ArtusAPI
 
 
 # ------------------------------------------------------------------------------
@@ -48,10 +46,9 @@ def main_menu():
     Returns:
         str: The raw text entered by the user at the prompt.
     """
-    return input(
-        """
+    print("""
     ╔══════════════════════════════════════════════════════════════════╗
-    ║                          Artus API 2.0                           ║
+    ║                     artusapi general example                     ║
     ╠══════════════════════════════════════════════════════════════════╣
     ║ Command Options:                                                 ║
     ║                                                                  ║
@@ -72,9 +69,8 @@ def main_menu():
     ║   15 -> Get Joint Temperatures                                   ║
     ║   16 -> Get Error Report                                         ║
     ║                                                                  ║
-    ╚══════════════════════════════════════════════════════════════════╝
-    >> Input Command Code (1-16): """
-    )
+    ╚══════════════════════════════════════════════════════════════════╝""")
+    return input(">> Input Command Code (1-16):")
 
 
 # ------------------------------------------------------------------------------
@@ -187,7 +183,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
                 )
             artusapi.set_joint_targets(grasp_dict)
         case "9":
-            artusapi.get_feedback_data()
+            artusapi.get_joint_angles()
         case "10":
             artusapi.get_joint_speeds()
         case "11":
@@ -214,22 +210,18 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
             joint = int(input("Enter joint to reset:"))
             artusapi.soft_reset(joint)
         case "f":
-            if (
-                input(
-                    "DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM. Press `e` to continue: "
-                )
-                == "e"
-            ):
+            print("DO NOT USE UNLESS SPECIFIED BY SARCOMERE DYNAMICS TEAM.")
+            confirm = input("Press `e` to continue: ")
+            if confirm == "e":
+                num_controllers = artusapi._robot_handler.robot.number_of_controllers
+
                 driver = int(input("Enter driver to flash: "))
-                if (
-                    driver > artusapi._robot_handler.robot.number_of_controllers
-                    or driver < 0
-                ):
+                if driver > num_controllers or driver < 0:
                     logger.error("Invalid driver number, please try again")
                 else:
-                    file_location_ = input("enter file location of driver: ")
+                    file_location = input("enter file location of driver: ")
                     artusapi.update_actuator(
-                        file_location=file_location_, drivers_to_flash=driver
+                        file_location=file_location, drivers_to_flash=driver
                     )
                     logger.info("Firmware flashed successfully")
 
@@ -237,7 +229,7 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
 # -------------------------------------------------------------------------------
 # --------------------------------- Example -------------------------------------
 # -------------------------------------------------------------------------------
-def example():
+def main():
     """Runs the interactive menu loop for controlling the configured ARTUS hand.
 
     Loads the robot configuration and API instance, then repeatedly shows
@@ -246,16 +238,12 @@ def example():
     loop continues.
     """
     # Load the configuration file (logger comes from the YAML logging section)
-    config = ArtusConfig()
 
-    artusapi = None
+    artusapi = ArtusAPI()
+    config = artusapi.config
+
     hand_poses_path = os.path.join(PROJECT_ROOT, "data", "hand_poses")
     logger = config.logger
-    artusapi = config.get_api()
-
-    # while True:
-    #     artusapi.get_fingertip_forces()
-    #     time.sleep(0.5)
 
     # Main loop (example)
     while True:
@@ -270,12 +258,4 @@ def example():
 # ---------------------------------- Main ------------------------------------------
 # ----------------------------------------------------------------------------------
 if __name__ == "__main__":
-    example()
-    # import serial
-    # x = serial.Serial(port='COM13',baudrate=250000, timeout= 1)
-
-    # n = bytearray([0x33])*139
-
-    # while True:
-    #     x.write(n)
-    #     time.sleep(1)
+    main()

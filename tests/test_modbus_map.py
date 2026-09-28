@@ -64,14 +64,16 @@ class TestModbusMap(unittest.TestCase):
 
     def test_scalar_feedback_keys_are_in_the_register_map(self):
         """Verifies every scalar feedback key has a register address and multiplier."""
-        for key in ModbusMap.SCALAR_FEEDBACK_KEYS:
+        for key in ModbusMap().SCALAR_FEEDBACK_KEYS:
             self.assertIn(key, self.m.modbus_reg_map)
             self.assertIn(key, self.m.data_type_multiplier_map)
 
     def test_fingertip_axes_match_names(self):
         """Verifies FINGERTIP_AXES matches the named axis tuple."""
-        self.assertEqual(ModbusMap.FINGERTIP_AXES, len(ModbusMap.FINGERTIP_AXIS_NAMES))
-        self.assertIn(ModbusMap.FINGERTIP_FEEDBACK_KEY, self.m.modbus_reg_map)
+        self.assertEqual(
+            ModbusMap().FINGERTIP_AXES, len(ModbusMap().FINGERTIP_AXIS_NAMES)
+        )
+        self.assertIn(ModbusMap().FINGERTIP_FEEDBACK_KEY, self.m.modbus_reg_map)
 
     def test_feedback_register_count_scalar_ignores_joint_count(self):
         """Verifies whole-hand scalar fields use the multiplier as a fixed register count."""
@@ -96,9 +98,9 @@ class TestModbusMap(unittest.TestCase):
         """Verifies fingertip fields scale by sensor count and axes, not joint count."""
         self.assertEqual(
             self.m.feedback_register_count(
-                ModbusMap.FINGERTIP_FEEDBACK_KEY, 16, number_of_sensors=5
+                ModbusMap().FINGERTIP_FEEDBACK_KEY, 16, number_of_sensors=5
             ),
-            5 * ModbusMap.FINGERTIP_AXES * 2,
+            5 * ModbusMap().FINGERTIP_AXES * 2,
         )
 
 

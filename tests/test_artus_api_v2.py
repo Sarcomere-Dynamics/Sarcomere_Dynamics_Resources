@@ -202,7 +202,7 @@ logging:
         for i, n in enumerate(names):
             self.assertEqual(d[n], data[i])
 
-    def test_set_joint_angles_sends_position_command(self):
+    def test_set_joint_targets_sends_position_command(self):
         """Verifies set_joint_targets sends a TARGET_COMMAND for a single joint target."""
         comm = MagicMock()
         api, comm = build_api()
@@ -215,14 +215,14 @@ logging:
         args = comm.send_data.call_args[0]
         self.assertEqual(args[1], CommandType.TARGET_COMMAND.value)
 
-    def test_set_joint_angles_by_list_delegates_to_set_joint_angles(self):
-        """Verifies set_joint_angles_by_list builds an index-keyed target dict and delegates to set_joint_targets."""
+    def test_set_joint_targets_by_list_delegates_to_set_joint_targets(self):
+        """Verifies set_joint_targets_by_list builds an index-keyed target dict and delegates to set_joint_targets."""
         api, _ = build_api()
         api.awake = True
         api.control_type = api.control_types["position"]
         api.last_time = 0.0
         with patch.object(api, "set_joint_targets", return_value=True) as m:
-            api.set_joint_angles_by_list([0, 0], control_type=3)
+            api.set_joint_targets_by_list([0, 0], control_type=3)
         m.assert_called_once()
         call_kw = m.call_args[0][0]
         self.assertIn("0", call_kw)
@@ -453,8 +453,8 @@ logging:
         api, _ = build_api(robot_type="artus_lite_plus", hand_type="left")
         sensors = len(api._robot_handler.robot.force_sensors)
         self.assertEqual(
-            api._feedback_register_count(ModbusMap.FINGERTIP_FEEDBACK_KEY),
-            sensors * ModbusMap.FINGERTIP_AXES * 2,
+            api._feedback_register_count(ModbusMap().FINGERTIP_FEEDBACK_KEY),
+            sensors * ModbusMap().FINGERTIP_AXES * 2,
         )
 
     def test_get_avg_temperature_reads_one_register(self):
@@ -493,11 +493,11 @@ logging:
         api, comm = build_api(robot_type="artus_lite_plus", hand_type="left")
         sensors = list(api._robot_handler.robot.force_sensors)
         words = []
-        for i in range(len(sensors) * ModbusMap.FINGERTIP_AXES):
+        for i in range(len(sensors) * ModbusMap().FINGERTIP_AXES):
             words.extend(struct.unpack("<HH", struct.pack("<f", float(i))))
         comm.receive_data.return_value = words
         api.awake = True
-        out = api.get_feedback_data(ModbusMap.FINGERTIP_FEEDBACK_KEY)
+        out = api.get_feedback_data(ModbusMap().FINGERTIP_FEEDBACK_KEY)
         self.assertEqual(set(out), set(sensors))
         self.assertEqual(out[sensors[0]], {"x": 0.0, "y": 1.0, "z": 2.0})
 

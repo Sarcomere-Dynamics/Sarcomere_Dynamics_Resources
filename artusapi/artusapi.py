@@ -371,8 +371,8 @@ class ArtusAPI:
             feedback_reg_key: ModbusMap key for the feedback start register.
             decoded_feedback_data: Decoded values from ``_read_feedback``.
         """
-        if feedback_reg_key in ModbusMap.SCALAR_FEEDBACK_KEYS:
-            label = ModbusMap.SCALAR_FEEDBACK_KEYS[feedback_reg_key]
+        if feedback_reg_key in ModbusMap().SCALAR_FEEDBACK_KEYS:
+            label = ModbusMap().SCALAR_FEEDBACK_KEYS[feedback_reg_key]
             self.logger.info(f"{label}: {decoded_feedback_data[0]}")
             return
         self.logger.info(
@@ -390,9 +390,9 @@ class ArtusAPI:
             The single value for scalar fields, a dict keyed by finger for
             fingertip forces, or a dict keyed by joint name otherwise.
         """
-        if feedback_reg_key in ModbusMap.SCALAR_FEEDBACK_KEYS:
+        if feedback_reg_key in ModbusMap().SCALAR_FEEDBACK_KEYS:
             return decoded_feedback_data[0]
-        if feedback_reg_key == ModbusMap.FINGERTIP_FEEDBACK_KEY:
+        if feedback_reg_key == ModbusMap().FINGERTIP_FEEDBACK_KEY:
             return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
@@ -616,34 +616,34 @@ class ArtusAPI:
         if (available_control & 0b100) != 0 and self.control_type == self.control_types[
             "position"
         ]:
-            set_joint_angles_cmd = self._command_handler.get_target_position_command(
+            set_joint_targets_cmd = self._command_handler.get_target_position_command(
                 self._robot_handler.robot.hand_joints
             )
             self.wait_for_com_freq()
             self._communication_handler.send_data(
-                set_joint_angles_cmd, CommandType.TARGET_COMMAND.value
+                set_joint_targets_cmd, CommandType.TARGET_COMMAND.value
             )
             self.last_time = time.perf_counter()
         if (available_control & 0b10) != 0 and self.control_type >= self.control_types[
             "velocity"
         ]:
-            set_joint_angles_cmd = self._command_handler.get_target_velocity_command(
+            set_joint_targets_cmd = self._command_handler.get_target_velocity_command(
                 self._robot_handler.robot.hand_joints
             )
             self.wait_for_com_freq()
             self._communication_handler.send_data(
-                set_joint_angles_cmd, CommandType.TARGET_COMMAND.value
+                set_joint_targets_cmd, CommandType.TARGET_COMMAND.value
             )
             self.last_time = time.perf_counter()
         if (available_control & 0b1) != 0 and self.control_type >= self.control_types[
             "torque"
         ]:
-            set_joint_angles_cmd = self._command_handler.get_target_force_command(
+            set_joint_targets_cmd = self._command_handler.get_target_force_command(
                 self._robot_handler.robot.hand_joints
             )
             self.wait_for_com_freq()
             self._communication_handler.send_data(
-                set_joint_angles_cmd, CommandType.TARGET_COMMAND.value
+                set_joint_targets_cmd, CommandType.TARGET_COMMAND.value
             )
             self.last_time = time.perf_counter()
         return True
@@ -738,8 +738,8 @@ class ArtusAPI:
         fs = self._robot_handler.robot.force_sensors
         if not fs:
             return {}
-        axes = ModbusMap.FINGERTIP_AXIS_NAMES
-        n_axes = ModbusMap.FINGERTIP_AXES
+        axes = ModbusMap().FINGERTIP_AXIS_NAMES
+        n_axes = ModbusMap().FINGERTIP_AXES
         out = {}
         i = 0
         for finger in fs:
