@@ -31,16 +31,17 @@ For further technical support, contact <info@sarcomeredynamics.com>.
 
 ## Installation
 
-Stable releases of [**artusapi** are hosted on PyPi](https://pypi.org/project/artusapi/), and can be installed via **pip**.
-
-```bash
-pip install artusapi
-```
-
-Alternatively, **artusapi** may be installed via [**uv**](https://docs.astral.sh/uv/)
+Sarcomere Dynamics Inc. recommends installing **artusapi** via [**uv**](https://docs.astral.sh/uv/)
 
 ```bash
 uv add artusapi
+```
+
+However, since stable releases of [**artusapi** are hosted on PyPi](https://pypi.org/project/artusapi/),
+**pip** or any alternative package manager may be used instead.
+
+```bash
+pip install artusapi
 ```
 
 For the latest development version of **artusapi**, this repository may be cloned directly from GitHub.
