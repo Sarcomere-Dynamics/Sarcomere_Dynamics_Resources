@@ -54,8 +54,8 @@ For the latest development version of **artusapi**, this repository may be clone
 
 |     Date      | Revision |                     Changelog                      | Pip Release |
 | :-----------: | :------: | :------------------------------------------------: | :---------: |
-| Oct. 09, 2026 |   v3.0   |        [2026-10.md](/changelog/2026-10.md)         |    v3.0     |
-| Jul. 20, 2026 |   v2.1   |        [2026-07.md](/changelog/2026-07.md)         |      -      |
+| Oct. 09, 2026 |   v3.0   |        [2026-10.md](/changelog/2026-10.md)         |   v3.0.0    |
+| Jul. 20, 2026 |   v2.1   |        [2026-07.md](/changelog/2026-07.md)         |   v2.0.0    |
 | Dec. 31, 2025 |   v2.0   |        [2025-12.md](/changelog/2025-12.md)         |      -      |
 | Jun. 02, 2025 | v1.3.10  |        [2025-06.md](/changelog/2025-06.md)         |   v1.3.10   |
 | Apr. 22, 2025 |  v1.1.1  |           readmes/documentation updated            |      -      |
