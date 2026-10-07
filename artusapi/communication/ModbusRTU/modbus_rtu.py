@@ -10,16 +10,10 @@
 
 import logging
 import os
-import time
 
 from pymodbus.client import ModbusSerialClient
-from pymodbus.exceptions import ConnectionException, ModbusIOException
 
-from ...common.modbus_map import CommandType
-
-MODBUS_RTU_MAX_NUM_RETRIES = 3
-MODBUS_RTU_TX_RETRY_DELAY_SECONDS = 0.5
-MODBUS_RTU_RX_RETRY_DELAY_SECONDS = 0.1
+from ..ModbusClient import ModbusClient
 
 
 def find_port_holders(port):
@@ -63,7 +57,7 @@ def find_port_holders(port):
     return holders
 
 
-class ModbusRTU:
+class ModbusRTU(ModbusClient):
     """Modbus RTU transport for RS485 communication with an ARTUS hand.
 
     Wraps a `pymodbus` `ModbusSerialClient` to send and receive data over
@@ -82,7 +76,12 @@ class ModbusRTU:
     """
 
     def __init__(
-        self, port="COM9", baudrate=115200, timeout=0.1, logger=None, slave_address=1
+        self,
+        port: str,
+        baudrate: int,
+        slave_address: int,
+        timeout: float,
+        logger: logging.Logger | None,
     ):
         """Initializes connection parameters without opening the port.
 
@@ -95,13 +94,7 @@ class ModbusRTU:
         """
         self.port = port
         self.baudrate = baudrate
-        self.timeout = timeout
-        self.slave_address = slave_address
-
-        if not logger:
-            self.logger = logging.getLogger(__name__)
-        else:
-            self.logger = logger
+        super().__init__(timeout=timeout, logger=logger, slave_address=slave_address)
 
     def open(self):
         """Opens the ModbusRTU serial connection.
@@ -142,233 +135,3 @@ class ModbusRTU:
             self.logger.error(e)
             self.logger.error(f"Error opening {self.port} @ {self.baudrate} baudrate")
             raise
-
-    def send(
-        self,
-        data: list,
-        command: int,
-        max_retries: int = MODBUS_RTU_MAX_NUM_RETRIES,
-        retry_delay: int = MODBUS_RTU_TX_RETRY_DELAY_SECONDS,
-    ):
-        """Writes register values to the hand, retrying on Modbus errors.
-
-        Data must be in 16-bit register format. Dispatches to
-        `write_register`/`write_registers` depending on `command`.
-
-        Args:
-            data: Register values to write. For `SETUP_COMMANDS`, either a
-                single value or a 2-element [low_byte, high_byte] pair
-                packed into one register; for other command types, the
-                first element is the starting register address followed by
-                the values to write (except FIRMWARE_COMMAND/CONFIG_COMMAND,
-                which write `data` starting at register 0).
-            command: CommandType enum value selecting the write operation.
-            max_retries: Number of times to retry on exception.
-            retry_delay: Delay in seconds between retries.
-
-        Returns:
-            True if the write succeeded. False if an unknown command type
-            was given, or if 8-bit value validation failed for
-            SETUP_COMMANDS.
-
-        Raises:
-            ModbusIOException: If the final retry attempt still receives an
-                error response.
-            ConnectionException: If the final retry attempt still fails.
-        """
-        if self.client is None:
-            self.logger.error("ModbusRTU client does not exist.")
-            return
-
-        for attempt in range(max_retries):
-            try:
-                if command == CommandType.SETUP_COMMANDS.value:
-                    if len(data) != 1:
-                        # Cast each data value into uint8_t before concat
-                        d0 = int(data[0]) & 0xFF
-                        d1 = int(data[1]) & 0xFF
-                        if not (0 <= d0 <= 255 and 0 <= d1 <= 255):
-                            self.logger.error(
-                                f"Values must be 8-bit (0-255). Got: {data[0]}, {data[1]}"
-                            )
-                            return False
-                        value = (d1 << 8) | d0
-                    else:
-                        value = data[0]
-
-                    result = self.client.write_register(
-                        0, value, device_id=self.slave_address
-                    )
-                elif command == CommandType.TARGET_COMMAND.value:
-                    result = self.client.write_registers(
-                        data[0], data[1:], device_id=self.slave_address
-                    )
-                elif (
-                    command == CommandType.FIRMWARE_COMMAND.value
-                    or command == CommandType.CONFIG_COMMAND.value
-                ):
-                    result = self.client.write_registers(
-                        0, data, device_id=self.slave_address
-                    )
-                else:
-                    self.logger.error(f"Unknown command: {command}")
-                    return False
-
-                if result.isError():
-                    raise ModbusIOException(f"Modbus error response: {result}")
-
-                return True
-
-            except (ModbusIOException, ConnectionException) as e:
-                self.logger.warning(
-                    f"Modbus exception on attempt {attempt + 1}/{max_retries}: {e}"
-                )
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
-                else:
-                    self.logger.error(f"Failed to send after {max_retries} attempts")
-                    raise  # Re-raise on final attempt
-
-            except Exception as e:
-                self.logger.error(f"Unexpected error: {e}")
-                raise  # Don't retry unexpected errors
-
-        return False
-
-    def receive(
-        self,
-        data: list,
-        max_retries: int = MODBUS_RTU_MAX_NUM_RETRIES,
-        retry_delay: int = MODBUS_RTU_RX_RETRY_DELAY_SECONDS,
-    ) -> list | None:
-        """Reads holding registers from the hand, retrying on Modbus errors.
-
-        Args:
-            data: Two-element list `[start_register, count]` describing the
-                registers to read.
-            max_retries: Number of times to retry on exception.
-            retry_delay: Delay in seconds between retries.
-
-        Returns:
-            A single int if one register was read, a list of ints if more
-            than one was read, or None if `max_retries` is 0.
-
-        Raises:
-            ModbusIOException: If the final retry attempt still receives an
-                error response.
-            ConnectionException: If the final retry attempt still fails.
-        """
-        if self.client is None:
-            self.logger.error("ModbusRTU client does not exist.")
-            return
-
-        for attempt in range(max_retries):
-            try:
-                result = self.client.read_holding_registers(
-                    data[0], count=data[1], device_id=self.slave_address
-                )
-                if result.isError():
-                    raise ModbusIOException(f"Modbus error response: {result}")
-
-                registers = result.registers
-                if len(registers) == 1:
-                    return registers[0]
-                else:
-                    return registers
-
-            except (ModbusIOException, ConnectionException) as e:
-                self.logger.warning(
-                    f"Modbus exception on receive attempt {attempt + 1}/{max_retries}: {e}"
-                )
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
-                else:
-                    self.logger.error(f"Failed to receive after {max_retries} attempts")
-                    raise
-
-            except Exception as e:
-                self.logger.error(f"Unexpected error during receive: {e}")
-                raise
-
-        return None
-
-    def send_receive(
-        self,
-        read_start: int,
-        read_count: int,
-        write_start: int,
-        values: list,
-        max_retries=MODBUS_RTU_MAX_NUM_RETRIES,
-        retry_delay=MODBUS_RTU_RX_RETRY_DELAY_SECONDS,
-    ):
-        """Atomically writes registers then reads registers via Modbus FC 0x17.
-
-        Uses pymodbus ``readwrite_registers`` (Read/Write Multiple Registers).
-        Firmware applies the write first, then returns the read data.
-
-        Args:
-            read_start: Starting holding-register address to read.
-            read_count: Number of registers to read.
-            write_start: Starting holding-register address to write.
-            values: List of uint16 register values to write.
-            max_retries: Number of times to retry on exception.
-            retry_delay: Delay in seconds between retries.
-
-        Returns:
-            A single int if one register was read, a list of ints if more
-            than one was read, or None if ``max_retries`` is 0.
-
-        Raises:
-            ModbusIOException: If the final retry attempt still receives an
-                error response.
-            ConnectionException: If the final retry attempt still fails.
-        """
-        if self.client is None:
-            self.logger.error("ModbusRTU client does not exist.")
-            return
-
-        for attempt in range(max_retries):
-            try:
-                result = self.client.readwrite_registers(
-                    read_address=read_start,
-                    read_count=read_count,
-                    write_address=write_start,
-                    values=values,
-                    device_id=self.slave_address,
-                )
-                if result.isError():
-                    raise ModbusIOException(f"Modbus error response: {result}")
-
-                registers = result.registers
-                if len(registers) == 1:
-                    return registers[0]
-                return registers
-
-            except (ModbusIOException, ConnectionException) as e:
-                self.logger.warning(
-                    f"Modbus exception on send_receive attempt {attempt + 1}/{max_retries}: {e}"
-                )
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay)
-                else:
-                    self.logger.error(
-                        f"Failed to send_receive after {max_retries} attempts"
-                    )
-                    raise
-
-            except Exception as e:
-                self.logger.error(f"Unexpected error during send_receive: {e}")
-                raise
-
-        return None
-
-    def close(self) -> None:
-        """Closes the serial connection, if one is open. Errors are suppressed."""
-        client = getattr(self, "client", None)
-        if client is None:
-            return
-        try:
-            client.close()
-            self.client = None
-        except Exception as e:
-            self.logger.error(f"Could not close ModbusRTU connection: {e}")

@@ -14,8 +14,8 @@ import time
 from tqdm import tqdm
 
 from ..common.modbus_map import ActuatorState, CommandType, ModbusMap, TrajectoryReturn
-from .ModbusTCP.modbus_tcp import ModbusTCP
 from .ModbusRTU.modbus_rtu import ModbusRTU
+from .ModbusTCP.modbus_tcp import ModbusTCP
 
 
 class CommunicationHandler:
@@ -40,7 +40,7 @@ class CommunicationHandler:
 
     def __init__(
         self,
-        port="COM9",
+        port: str,
         baudrate=115200,
         logger=None,
         slave_address=1,
@@ -82,10 +82,10 @@ class CommunicationHandler:
         if self.communication_method == "ModbusRTU":
             self.communicator = ModbusRTU(
                 port=self.port,
-                baudrate=self.baudrate,
+                baudrate=int(self.baudrate) if self.baudrate else 115200,
+                slave_address=self.slave_address,
                 timeout=0.2,
                 logger=self.logger,
-                slave_address=self.slave_address,
             )
         elif self.communication_method == "ModbusTCP":
             host, _, tcp_port = str(self.port).partition(":")
@@ -93,9 +93,9 @@ class CommunicationHandler:
             self.communicator = ModbusTCP(
                 host=host,
                 port=int(tcp_port) if tcp_port else 502,
+                slave_address=self.slave_address,
                 timeout=0.5,
                 logger=self.logger,
-                slave_address=self.slave_address,
             )
         else:
             raise ValueError(
