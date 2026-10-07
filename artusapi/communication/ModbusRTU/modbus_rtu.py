@@ -111,6 +111,13 @@ class ModbusRTU:
                 message includes any processes found holding the port via
                 `find_port_holders`.
         """
+        client = getattr(self, "client", None)
+        if client is not None:
+            try:
+                client.close()
+            except Exception:
+                self.logger.error("Failed to close existing ModbusRTU client.")
+
         try:
             # retries=0: retry behaviour is handled in send/receive below,
             # matching the previous minimalmodbus implementation
@@ -357,10 +364,11 @@ class ModbusRTU:
 
     def close(self) -> None:
         """Closes the serial connection, if one is open. Errors are suppressed."""
-        if self.client is None:
+        client = getattr(self, "client", None)
+        if client is None:
             return
         try:
-            self.client.close()
+            client.close()
             self.client = None
         except Exception as e:
             self.logger.error(f"Could not close ModbusRTU connection: {e}")

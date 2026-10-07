@@ -82,7 +82,8 @@ class ModbusTCP:
             try:
                 client.close()
             except Exception:
-                pass
+                self.logger.error("Failed to close existing ModbusTCP client.")
+
         try:
             # retries=0: retry policy is owned by send()/receive() loops, same as ModbusRTU
             self.client = ModbusTcpClient(
@@ -327,10 +328,11 @@ class ModbusTCP:
 
     def close(self) -> None:
         """Closes the TCP connection, if one is open. Errors are suppressed."""
-        if self.client is None:
+        client = getattr(self, "client", None)
+        if client is None:
             return
         try:
-            self.client.close()
+            client.close()
             self.client = None
         except Exception as e:
             self.logger.error(f"Could not close ModbusTCP connection: {e}")
