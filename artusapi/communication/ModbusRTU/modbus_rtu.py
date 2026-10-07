@@ -104,12 +104,7 @@ class ModbusRTU(ModbusClient):
                 message includes any processes found holding the port via
                 `find_port_holders`.
         """
-        client = getattr(self, "client", None)
-        if client is not None:
-            try:
-                client.close()
-            except Exception:
-                self.logger.error("Failed to close existing ModbusRTU client.")
+        super().open()
 
         try:
             # retries=0: retry behaviour is handled in send/receive below,

@@ -90,13 +90,14 @@ class ActuatorUpdater:
             try:
                 ret = self._communication_handler._check_robot_state()
                 self.logger.info(f"return from check_robot_state is: {ret}")
-                if ret == ActuatorState.ACTUATOR_FLASHING_ACK.value:
-                    return True
-                elif ret == ActuatorState.ACTUATOR_ERROR.value:
-                    self.logger.error(f"Error: {ret}")
-                    return False
-                elif ret == ActuatorState.ACTUATOR_FLASHING.value:
-                    self.logger.info("Erasing Flash..")
+                match ret:
+                    case ActuatorState.ACTUATOR_FLASHING_ACK.value:
+                        return True
+                    case ActuatorState.ACTUATOR_ERROR.value:
+                        self.logger.error(f"Error: {ret}")
+                        return False
+                    case ActuatorState.ACTUATOR_FLASHING.value:
+                        self.logger.info("Erasing Flash..")
             except Exception as e:
                 self.logger.error(f"Error checking robot state: {e}")
                 continue

@@ -68,8 +68,12 @@ class ModbusClient:
         return client is not None and bool(getattr(client, "connected", False))
 
     def open(self) -> None:
-        if self.logger is not None:
-            self.logger.error("Must be handled per-transport basis")
+        client = getattr(self, "client", None)
+        if client is not None:
+            try:
+                client.close()
+            except OSError:
+                self.logger.error("Failed to close existing ModbusClient.")
 
     def close(self) -> None:
         """Closes the serial connection, if one is open. Errors are suppressed."""
@@ -79,8 +83,8 @@ class ModbusClient:
         try:
             client.close()
             self.client = None
-        except Exception as e:
-            self.logger.error(f"Could not close connection: {e}")
+        except OSError as e:
+            self.logger.error(f"Could not close ModbusClient connection: {e}")
 
     def send(
         self,
@@ -172,6 +176,10 @@ class ModbusClient:
                 else:
                     self.logger.error(f"Failed to send after {max_retries} attempts")
                     raise  # Re-raise on final attempt
+
+            except OSError as e:
+                if e.strerror == "Input/output error":
+                    return False
 
             except Exception as e:
                 self.logger.error(f"Unexpected error: {e}")

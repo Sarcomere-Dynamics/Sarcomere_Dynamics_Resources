@@ -104,7 +104,6 @@ class ArtusAPI:
             "position": 3,
             "velocity": 2,
             "torque": 1,
-            # 'current': 0
         }
 
         self.control_type = self.control_types["position"]
@@ -132,9 +131,6 @@ class ArtusAPI:
         self.last_time = time.perf_counter()
 
         self.awake = False
-
-        # one-shot so the deprecation notice does not spam a control loop
-        self._warned_get_joint_angles = False
 
         # set up sigint handler
         self.original_sigint_handler = signal.getsignal(signal.SIGINT)
@@ -457,8 +453,6 @@ class ArtusAPI:
     def connect(self):
         """Opens the underlying communication channel to the hand."""
         self._communication_handler.open_connection()
-        time.sleep(1)
-        # self.wake_up()
 
     def disconnect(self):
         """Closes the communication channel and restores the original SIGINT handler."""
@@ -484,12 +478,10 @@ class ArtusAPI:
         self._communication_handler.send_data(wake_command)
         self.last_time = time.perf_counter()
 
-        # wait for hand state ready
         ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=30)
         if not ready_result:
             self.logger.error("Hand timed out waiting for ready")
         elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
-            # try to wake hand again
             self.wake_up()
         else:
             self.logger.info("Hand ready")

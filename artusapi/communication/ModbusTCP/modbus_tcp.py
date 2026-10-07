@@ -65,14 +65,7 @@ class ModbusTCP(ModbusClient):
         Raises:
             ConnectionError: If the TCP connection could not be established.
         """
-        if self.is_connected():
-            return
-        client = getattr(self, "client", None)
-        if client is not None:
-            try:
-                client.close()
-            except Exception:
-                self.logger.error("Failed to close existing ModbusTCP client.")
+        super().open()
 
         try:
             self.client = ModbusTcpClient(
