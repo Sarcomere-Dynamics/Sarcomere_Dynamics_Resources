@@ -138,6 +138,10 @@ class ModbusTCP:
             ConnectionException: If the final retry attempt still fails to
                 connect.
         """
+        if self.client is None:
+            self.logger.error("ModbusTCP client does not exist.")
+            return
+
         for attempt in range(max_retries):
             try:
                 if not self.is_connected():
@@ -213,6 +217,10 @@ class ModbusTCP:
             ConnectionException: If the final retry attempt still fails to
                 connect.
         """
+        if self.client is None:
+            self.logger.error("ModbusTCP client does not exist.")
+            return
+
         for attempt in range(max_retries):
             try:
                 if not self.is_connected():
@@ -276,6 +284,10 @@ class ModbusTCP:
             ConnectionException: If the final retry attempt still fails to
                 connect.
         """
+        if self.client is None:
+            self.logger.error("ModbusTCP client does not exist.")
+            return
+
         for attempt in range(max_retries):
             try:
                 if not self.is_connected():
@@ -313,12 +325,12 @@ class ModbusTCP:
 
         return None
 
-    def close(self):
+    def close(self) -> None:
         """Closes the TCP connection, if one is open. Errors are suppressed."""
-        client = getattr(self, "client", None)
-        if client is None:
+        if self.client is None:
             return
         try:
-            client.close()
-        except Exception:
-            pass
+            self.client.close()
+            self.client = None
+        except Exception as e:
+            self.logger.error(f"Could not close ModbusTCP connection: {e}")

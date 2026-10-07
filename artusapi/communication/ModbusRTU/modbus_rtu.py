@@ -17,6 +17,10 @@ from pymodbus.exceptions import ConnectionException, ModbusIOException
 
 from ...common.modbus_map import CommandType
 
+MODBUS_RTU_MAX_NUM_RETRIES = 3
+MODBUS_RTU_TX_RETRY_DELAY_SECONDS = 0.5
+MODBUS_RTU_RX_RETRY_DELAY_SECONDS = 0.1
+
 
 def find_port_holders(port):
     """Finds processes that currently have `port` open.
@@ -132,7 +136,13 @@ class ModbusRTU:
             self.logger.error(f"Error opening {self.port} @ {self.baudrate} baudrate")
             raise
 
-    def send(self, data: list, command: int, max_retries=3, retry_delay=0.5):
+    def send(
+        self,
+        data: list,
+        command: int,
+        max_retries: int = MODBUS_RTU_MAX_NUM_RETRIES,
+        retry_delay: int = MODBUS_RTU_TX_RETRY_DELAY_SECONDS,
+    ):
         """Writes register values to the hand, retrying on Modbus errors.
 
         Data must be in 16-bit register format. Dispatches to
@@ -159,6 +169,10 @@ class ModbusRTU:
                 error response.
             ConnectionException: If the final retry attempt still fails.
         """
+        if self.client is None:
+            self.logger.error("ModbusRTU client does not exist.")
+            return
+
         for attempt in range(max_retries):
             try:
                 if command == CommandType.SETUP_COMMANDS.value:
@@ -196,7 +210,6 @@ class ModbusRTU:
                 if result.isError():
                     raise ModbusIOException(f"Modbus error response: {result}")
 
-                # Success - return True
                 return True
 
             except (ModbusIOException, ConnectionException) as e:
@@ -215,7 +228,12 @@ class ModbusRTU:
 
         return False
 
-    def receive(self, data: list, max_retries=3, retry_delay=0.1):
+    def receive(
+        self,
+        data: list,
+        max_retries: int = MODBUS_RTU_MAX_NUM_RETRIES,
+        retry_delay: int = MODBUS_RTU_RX_RETRY_DELAY_SECONDS,
+    ) -> list | None:
         """Reads holding registers from the hand, retrying on Modbus errors.
 
         Args:
@@ -233,6 +251,10 @@ class ModbusRTU:
                 error response.
             ConnectionException: If the final retry attempt still fails.
         """
+        if self.client is None:
+            self.logger.error("ModbusRTU client does not exist.")
+            return
+
         for attempt in range(max_retries):
             try:
                 result = self.client.read_holding_registers(
@@ -269,8 +291,8 @@ class ModbusRTU:
         read_count: int,
         write_start: int,
         values: list,
-        max_retries=3,
-        retry_delay=0.1,
+        max_retries=MODBUS_RTU_MAX_NUM_RETRIES,
+        retry_delay=MODBUS_RTU_RX_RETRY_DELAY_SECONDS,
     ):
         """Atomically writes registers then reads registers via Modbus FC 0x17.
 
@@ -294,6 +316,10 @@ class ModbusRTU:
                 error response.
             ConnectionException: If the final retry attempt still fails.
         """
+        if self.client is None:
+            self.logger.error("ModbusRTU client does not exist.")
+            return
+
         for attempt in range(max_retries):
             try:
                 result = self.client.readwrite_registers(
@@ -329,12 +355,12 @@ class ModbusRTU:
 
         return None
 
-    def close(self):
+    def close(self) -> None:
         """Closes the serial connection, if one is open. Errors are suppressed."""
-        client = getattr(self, "client", None)
-        if client is None:
+        if self.client is None:
             return
         try:
-            client.close()
-        except Exception:
-            pass
+            self.client.close()
+            self.client = None
+        except Exception as e:
+            self.logger.error(f"Could not close ModbusRTU connection: {e}")
