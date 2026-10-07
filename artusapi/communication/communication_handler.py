@@ -79,32 +79,33 @@ class CommunicationHandler:
             ValueError: If `communication_method` is not "ModbusRTU" or
                 "ModbusTCP".
         """
-        if self.communication_method == "ModbusRTU":
-            self.communicator = ModbusRTU(
-                port=self.port,
-                baudrate=int(self.baudrate) if self.baudrate else 115200,
-                slave_address=self.slave_address,
-                timeout=0.2,
-                logger=self.logger,
-            )
-        elif self.communication_method == "ModbusTCP":
-            host, _, tcp_port = str(self.port).partition(":")
-            # 0.5s: first connect after idle needs firmware-side ARP resolution; 0.2s flakes
-            self.communicator = ModbusTCP(
-                host=host,
-                port=int(tcp_port) if tcp_port else 502,
-                slave_address=self.slave_address,
-                timeout=0.5,
-                logger=self.logger,
-            )
-        else:
-            raise ValueError(
-                f"Unknown communication method: {self.communication_method}"
-            )
+        match self.communication_method:
+            case "ModbusRTU":
+                self.communication_client = ModbusRTU(
+                    port=self.port,
+                    baudrate=int(self.baudrate) if self.baudrate else 115200,
+                    slave_address=self.slave_address,
+                    timeout=0.2,
+                    logger=self.logger,
+                )
+            case "ModbusTCP":
+                host, _, tcp_port = str(self.port).partition(":")
+                # 0.5s: first connect after idle needs firmware-side ARP resolution; 0.2s flakes
+                self.communication_client = ModbusTCP(
+                    host=host,
+                    port=int(tcp_port) if tcp_port else 502,
+                    slave_address=self.slave_address,
+                    timeout=0.5,
+                    logger=self.logger,
+                )
+            case _:
+                raise ValueError(
+                    f"Unknown communication method: {self.communication_method}"
+                )
 
     def open_connection(self):
         """Opens the underlying transport connection."""
-        self.communicator.open()
+        self.communication_client.open()
 
     def send_data(
         self, data: list, command_type: int = CommandType.SETUP_COMMANDS.value
@@ -117,9 +118,7 @@ class CommunicationHandler:
             command_type: CommandType enum value selecting which Modbus
                 write operation the underlying transport should perform.
         """
-        # if len(data) > 1 and len(data)%2 != 0:
-        #     self.logger.error(f"Data length should be even")
-        self.communicator.send(data, command_type)
+        self.communication_client.send(data, command_type)
 
     def receive_data(
         self,
@@ -136,8 +135,7 @@ class CommunicationHandler:
         Returns:
             A single int if one register was read, otherwise a list of ints.
         """
-        # self.logger.info(f"data received is {self.communicator.receive([start,amount_dat])}")
-        return self.communicator.receive([start, amount_dat])
+        return self.communication_client.receive([start, amount_dat])
 
     def send_receive_data(
         self, read_start: int, read_count: int, write_start: int, values: list
@@ -153,13 +151,13 @@ class CommunicationHandler:
         Returns:
             A single int if one register was read, otherwise a list of ints.
         """
-        return self.communicator.send_receive(
+        return self.communication_client.send_receive(
             read_start, read_count, write_start, values
         )
 
     def close_connection(self):
         """Closes the underlying transport connection."""
-        self.communicator.close()
+        self.communication_client.close()
 
     def _check_robot_state(self):
         """Reads and unpacks the combined robot/trajectory status byte.
@@ -220,14 +218,11 @@ class CommunicationHandler:
         if vis:
             with tqdm(
                 total=timeout, unit="s", desc="Waiting for Robot Ready"
-            ) as progresbar:
-                while 1:
-                    # self.logger.info(f"does it get here")
-
+            ) as progressbar:
+                while True:
                     raw_state = self._check_robot_state()
-                    result = raw_state & 0xF
-                    trajectory_state = (raw_state & 0b11110000) >> 4
-                    # self.logger.info(f"does it get here x2")
+                    result = raw_state & 0x0F
+                    trajectory_state = (raw_state >> 4) & 0x0F
                     self.logger.info(
                         f"Robot state: {ActuatorState(result).name}, Trajectory: {TrajectoryReturn(trajectory_state).name}"
                     )
@@ -235,27 +230,26 @@ class CommunicationHandler:
                     self.ntrips += 1
                     if result in acceptable_states:
                         return result
-                    # time.sleep(0.1)
-                    if progresbar.n + time_diff >= timeout:
+                    if progressbar.n + time_diff >= timeout:
                         self.logger.error("Timeout waiting for robot ready")
                         break
-                    progresbar.update(time_diff)
+                    progressbar.update(time_diff)
                     time.sleep(0.3)
                     start_time = time.perf_counter()
-                # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")
         else:
-            while 1:
+            while True:
                 raw_state = self._check_robot_state()
                 result = raw_state & 0xF
-                trajectory_state = (raw_state & 0b11110000) >> 4
-                # self.logger.info(f"enters else statement")
-                self.logger.info(
-                    f"Robot state: {ActuatorState(result).name}, Trajectory: {TrajectoryReturn(trajectory_state).name}"
+                trajectory_state = (raw_state >> 4) & 0x0F
+
+                robot_state_str = f"Robot state: {ActuatorState(result).name}"
+                trajectory_str = (
+                    f"Trajectory: {TrajectoryReturn(trajectory_state).name}"
                 )
+                self.logger.info(f"{robot_state_str}, {trajectory_str}")
                 self.ntrips += 1
                 if result in acceptable_states:
                     return result
-                # time.sleep(0.1)
                 time.sleep(0.3)
                 if time.perf_counter() - start_time > timeout:
                     self.logger.error("Timeout waiting for robot ready")
@@ -263,4 +257,3 @@ class CommunicationHandler:
 
         if result == ActuatorState.ACTUATOR_BUSY.value:
             self.logger.error("Robot Busy")
-            # self.logger.info(f"Roundtrip time: {self.ntrips/timeout} trips per second")

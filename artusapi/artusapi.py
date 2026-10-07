@@ -457,8 +457,6 @@ class ArtusAPI:
     def connect(self):
         """Opens the underlying communication channel to the hand."""
         self._communication_handler.open_connection()
-        time.sleep(1)
-        # self.wake_up()
 
     def disconnect(self):
         """Closes the communication channel and restores the original SIGINT handler."""
@@ -484,12 +482,10 @@ class ArtusAPI:
         self._communication_handler.send_data(wake_command)
         self.last_time = time.perf_counter()
 
-        # wait for hand state ready
         ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=30)
         if not ready_result:
             self.logger.error("Hand timed out waiting for ready")
         elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
-            # try to wake hand again
             self.wake_up()
         else:
             self.logger.info("Hand ready")
