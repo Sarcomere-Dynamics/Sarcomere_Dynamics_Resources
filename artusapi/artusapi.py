@@ -1015,14 +1015,10 @@ class ArtusAPI:
         self._communication_handler.send_data(firmware_cmd)
         self.last_time = time.perf_counter()
 
-        # send firmware data
-        # self._firmware_updater.update_actuator_piecewise(fw_size)
-
         time.sleep(0.5)
 
-        self.logger.info("next line is sending the firmware data")
         # send firmware data
-        self._firmware_updater.update_actuator(fw_size)
+        self._firmware_updater.upload_firmware(fw_size)
 
         # wait for hand state ready
         while self.get_robot_status()[0] == ActuatorState.ACTUATOR_FLASHING.name:
