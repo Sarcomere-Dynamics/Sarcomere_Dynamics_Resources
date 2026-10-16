@@ -205,7 +205,6 @@ class CommunicationHandler:
         """
         start_time = time.perf_counter()
         time.sleep(0.2)
-        # self.logger.info(f"the self state is: {acceptable_state}")
         if not acceptable_state:
             acceptable_states = [
                 ActuatorState.ACTUATOR_IDLE.value,
@@ -215,45 +214,29 @@ class CommunicationHandler:
             ]
         else:
             acceptable_states = [acceptable_state]
-        if vis:
-            with tqdm(
-                total=timeout, unit="s", desc="Waiting for Robot Ready"
-            ) as progressbar:
-                while True:
-                    raw_state = self._check_robot_state()
-                    result = raw_state & 0x0F
-                    trajectory_state = (raw_state >> 4) & 0x0F
-                    self.logger.info(
-                        f"Robot state: {ActuatorState(result).name}, Trajectory: {TrajectoryReturn(trajectory_state).name}"
-                    )
-                    time_diff = time.perf_counter() - start_time
-                    self.ntrips += 1
-                    if result in acceptable_states:
-                        return result
-                    if progressbar.n + time_diff >= timeout:
-                        self.logger.error("Timeout waiting for robot ready")
-                        break
-                    progressbar.update(time_diff)
-                    time.sleep(0.3)
-                    start_time = time.perf_counter()
-        else:
-            while True:
-                raw_state = self._check_robot_state()
-                result = raw_state & 0xF
-                trajectory_state = (raw_state >> 4) & 0x0F
 
-                robot_state_str = f"Robot state: {ActuatorState(result).name}"
-                trajectory_str = (
-                    f"Trajectory: {TrajectoryReturn(trajectory_state).name}"
-                )
-                self.logger.info(f"{robot_state_str}, {trajectory_str}")
-                self.ntrips += 1
-                if result in acceptable_states:
-                    return result
-                time.sleep(0.3)
-                if time.perf_counter() - start_time > timeout:
+        progressbar = (
+            tqdm(total=timeout, unit="s", desc="Waiting for Robot Ready")
+            if vis
+            else None
+        )
+        while True:
+            raw_state = self._check_robot_state()
+            actuator_state = raw_state & 0x0F
+            trajectory_state = (raw_state >> 4) & 0x0F
+            self.logger.info(
+                f"Robot state: {ActuatorState(actuator_state).name}, Trajectory: {TrajectoryReturn(trajectory_state).name}"
+            )
+            time_diff = time.perf_counter() - start_time
+            self.ntrips += 1
+            if actuator_state in acceptable_states:
+                return actuator_state
+            if progressbar is not None:
+                if progressbar.n + time_diff >= timeout:
                     self.logger.error("Timeout waiting for robot ready")
                     break
+                progressbar.update(time_diff)
+            start_time = time.perf_counter()
 
-        if result == ActuatorState.ACTUATOR_BUSY.value:
+        if actuator_state == ActuatorState.ACTUATOR_BUSY.value:
             self.logger.error("Robot Busy")
