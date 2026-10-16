@@ -1,1 +1,0 @@
-from .artus_scorpion import ArtusScorpion

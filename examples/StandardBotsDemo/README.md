@@ -29,7 +29,7 @@ Drives an ARTUS hand end-effector mounted on a **Standard Bots** robotic arm thr
 [ Standard Bots arm, running a routine ] --cloud API--> [ this script watches current_step_id ]
                                                                     |
                                                                     v
-                                                     [ ArtusAPI_V2 grasp/open on the hand ]
+                                                     [ ArtusAPI grasp/open on the hand ]
 ```
 
 The hand and the arm are controlled through two completely separate channels — this script does not send anything to the arm, it only reads routine state and reacts by commanding the hand.
@@ -37,4 +37,4 @@ The hand and the arm are controlled through two completely separate channels —
 ## Related reading
 
 - [Examples index](../README.md)
-- [`general_example/`](../general_example/) for the base ArtusAPI_V2 flow this demo builds on
+- [`general_example/`](../general_example/) for the base ArtusAPI flow this demo builds on

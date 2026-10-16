@@ -1,0 +1,24 @@
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
+
+from .artus_lite_plus import ArtusLitePlus
+
+
+class ArtusLitePlusRight(ArtusLitePlus):
+    """Right-hand variant of the ARTUS Lite Plus."""
+
+    def __init__(self, logger=None):
+        """Initializes the right ARTUS Lite Plus hand with mirrored spread joints.
+
+        Args:
+            logger: Optional logger instance passed through to
+                ``ArtusLitePlus``.
+        """
+        super().__init__(type="right", logger=logger)

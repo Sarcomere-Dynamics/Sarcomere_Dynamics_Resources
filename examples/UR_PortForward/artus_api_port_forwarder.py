@@ -1,14 +1,12 @@
-"""
-Sarcomere Dynamics Software License Notice
-------------------------------------------
-This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
-including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
-
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
-
-Licensed under the Sarcomere Dynamics Software License.
-See the LICENSE file in the repository for full details.
-"""
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
 
 """Forwards a UR robot's TCP-exposed RS485 line to a local serial device via socat.
 
@@ -18,10 +16,10 @@ pseudo-terminal device, so existing serial-based ArtusAPI code can talk
 to the ARTUS hand as if it were connected locally.
 """
 
-import os
 import subprocess
-import serial
 import time
+
+import serial
 
 
 class ArtusAPIPortForwarder:
@@ -33,9 +31,11 @@ class ArtusAPIPortForwarder:
     to the robot's RS485 bus.
     """
 
-    def __init__(self,
-                 robot_ip = "192.168.194.129", # robot ip address (change this to the robot's ip address)
-                 local_device_name = "/tmp/ttyUR"): # temporary device name
+    def __init__(
+        self,
+        robot_ip="192.168.194.129",  # robot ip address (change this to the robot's ip address)
+        local_device_name="/tmp/ttyUR",
+    ):  # temporary device name
         """Starts the socat bridge from the robot's TCP port to a local device.
 
         Args:
@@ -50,7 +50,6 @@ class ArtusAPIPortForwarder:
         self.ser = None
         self._run_socat()
 
-
     def _run_socat(self):
         """Launches the socat subprocess linking the local device to the robot.
 
@@ -62,7 +61,6 @@ class ArtusAPIPortForwarder:
         self.socat_process = subprocess.Popen(socat_command, shell=True)
         time.sleep(2)
 
-
     def get_local_device_name(self):
         """Returns the local pseudo-terminal device path for serial access.
 
@@ -71,8 +69,6 @@ class ArtusAPIPortForwarder:
             "/tmp/ttyUR").
         """
         return self.local_device_name
-
-
 
 
 def test_port_forwarder():
@@ -102,7 +98,6 @@ def test_port_forwarder():
         data_received = ser.readline()
         print(f"Received: {data_received}")
         time.sleep(1)
-
 
 
 if __name__ == "__main__":

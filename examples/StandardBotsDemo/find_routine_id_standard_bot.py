@@ -1,14 +1,12 @@
-"""
-Sarcomere Dynamics Software License Notice
-------------------------------------------
-This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
-including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
-
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
-
-Licensed under the Sarcomere Dynamics Software License.
-See the LICENSE file in the repository for full details.
-"""
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
 
 """Lists Standard Bots routines and their IDs to help populate standard_bots_config.yaml.
 
@@ -29,7 +27,9 @@ except ImportError as e:
         "  pip install -r examples/StandardBotsDemo/requirements.txt"
     ) from e
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 sys.path.append(PROJECT_ROOT)
 
 from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_config
@@ -43,19 +43,16 @@ from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_co
 sb_config = load_standard_bots_config()
 
 sdk = StandardBotsRobot(
-    url=sb_config['url'],
-    token=sb_config['token'],
-    robot_kind=getattr(StandardBotsRobot.RobotKind, sb_config['robot_kind']),
+    url=sb_config["url"],
+    token=sb_config["token"],
+    robot_kind=getattr(StandardBotsRobot.RobotKind, sb_config["robot_kind"]),
 )
 
 print("Attempting to connect to standard bot...")
 
 with sdk.connection():
     try:
-        response = sdk.routine_editor.routines.list(
-            limit=100,
-            offset=0
-        )
+        response = sdk.routine_editor.routines.list(limit=100, offset=0)
 
         paginated_response = response.ok()
 

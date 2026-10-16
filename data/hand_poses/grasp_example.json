@@ -1,114 +1,98 @@
 {
-    "thumb_spread":
-    {
-        "target_angle": -25,
-        "target_force": 40,
-        "target_velocity": 50,
-        "index": 0
-    },
-    "thumb_flex":
-    {
-        "target_angle": 40,
-        "target_force": 40,
-        "target_velocity": 50,
-        "index": 1
-    },
-    "thumb_d2":
-    {
-        "target_angle": 40,
-        "target_force": 40,
-        "target_velocity": 40,
-        "index": 2
-    },
-    "thumb_d1":
-    {
-        "target_angle": 40,
-        "target_force": 40,
-        "target_velocity": 40,
-        "index": 3
-    },
-    "index_spread":
-    {
-        "target_angle": 0,
-        "target_force": 40,
-        "target_velocity": 40,
-        "index": 4
-    },
-    "index_flex":
-    {
-        "target_angle": 40,
-        "target_force": 40,
-        "target_velocity": 40,
-        "index": 5
-    },
-    "index_d2":
-    {
-        "target_angle": 40,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 6
-    },
-    "middle_spread":
-    {
-        "target_angle": 0,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 7
-    },
-    "middle_flex":
-    {
-        "target_angle": 40,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 8
-    },
-    "middle_d2":
-    {
-        "target_angle": 40,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 9
-    },
-    "ring_spread":
-    {
-        "target_angle": 0,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 10
-    },
-    "ring_flex":
-    {
-        "target_angle": 40,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 11
-    },
-    "ring_d2":
-    {
-        "target_angle": 40,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 12
-    },
-    "pinky_spread":
-    {
-        "target_angle": 0,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 13
-    },
-    "pinky_flex":
-    {
-        "target_angle": 40,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 14
-    },
-    "pinky_d2":
-    {
-        "target_angle": 40,
-        "target_force": 2,
-        "target_velocity": 40,
-        "index": 15
-    }
+  "thumb_spread": {
+    "index": 0,
+    "target_angle": -25,
+    "target_velocity": 50,
+    "target_force": 40
+  },
+  "thumb_flex": {
+    "index": 1,
+    "target_angle": 40,
+    "target_velocity": 50,
+    "target_force": 40
+  },
+  "thumb_d2": {
+    "index": 2,
+    "target_angle": 40,
+    "target_force": 40,
+    "target_velocity": 40
+  },
+  "thumb_d1": {
+    "index": 3,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 40
+  },
+  "index_spread": {
+    "index": 4,
+    "target_angle": 0,
+    "target_velocity": 40,
+    "target_force": 40
+  },
+  "index_flex": {
+    "index": 5,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 40
+  },
+  "index_d2": {
+    "index": 6,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "middle_spread": {
+    "index": 7,
+    "target_angle": 0,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "middle_flex": {
+    "index": 8,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "middle_d2": {
+    "index": 9,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "ring_spread": {
+    "index": 10,
+    "target_angle": 0,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "ring_flex": {
+    "index": 11,
+    "target_angle": 40,
+    "target_force": 2,
+    "target_velocity": 40
+  },
+  "ring_d2": {
+    "index": 12,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "pinky_spread": {
+    "index": 13,
+    "target_angle": 0,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "pinky_flex": {
+    "index": 14,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 2
+  },
+  "pinky_d2": {
+    "index": 15,
+    "target_angle": 40,
+    "target_velocity": 40,
+    "target_force": 2
+  }
 }

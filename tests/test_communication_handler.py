@@ -1,0 +1,109 @@
+"""Tests for CommunicationHandler with ModbusRTU mocked (no serial port)."""
+
+import unittest
+from unittest.mock import MagicMock, patch
+
+from artusapi.common.modbus_map import ModbusMap, TrajectoryReturn
+from artusapi.communication.communication_handler import (
+    ActuatorState,
+    CommunicationHandler,
+)
+
+
+class TestNewCommunicationMocked(unittest.TestCase):
+    """Verifies CommunicationHandler delegates to a mocked ModbusRTU transport."""
+
+    def _make_nc(self, mock_inst: MagicMock) -> CommunicationHandler:
+        """Builds a CommunicationHandler with ModbusRTU patched to return the given mock.
+
+        Args:
+            mock_inst: Mock to substitute for the real ModbusRTU instance.
+
+        Returns:
+            A CommunicationHandler instance wired to the mock transport.
+        """
+        with patch(
+            "ArtusAPI.communication.communication_handler.ModbusRTU",
+            return_value=mock_inst,
+        ):
+            nc = CommunicationHandler(
+                port="MOCK",
+                baudrate=115200,
+                communication_method="ModbusRTU",
+            )
+        return nc
+
+    def test_open_close(self):
+        """Verifies open_connection/close_connection delegate to the underlying transport."""
+        inst = MagicMock()
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        inst.open.assert_called_once()
+        nc.close_connection()
+        inst.close.assert_called_once()
+
+    def test_send_data_delegates(self):
+        """Verifies send_data delegates to the transport's send method."""
+        inst = MagicMock()
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        nc.send_data([1, 2, 3], command_type=16)
+        inst.send.assert_called_once()
+
+    def test_receive_data_delegates(self):
+        """Verifies receive_data delegates to the transport's receive method and returns its value."""
+        inst = MagicMock()
+        inst.receive.return_value = 0x0102
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        ret = nc.receive_data(
+            amount_dat=1, start=ModbusMap().modbus_reg_map["feedback_register"]
+        )
+        self.assertEqual(ret, 0x0102)
+        inst.receive.assert_called_once()
+
+    def test_send_receive_data_delegates(self):
+        """Verifies send_receive_data delegates to the transport's FC 0x17 path."""
+        inst = MagicMock()
+        inst.send_receive.return_value = [0x0100, 0x0200]
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        read_start = ModbusMap().modbus_reg_map["feedback_position_start_reg"]
+        write_start = ModbusMap().modbus_reg_map["target_position_start_reg"]
+        values = [0x1E3C]
+        ret = nc.send_receive_data(read_start, 8, write_start, values)
+        self.assertEqual(ret, [0x0100, 0x0200])
+        inst.send_receive.assert_called_once_with(read_start, 8, write_start, values)
+
+    def test_check_robot_state_low_nibble(self):
+        """Verifies _check_robot_state extracts the low nibble of the raw status word."""
+        inst = MagicMock()
+        inst.receive.return_value = 0x0506
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        low = nc._check_robot_state()
+        self.assertEqual(low, 0x06)
+
+    def test_unknown_method_raises(self):
+        """Verifies constructing CommunicationHandler with an unsupported communication method raises ValueError."""
+        with self.assertRaises(ValueError):
+            CommunicationHandler(communication_method="NOT_A_METHOD")
+
+    def test_wait_for_ready_decodes_trajectory_state(self):
+        """Verifies wait_for_ready splits the status word into actuator state and trajectory return, logging the latter."""
+        # low nibble 0x1 = ACTUATOR_IDLE, high nibble 0x2 = TRAJECTORY_COMPLETE
+        inst = MagicMock()
+        inst.receive.return_value = 0x21
+        nc = self._make_nc(inst)
+        nc.open_connection()
+        with patch.object(nc.logger, "info") as log_info:
+            result = nc.wait_for_ready(
+                acceptable_state=ActuatorState.ACTUATOR_IDLE.value
+            )
+        self.assertEqual(result, ActuatorState.ACTUATOR_IDLE.value)
+        logged = " ".join(str(c.args[0]) for c in log_info.call_args_list)
+        self.assertIn(TrajectoryReturn.TRAJECTORY_COMPLETE.name, logged)
+
+
+if __name__ == "__main__":
+    unittest.main()

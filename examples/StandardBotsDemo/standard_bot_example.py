@@ -1,14 +1,12 @@
-"""
-Sarcomere Dynamics Software License Notice
-------------------------------------------
-This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
-including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
-
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
-
-Licensed under the Sarcomere Dynamics Software License.
-See the LICENSE file in the repository for full details.
-"""
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
 
 """Coordinates an ARTUS hand grasp/release with a Standard Bots pick-and-place routine.
 
@@ -18,11 +16,11 @@ the script alternates grasping and opening the hand so its state tracks
 the arm's position through a repeating pick-drop cycle.
 """
 
-import time
 import json
+import logging
 import os
 import sys
-import logging
+import time
 
 try:
     from standardbots import StandardBotsRobot
@@ -35,13 +33,18 @@ except ImportError as e:
 # ------------------------------------------------------------------------------
 # ---------------------------- Artus Hand Setup --------------------------------
 # ------------------------------------------------------------------------------
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
 sys.path.append(PROJECT_ROOT)
 
-from examples.config.configuration import ArtusConfig
+from artusapi import ArtusConfig
 from examples.StandardBotsDemo.standard_bots_config import load_standard_bots_config
 
-def setup_logger(level='ERROR', format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'):
+
+def setup_logger(
+    level="ERROR", format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+):
     """Creates (or reuses) a console logger for the ArtusAPI example.
 
     Args:
@@ -54,7 +57,7 @@ def setup_logger(level='ERROR', format='%(asctime)s - %(name)s - %(levelname)s -
         logging.Logger: Logger named 'ArtusAPI_Example' with a console
         handler attached (attached only once across repeated calls).
     """
-    logger = logging.getLogger('ArtusAPI_Example')
+    logger = logging.getLogger("ArtusAPI_Example")
     logger.setLevel(level)
     console_handler = logging.StreamHandler()
     console_handler.setLevel(level)
@@ -63,11 +66,15 @@ def setup_logger(level='ERROR', format='%(asctime)s - %(name)s - %(levelname)s -
         logger.addHandler(console_handler)
     return logger
 
+
 # Initialize Configuration & API
 config = ArtusConfig()
-logger = setup_logger(level=config.config.logging.level, format=config.config.logging.format)
+logger = setup_logger(
+    level=config.config.logging.level, format=config.config.logging.format
+)
 artusapi = config.get_api(logger=logger)
-hand_poses_path = os.path.join(PROJECT_ROOT, 'data', 'hand_poses')
+hand_poses_path = os.path.join(PROJECT_ROOT, "data", "hand_poses")
+
 
 # Helper functions to trigger hand movements
 def execute_grasp():
@@ -75,30 +82,36 @@ def execute_grasp():
 
     Loads the pose from data/hand_poses/grasp_example.json, fills in each
     joint's target_velocity and target_force from the robot's configured
-    defaults, and sends the resulting pose via artusapi.set_joint_angles.
+    defaults, and sends the resulting pose via artusapi.set_joint_targets.
     """
     logger.info("Executing Grasp")
-    with open(os.path.join(hand_poses_path, 'grasp_example.json'), 'r') as file:
+    with open(os.path.join(hand_poses_path, "grasp_example.json"), "r") as file:
         pose_dict = json.load(file)
     for key in pose_dict.keys():
-        pose_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
-        pose_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
-    artusapi.set_joint_angles(pose_dict)
+        pose_dict[key]["target_velocity"] = (
+            artusapi._robot_handler.robot.default_velocity
+        )
+        pose_dict[key]["target_force"] = artusapi._robot_handler.robot.default_force
+    artusapi.set_joint_targets(pose_dict)
+
 
 def execute_open():
     """Sends the grasp_open.json pose to the ARTUS hand.
 
     Loads the pose from data/hand_poses/grasp_open.json, fills in each
     joint's target_velocity and target_force from the robot's configured
-    defaults, and sends the resulting pose via artusapi.set_joint_angles.
+    defaults, and sends the resulting pose via artusapi.set_joint_targets.
     """
     logger.info("Executing Open")
-    with open(os.path.join(hand_poses_path, 'grasp_open.json'), 'r') as file:
+    with open(os.path.join(hand_poses_path, "grasp_open.json"), "r") as file:
         pose_dict = json.load(file)
     for key in pose_dict.keys():
-        pose_dict[key]['target_velocity'] = artusapi._robot_handler.robot.default_velocity
-        pose_dict[key]['target_force'] = artusapi._robot_handler.robot.default_force
-    artusapi.set_joint_angles(pose_dict)
+        pose_dict[key]["target_velocity"] = (
+            artusapi._robot_handler.robot.default_velocity
+        )
+        pose_dict[key]["target_force"] = artusapi._robot_handler.robot.default_force
+    artusapi.set_joint_targets(pose_dict)
+
 
 # ------------------------------------------------------------------------------
 # ----------------------- Artus Hand Initialization ----------------------------
@@ -121,14 +134,14 @@ except Exception as e:
 sb_config = load_standard_bots_config()
 
 sdk = StandardBotsRobot(
-    url=sb_config['url'],
-    token=sb_config['token'],
-    robot_kind=getattr(StandardBotsRobot.RobotKind, sb_config['robot_kind']),
+    url=sb_config["url"],
+    token=sb_config["token"],
+    robot_kind=getattr(StandardBotsRobot.RobotKind, sb_config["robot_kind"]),
 )
 
-routine_id = sb_config['routine_id']
-first_target_id = sb_config['first_target_id']
-second_target_id = sb_config['second_target_id']
+routine_id = sb_config["routine_id"]
+first_target_id = sb_config["first_target_id"]
+second_target_id = sb_config["second_target_id"]
 
 print(f"Monitoring routine: {routine_id}...\n")
 
@@ -152,7 +165,7 @@ with sdk.connection():
             )
 
             data = response.ok()
-            current_step = getattr(data, 'current_step_id', None)
+            current_step = getattr(data, "current_step_id", None)
 
             # Execute logic only when the step changes
             if current_step and current_step != last_seen_step:
@@ -165,12 +178,16 @@ with sdk.connection():
                         sequence_phase = 1
 
                     elif sequence_phase == 2:
-                        print("Phase 2: Returned to first target empty. Waiting to move.")
+                        print(
+                            "Phase 2: Returned to first target empty. Waiting to move."
+                        )
                         # Do nothing, just advance phase
                         sequence_phase = 3
 
                     elif sequence_phase == 4:
-                        print("Phase 4: Returned to first target with object. Releasing.")
+                        print(
+                            "Phase 4: Returned to first target with object. Releasing."
+                        )
                         execute_open()
                         sequence_phase = 5
 
@@ -186,7 +203,9 @@ with sdk.connection():
                         sequence_phase = 4
 
                     elif sequence_phase == 5:
-                        print("Phase 5: Returned to second target empty. Waiting to move.")
+                        print(
+                            "Phase 5: Returned to second target empty. Waiting to move."
+                        )
                         # Do nothing, cycle back
                         sequence_phase = 0
 

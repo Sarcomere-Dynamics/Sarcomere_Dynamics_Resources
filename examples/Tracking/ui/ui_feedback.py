@@ -1,32 +1,34 @@
-"""
-Sarcomere Dynamics Software License Notice
-------------------------------------------
-This software is developed by Sarcomere Dynamics Inc. for use with the ARTUS family of robotic products,
-including ARTUS Lite, ARTUS+, ARTUS Dex, and Hyperion.
-
-Copyright (c) 2023–2026, Sarcomere Dynamics Inc. All rights reserved.
-
-Licensed under the Sarcomere Dynamics Software License.
-See the LICENSE file in the repository for full details.
-"""
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
 
 """Qt widget providing live plots of ARTUS hand feedback data."""
 
-import os
 import json
+import os
 import sys
-from PySide6 import QtCore, QtGui, QtWidgets
-import pyqtgraph as pg
-import numpy as np
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+import numpy as np
+import pyqtgraph as pg
+from PySide6 import QtCore, QtWidgets
+
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 print("PROJECT_ROOT: ", PROJECT_ROOT)
 sys.path.append(PROJECT_ROOT)
 
 # dependencies
+from artusapi import ArtusConfig
+from artusapi.robot.robot import Robot
 from examples.Tracking.zmq_class.zmq_class import ZMQSubscriber
-from examples.config.configuration import ArtusConfig
-from ArtusAPI.robot.robot import Robot
+
 
 class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
     """Qt widget that plots live per-joint and force-sensor feedback data.
@@ -77,7 +79,9 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         self.ptr = []
 
         self.force_sensor_info = getattr(self.robot_description, "force_sensors", None)
-        self.force_sensor_names = list(self.force_sensor_info.keys()) if self.force_sensor_info else []
+        self.force_sensor_names = (
+            list(self.force_sensor_info.keys()) if self.force_sensor_info else []
+        )
         self.force_sensor_axes = ["x", "y", "z"]
         self.force_plots = {}
         self.force_curves = {}
@@ -102,13 +106,15 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         self.feedback_type_selector = QtWidgets.QComboBox(self)
         self.feedback_type_selector.addItems(["angle", "velocity", "force"])
         self.feedback_type_selector.setCurrentText(self.feedback_type)
-        self.feedback_type_selector.currentIndexChanged.connect(self._on_feedback_type_changed)
+        self.feedback_type_selector.currentIndexChanged.connect(
+            self._on_feedback_type_changed
+        )
         feedback_type_layout.addWidget(feedback_type_label)
         feedback_type_layout.addWidget(self.feedback_type_selector)
         self.layout.addLayout(feedback_type_layout)
 
         self.plot_widget = pg.GraphicsLayoutWidget(show=True)
-        self.plot_widget.setWindowTitle('Artus Lite Feedback Visualization')
+        self.plot_widget.setWindowTitle("Artus Lite Feedback Visualization")
         self.layout.addWidget(self.plot_widget)
 
         self.create_joint_plots()
@@ -127,7 +133,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
         for i, name in enumerate(self.joint_names):
             plot_item = self.plot_widget.addPlot(title=name)
             plot_item.setYRange(-90, 90)  # Adjust range as needed
-            curve = plot_item.plot(pen='g') # Default to green for angle
+            curve = plot_item.plot(pen="g")  # Default to green for angle
 
             self.plots.append(plot_item)
             self.curves.append(curve)
@@ -160,7 +166,9 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
             self.force_ptr[sensor_name] = 0
 
             for axis in self.force_sensor_axes:
-                self.force_curves[sensor_name][axis] = plot_item.plot(pen=axis_colors[axis])
+                self.force_curves[sensor_name][axis] = plot_item.plot(
+                    pen=axis_colors[axis]
+                )
                 self.force_data[sensor_name][axis] = np.zeros(self.history_length)
 
             if (i + 1) % num_cols == 0:
@@ -188,7 +196,7 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
             # and values are the feedback values
             for i, name in enumerate(self.joint_names):
                 if name in feedback_data:
-                    value = feedback_data[name][f'feedback_{self.feedback_type}']
+                    value = feedback_data[name][f"feedback_{self.feedback_type}"]
                     self.data[i][:-1] = self.data[i][1:]
                     self.data[i][-1] = value
                     self.curves[i].setData(self.data[i])
@@ -196,18 +204,24 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
                     self.ptr[i] += 1
 
             # Update force sensor plots if available
-            if self.force_sensor_names and 'force_sensors' in feedback_data:
-                sensor_feedback = feedback_data.get('force_sensors', {})
+            if self.force_sensor_names and "force_sensors" in feedback_data:
+                sensor_feedback = feedback_data.get("force_sensors", {})
                 for sensor_name in self.force_sensor_names:
                     axis_data = sensor_feedback.get(sensor_name)
                     if not axis_data:
                         continue
                     for axis in self.force_sensor_axes:
                         value = axis_data.get(axis, 0)
-                        self.force_data[sensor_name][axis][:-1] = self.force_data[sensor_name][axis][1:]
+                        self.force_data[sensor_name][axis][:-1] = self.force_data[
+                            sensor_name
+                        ][axis][1:]
                         self.force_data[sensor_name][axis][-1] = value
-                        self.force_curves[sensor_name][axis].setData(self.force_data[sensor_name][axis])
-                        self.force_curves[sensor_name][axis].setPos(self.force_ptr[sensor_name], 0)
+                        self.force_curves[sensor_name][axis].setData(
+                            self.force_data[sensor_name][axis]
+                        )
+                        self.force_curves[sensor_name][axis].setPos(
+                            self.force_ptr[sensor_name], 0
+                        )
                     self.force_ptr[sensor_name] += 1
         except json.JSONDecodeError:
             print("Error decoding JSON feedback data.")
@@ -241,20 +255,27 @@ class UIFeedback(QtWidgets.QWidget, ZMQSubscriber):
 
             # Set y-range and color based on feedback type
             if self.feedback_type == "force":
-                plot_item.setYRange(-self.robot_description.max_force, self.robot_description.max_force)
-                self.curves[i].setPen('r')
+                plot_item.setYRange(
+                    -self.robot_description.max_force, self.robot_description.max_force
+                )
+                self.curves[i].setPen("r")
             elif self.feedback_type == "velocity":
-                plot_item.setYRange(-self.robot_description.max_velocity, self.robot_description.max_velocity)  # Keep current range
-                self.curves[i].setPen('y')
+                plot_item.setYRange(
+                    -self.robot_description.max_velocity,
+                    self.robot_description.max_velocity,
+                )  # Keep current range
+                self.curves[i].setPen("y")
             elif self.feedback_type == "angle":
                 plot_item.setYRange(-90, 90)  # Keep current range
-                self.curves[i].setPen('g')
+                self.curves[i].setPen("g")
 
         # Reset force sensor plot data
         for sensor_name in self.force_sensor_names:
             for axis in self.force_sensor_axes:
                 self.force_data[sensor_name][axis] = np.zeros(self.history_length)
-                self.force_curves[sensor_name][axis].setData(self.force_data[sensor_name][axis])
+                self.force_curves[sensor_name][axis].setData(
+                    self.force_data[sensor_name][axis]
+                )
                 self.force_curves[sensor_name][axis].setPos(0, 0)
             self.force_ptr[sensor_name] = 0
 
@@ -267,5 +288,5 @@ def main():
     sys.exit(app.exec_())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

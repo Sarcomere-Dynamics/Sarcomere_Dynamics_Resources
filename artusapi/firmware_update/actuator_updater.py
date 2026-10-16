@@ -1,0 +1,191 @@
+# Sarcomere Dynamics Software License Notice
+# ------------------------------------------
+# This software is developed by Sarcomere Dynamics Inc.
+# for use with the ARTUS family of robotic products.
+#
+# Copyright (c) 2023-2026, Sarcomere Dynamics Inc. All rights reserved.
+#
+# Licensed under the Sarcomere Dynamics Software License.
+# See the LICENSE file in the repository for full details.
+
+import logging
+import math
+import os
+import time
+
+from tqdm import tqdm
+
+from ..common.modbus_map import ActuatorState, CommandType
+from ..communication.communication_handler import CommunicationHandler
+
+BYTES_CHUNK = 64
+
+
+class ActuatorUpdater:
+    """Uploads firmware binaries to an ARTUS hand over Modbus RTU/TCP.
+
+    Streams a `.bin` file to the hand's master board in fixed-size
+    chunks, polling the actuator state after each page (or half-page) is
+    sent to confirm the firmware update flash acknowledged the write.
+
+    Attributes:
+        _communication_handler: Communication handler used to send
+            firmware data and poll robot state.
+        _command_handler: Command handler providing the firmware update
+            opcode.
+        file_location: Path to the firmware binary file to upload.
+        logger: Logger used for progress/error messages.
+    """
+
+    def __init__(
+        self,
+        communication_handler: CommunicationHandler | None = None,
+        command_handler=None,
+        file_location=None,
+        logger=None,
+    ):
+        """Initializes the firmware updater.
+
+        Args:
+            communication_handler: Communication handler used to send
+                firmware data and poll robot state.
+            command_handler: Command handler providing the firmware
+                update opcode.
+            file_location: Path to the firmware binary file to upload.
+            logger: Logger to use; a module-level logger is created if
+                not provided.
+        """
+        self._communication_handler = communication_handler
+        self._command_handler = command_handler
+        self.file_location = file_location
+        if not logger:
+            self.logger = logging.getLogger(__name__)
+        else:
+            self.logger = logger
+
+    def get_bin_file_info(self):
+        """Reads and logs the size of the configured firmware binary.
+
+        Returns:
+            The size of the file at ``self.file_location``, in bytes.
+        """
+        file_size = int(os.path.getsize(self.file_location))
+        self.logger.info(f"Bin file size = {file_size} @ location {self.file_location}")
+        return file_size
+
+    def flashing_ack_checker(self):
+        """Polls the robot state until the flash erase/write is acknowledged.
+
+        Blocks, checking the actuator state every 5 seconds, until the
+        hand reports ``ACTUATOR_FLASHING_ACK`` (success) or
+        ``ACTUATOR_ERROR`` (failure). Logs and continues on transient
+        state-check exceptions.
+
+        Returns:
+            True once ``ACTUATOR_FLASHING_ACK`` is observed, False if
+            ``ACTUATOR_ERROR`` is observed.
+        """
+        while True:
+            self.logger.info("entered flashing_ack_checker")
+            try:
+                ret = self._communication_handler._check_robot_state()
+                self.logger.info(f"return from check_robot_state is: {ret}")
+                match ret:
+                    case ActuatorState.ACTUATOR_FLASHING_ACK.value:
+                        return True
+                    case ActuatorState.ACTUATOR_ERROR.value:
+                        self.logger.error(f"Error: {ret}")
+                        return False
+                    case ActuatorState.ACTUATOR_FLASHING.value:
+                        self.logger.info("Erasing Flash..")
+            except Exception as e:
+                self.logger.error(f"Error checking robot state: {e}")
+                continue
+            time.sleep(5)
+
+    # This method manages sending the firmware image data to the mainboard.
+    # It does not start the firmware update process on the mainboard itself.
+    def upload_firmware(self, file_size):
+        """Uploads firmware binary data to the master board in half-page chunks.
+
+        Only manages sending the actual binary data to the master; it
+        does not start the firmware update process on the master. Reads
+        the binary at ``self.file_location`` and streams it in 128-byte
+        (half-page) chunks, waiting for the initial flashing
+        acknowledgment before starting and pausing briefly every 50
+        (half-)pages. Sends a terminating ``[0x0, 0x0]`` chunk once the
+        upload completes.
+
+        Args:
+            file_size: Size of the firmware binary in bytes, used to
+                compute the number of 256-byte pages required.
+
+        Returns:
+            False if the initial flashing acknowledgment fails;
+            otherwise returns None after the upload completes.
+        """
+        byte_counter = 0
+        page_counter = 0
+
+        with open(self.file_location, "rb") as file:
+            file_data = file.read()
+            self.logger.info("file read complete")
+
+            time.sleep(1)
+
+            # wait for the initial communication/erase function
+            if not self.flashing_ack_checker():
+                return False
+
+            pages_required = math.ceil(file_size / 256)
+            self.logger.info(f"Upload requires {pages_required} page writes")
+
+            # over total number of bytes
+            with tqdm(
+                total=pages_required,
+                unit="pages",
+                unit_scale=True,
+                desc="Uploading Actuator Firmware",
+            ) as pbar:
+                while page_counter < pages_required:
+                    # fill byte data
+                    concat_chunk = []
+                    # take each pair and make it into a 16bit value
+                    while len(concat_chunk) < 64:  # 128 bytes
+                        if byte_counter >= file_size:
+                            concat_chunk.append(0xFFFF)
+                        elif byte_counter + 1 >= file_size:
+                            concat_chunk.append(file_data[byte_counter] << 8 | 0xFF)
+                        else:
+                            concat_chunk.append(
+                                file_data[byte_counter] << 8
+                                | file_data[byte_counter + 1]
+                            )
+                        byte_counter += 2
+
+                    concat_chunk.insert(
+                        0, self._command_handler.command_dict["firmware_update_command"]
+                    )  # this has to be the first element every time
+
+                    self._communication_handler.send_data(
+                        concat_chunk, CommandType.FIRMWARE_COMMAND.value
+                    )
+
+                    time.sleep(0.01)
+
+                    self.logger.info(f"Sent page {page_counter} of {pages_required}")
+
+                    time.sleep(0.01)
+
+                    page_counter += 0.5  # update by 0.5 pages becaause sending 128 bytes (1/2 page) instead of 256 bytes (full page)
+                    pbar.update(0.5)
+
+                    if page_counter % 50 == 0:
+                        time.sleep(0.1)
+
+            # send 0000 to end the firmware update process
+            eof_list = [0x0, 0x0]
+            self._communication_handler.send_data(
+                eof_list, CommandType.FIRMWARE_COMMAND.value
+            )
+            self.logger.info("Firmware Update is in progress..")
