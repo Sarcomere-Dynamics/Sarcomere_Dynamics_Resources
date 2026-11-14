@@ -15,6 +15,7 @@ import signal
 import time
 
 from .commands import CommandHandler
+from .common import protocol_codes as pc
 from .common.modbus_map import ModbusMap, TrajectoryReturn
 from .common.slave_id_map import expected_slave_id
 from .communication.communication_handler import (
@@ -305,10 +306,12 @@ class ArtusAPI:
             Number of consecutive 16-bit registers to request.
         """
         sensors = self._robot_handler.robot.force_sensors or {}
+        motors = getattr(self._robot_handler.robot, "motor_names", None) or []
         return ModbusMap().feedback_register_count(
             feedback_reg_key,
             self._robot_handler.robot.number_of_joints,
             len(sensors),
+            len(motors),
         )
 
     def _resolve_feedback_key(self, start_reg) -> str:
@@ -371,6 +374,28 @@ class ArtusAPI:
             label = ModbusMap().SCALAR_FEEDBACK_KEYS[feedback_reg_key]
             self.logger.info(f"{label}: {decoded_feedback_data[0]}")
             return
+        if feedback_reg_key == ModbusMap().FAULT_FEEDBACK_KEY:
+            fault = self.helper_decode_fault_record(decoded_feedback_data)
+            self.logger.info(
+                f"Fault: {fault['reason']} in {fault['state']}"
+                + (f" on {fault['motor_name']}" if fault["motor_name"] else "")
+                + f" | last command {fault['last_command']}: {fault['last_command_result']}"
+            )
+            return
+        if feedback_reg_key in ModbusMap().MOTOR_FEEDBACK_KEYS:
+            shaped = self.helper_fill_dict_from_motor_data(feedback_reg_key, decoded_feedback_data)
+            self.logger.info(f"{feedback_reg_key}: {shaped}")
+            return
+        if feedback_reg_key == "feedback_actuator_error_reg":
+            # uint32 bitfields read more clearly in hex
+            errors = self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
+            # Only log errors with non-zero value
+            non_zero_errors = {name: f"0x{code:08X}" for name, code in errors.items() if code != 0}
+            if non_zero_errors:
+                self.logger.info(f"{feedback_reg_key}:{non_zero_errors}")
+            else:
+                self.logger.info(f"{feedback_reg_key}: No errors")
+            return
         self.logger.info(
             f"{feedback_reg_key}:{self._robot_handler.get_feedback_data(decoded_feedback_data, feedback_type=feedback_reg_key)}"
         )
@@ -384,12 +409,18 @@ class ArtusAPI:
 
         Returns:
             The single value for scalar fields, a dict keyed by finger for
-            fingertip forces, or a dict keyed by joint name otherwise.
+            fingertip forces, the decoded record for the fault register, a
+            dict keyed by motor name for per-motor fields, or a dict keyed by
+            joint name otherwise.
         """
         if feedback_reg_key in ModbusMap().SCALAR_FEEDBACK_KEYS:
             return decoded_feedback_data[0]
         if feedback_reg_key == ModbusMap().FINGERTIP_FEEDBACK_KEY:
             return self.helper_fill_dict_from_fingertip_forces(decoded_feedback_data)
+        if feedback_reg_key == ModbusMap().FAULT_FEEDBACK_KEY:
+            return self.helper_decode_fault_record(decoded_feedback_data)
+        if feedback_reg_key in ModbusMap().MOTOR_FEEDBACK_KEYS:
+            return self.helper_fill_dict_from_motor_data(feedback_reg_key, decoded_feedback_data)
         return self.helper_fill_dict_from_feedback_data(decoded_feedback_data)
 
     def _check_communication_frequency(self, last_time: float):
@@ -691,6 +722,13 @@ class ArtusAPI:
             return
 
         feedback_reg_key = self._resolve_feedback_key(start_reg)
+        if feedback_reg_key in ModbusMap().MOTOR_FEEDBACK_KEYS and not getattr(
+            self._robot_handler.robot, "motor_names", None
+        ):
+            self.logger.warning(
+                f"{feedback_reg_key}: no per-motor registers mapped for {self.robot_type}"
+            )
+            return
         decoded_feedback_data = self._read_feedback(feedback_reg_key)
         return self._shape_feedback(feedback_reg_key, decoded_feedback_data)
 
@@ -834,6 +872,201 @@ class ArtusAPI:
             None if the hand is not awake.
         """
         return self.get_feedback_data("feedback_actuator_error_reg")
+
+    # ------------------------------------------------------------------
+    # Master status + per-motor diagnostics (registers 700-812, firmware
+    # 2026-11 and later). Codes and meanings: common/protocol_codes.py.
+    # ------------------------------------------------------------------
+
+    def _motor_name(self, index: int) -> str | None:
+        """Motor name for a firmware actuator index, None for 0xFF / unknown."""
+        if index == pc.MASTER_FAULT_MOTOR_NONE:
+            return None
+        names = getattr(self._robot_handler.robot, "motor_names", None) or []
+        return names[index] if 0 <= index < len(names) else f"motor_{index}"
+
+    def helper_decode_fault_record(self, words: list) -> dict:
+        """Decodes the 5-word master status record (registers 700-704).
+
+        Args:
+            words: Raw uint16 registers 700..704.
+
+        Returns:
+            Dict with ``reason`` / ``reason_code`` / ``description`` (why the
+            master entered ERROR, ``NONE`` if it is not in ERROR), ``state``
+            (ActuatorState name at the time), ``motor_index`` / ``motor_name``
+            (the motor blamed, None if none), ``procedure_result``,
+            ``error_report`` (that motor's raw word) with ``errors`` (its
+            decoded flags) and ``drv_fault_status``, and ``last_command`` /
+            ``last_command_result`` / ``last_command_description``.
+        """
+        w = list(words) + [0] * (ModbusMap().FAULT_REGISTER_WORDS - len(words))
+        reason = w[0] & 0xFF
+        state = (w[0] >> 8) & 0xFF
+        motor = (w[1] >> 8) & 0xFF
+        procedure = w[1] & 0xFF
+        error_report = (w[2] & 0xFFFF) | ((w[3] & 0xFFFF) << 16)
+        command = (w[4] >> 8) & 0xFF
+        result = w[4] & 0xFF
+        slave = pc.decode_slave_error(error_report)
+        try:
+            state_name = ActuatorState(state).name
+        except ValueError:
+            state_name = f"UNKNOWN({state})"
+        try:
+            description = pc.MASTER_FAULT_MEANING[pc.MasterFault(reason)]
+        except ValueError:
+            description = "Unknown fault code (firmware newer than this API?)."
+        try:
+            result_description = pc.COMMAND_RESULT_MEANING[pc.CommandResult(result)]
+        except ValueError:
+            result_description = "Unknown result code."
+        return {
+            "reason": pc.enum_name(pc.MasterFault, reason),
+            "reason_code": reason,
+            "description": description,
+            "state": state_name,
+            "motor_index": None if motor == pc.MASTER_FAULT_MOTOR_NONE else motor,
+            "motor_name": self._motor_name(motor),
+            "procedure_result": pc.enum_name(pc.ProcedureResult, procedure),
+            "error_report": error_report,
+            "errors": slave["flags"],
+            "drv_fault_status": slave["drv_fault_status"],
+            "last_command": pc.command_name(command) if command else "NONE",
+            "last_command_result": pc.enum_name(pc.CommandResult, result),
+            "last_command_description": result_description,
+        }
+
+    def helper_fill_dict_from_motor_data(self, feedback_reg_key: str, data: list) -> dict:
+        """Maps decoded per-motor feedback to a dict keyed by motor name.
+
+        Args:
+            feedback_reg_key: One of ``ModbusMap().MOTOR_FEEDBACK_KEYS``.
+            data: Decoded values in firmware motor order.
+
+        Returns:
+            ``feedback_motor_error_reg``: motor -> raw uint32 error_report.
+            ``feedback_motor_status_reg``: motor -> ``{"axis_state": name,
+            "procedure_result": name}``.
+            ``feedback_motor_flags_reg``: motor -> list of MotorFlags names.
+        """
+        names = getattr(self._robot_handler.robot, "motor_names", None) or []
+        out = {}
+        for i, name in enumerate(names):
+            if i >= len(data):
+                break
+            v = data[i]
+            if feedback_reg_key == "feedback_motor_status_reg":
+                out[name] = {
+                    "axis_state": pc.enum_name(pc.AxisState, (v >> 8) & 0xFF),
+                    "procedure_result": pc.enum_name(pc.ProcedureResult, v & 0xFF),
+                }
+            elif feedback_reg_key == "feedback_motor_flags_reg":
+                out[name] = pc.flag_names(v)
+            else:
+                out[name] = v
+        return out
+
+    def get_fault_report(self):
+        """Reads why the hand is in ERROR, and what happened to the last command.
+
+        Read this whenever the status is ACTUATOR_ERROR: it names the cause
+        even when every joint error word is 0 (ESTOP, lost communication, a
+        bad command argument, a calibration step without a motor fault).
+
+        Returns:
+            The dict from ``helper_decode_fault_record`` (``reason`` is
+            ``NONE`` when no fault is latched), or None if the hand is not
+            awake.
+        """
+        return self.get_feedback_data(ModbusMap().FAULT_FEEDBACK_KEY)
+
+    def get_last_command_result(self):
+        """Reads whether the master accepted the last command sent to it.
+
+        Returns:
+            ``{"command": name, "result": name, "description": text}`` --
+            result ACCEPTED, REJECTED_STATE (not valid now / not handled) or
+            REJECTED_ERROR (hand in ERROR). None if the hand is not awake.
+        """
+        fault = self.get_fault_report()
+        if fault is None:
+            return None
+        return {
+            "command": fault["last_command"],
+            "result": fault["last_command_result"],
+            "description": fault["last_command_description"],
+        }
+
+    def get_motor_error_report(self):
+        """Reads each motor board's own error_report (registers 710+).
+
+        Unlike the per-joint words, these are not merged across the motors of
+        a joint and never carry the master's calibration bits. Decode one with
+        ``protocol_codes.decode_slave_error``.
+
+        Returns:
+            Dict motor name -> uint32, or None (not awake / not supported).
+        """
+        return self.get_feedback_data("feedback_motor_error_reg")
+
+    def get_motor_status(self):
+        """Reads each motor board's axis state and last procedure result.
+
+        Returns:
+            Dict motor name -> ``{"axis_state", "procedure_result"}`` names,
+            or None (not awake / not supported).
+        """
+        return self.get_feedback_data("feedback_motor_status_reg")
+
+    def get_motor_flags(self):
+        """Reads the master's per-motor flags (LL_FAILED, STROKE_FAILED,
+        COMM_LOST, NO_RESPONSE).
+
+        Returns:
+            Dict motor name -> list of flag names, or None (not awake / not
+            supported).
+        """
+        return self.get_feedback_data("feedback_motor_flags_reg")
+
+    def get_motor_diagnostics(self, only_problems: bool = True):
+        """Reads every per-motor register and merges them per motor.
+
+        Args:
+            only_problems: Leave out motors with no error, no flags and a
+                SUCCESS / BUSY procedure result.
+
+        Returns:
+            Dict motor name -> ``{"error_report": "0x........", "errors":
+            [...], "drv_fault_status": int | None, "axis_state": name,
+            "procedure_result": name, "flags": [...]}``, or None (not awake /
+            not supported).
+        """
+        errors = self.get_motor_error_report()
+        status = self.get_motor_status()
+        flags = self.get_motor_flags()
+        if errors is None or status is None or flags is None:
+            return None
+        out = {}
+        for name, word in errors.items():
+            slave = pc.decode_slave_error(word)
+            entry = {
+                "error_report": f"0x{word:08X}",
+                "errors": slave["flags"],
+                "drv_fault_status": slave["drv_fault_status"],
+                "axis_state": status.get(name, {}).get("axis_state"),
+                "procedure_result": status.get(name, {}).get("procedure_result"),
+                "flags": flags.get(name, []),
+            }
+            healthy = (
+                word == 0
+                and not entry["flags"]
+                and entry["procedure_result"] in ("SUCCESS", "BUSY")
+            )
+            if only_problems and healthy:
+                continue
+            out[name] = entry
+        return out
 
     def _set_get_joint_field(self, joints: dict, target_packer, feedback_reg_key: str):
         """Shared FC 0x17 path: write one target field and read matching feedback.

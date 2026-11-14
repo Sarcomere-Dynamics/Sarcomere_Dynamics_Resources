@@ -29,6 +29,16 @@ This example is design to work with all of the ARTUS hands/end effectors. Please
 - [ARTUS Talos](../../ArtusAPI/robot/artus_talos/ARTUS_TALOS.md)
 - [ARTUS Scorpion](../../ArtusAPI/robot/artus_scorpion/ARTUS_SCORPION.md)
 
+### Reading errors and diagnostics
+
+Options 17-20 read the master's status registers (700-812). They need master firmware from November 2026 or later; older firmware returns meaningless values here.
+
+- **17 Fault report**: when the hand reports `ACTUATOR_ERROR`, says why (`reason`, e.g. `STROKE_CAL_FAILED`, `COMM_LOST`, `ESTOP`), which state it was in, which motor was blamed and that motor's calibration result and error word. Works even when every joint error word is 0.
+- **18 Last command result**: whether the last command was `ACCEPTED`, `REJECTED_STATE` (not valid in the current state, or not handled by this firmware) or `REJECTED_ERROR` (hand in ERROR: send `c` to clear errors first).
+- **19 / 20 Motor diagnostics**: per motor board (23 on the ARTUS Dex), its own error word decoded into flag names, axis state, last calibration result and the master's flags (`LL_FAILED`, `STROKE_FAILED`, `COMM_LOST`, `NO_RESPONSE`). 19 lists only motors with a problem, 20 lists all. Not available for ARTUS Lite / Lite+.
+
+Code meanings are in `artusapi/common/protocol_codes.py`.
+
 ### Setting targets
 
 The example uses two main json files to set the targets for the robot. They are located in the `data/hand_poses` folder. These files are set up for the **ARTUS Lite** hand, with all 16 joints.

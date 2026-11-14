@@ -91,6 +91,10 @@ class ArtusBase:
         self.joint_names = joint_names
         self.number_of_joints = number_of_joints
         self.number_of_controllers = number_of_controllers
+        # Motor boards in the master's actuator order, for the per-motor
+        # diagnostics registers (710+). None = the robot's firmware does not
+        # expose them (or they are not mapped yet).
+        self.motor_names: list[str] | None = None
 
         class Joint:
             """Mutable state container for a single joint's targets and feedback."""

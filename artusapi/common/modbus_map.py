@@ -20,6 +20,12 @@ class ModbusMap:  # Artus Generic Modbus Map
         FINGERTIP_FEEDBACK_KEY: Key for x/y/z per fingertip force sensor.
         FINGERTIP_AXIS_NAMES: Axis order of each fingertip sample.
         FINGERTIP_AXES: Number of axes per fingertip sensor.
+        FAULT_FEEDBACK_KEY: Key for the master status record (registers
+            700-704: fault reason/state/motor/procedure/error, last command).
+        FAULT_REGISTER_WORDS: Registers in that record.
+        MOTOR_FEEDBACK_KEYS: Per-motor diagnostics keys (raw error_report,
+            axis state + procedure result, master flags), one sample per
+            motor board rather than per joint.
     """
 
     def __init__(self):
@@ -30,6 +36,18 @@ class ModbusMap:  # Artus Generic Modbus Map
             "slave_id_reg": "slave_id_reg",
         }
         self.FINGERTIP_FEEDBACK_KEY = "feedback_force_sensor_start_reg"
+        # Master status record (registers 700-704): fault + last command result.
+        # A fixed block, not per joint. Layout: protocol_codes.py / firmware
+        # protocols/host.yaml.
+        self.FAULT_FEEDBACK_KEY = "feedback_fault_reg"
+        self.FAULT_REGISTER_WORDS = 5
+        # Per-motor diagnostics: one sample per motor board, sized by the
+        # robot's motor count (``motor_names``), not its joint count.
+        self.MOTOR_FEEDBACK_KEYS = (
+            "feedback_motor_error_reg",
+            "feedback_motor_status_reg",
+            "feedback_motor_flags_reg",
+        )
         self.FINGERTIP_AXIS_NAMES = ("x", "y", "z")
         self.FINGERTIP_AXES = 3
 
@@ -58,6 +76,14 @@ class ModbusMap:  # Artus Generic Modbus Map
             "feedback_actuator_motor_mode_reg": 600,  # feedback motor mode
             # size is float
             "feedback_force_sensor_start_reg": 650,  # input feedback fingertip force sensors
+            # master status (read-only, 5 words): fault record + last command result
+            "feedback_fault_reg": 700,
+            # size is uint32 per motor (2 registers): raw motor error_report
+            "feedback_motor_error_reg": 710,
+            # size is 16b per motor: (axis_state << 8) | procedure_result
+            "feedback_motor_status_reg": 760,
+            # size is 16b per motor: MotorFlags
+            "feedback_motor_flags_reg": 790,
             # size is float
             "feedback_voltage_start_reg": 1000,  # feedback voltage register (1 value)
             # size is int16_t
@@ -92,6 +118,13 @@ class ModbusMap:  # Artus Generic Modbus Map
             "feedback_actuator_motor_mode_reg": 0.5,  # feedback motor mode
             # size is float
             "feedback_force_sensor_start_reg": 2,  # input feedback fingertip force sensors
+            # 5 raw words, decoded by CommandHandler (not per joint)
+            "feedback_fault_reg": 5,
+            # uint32 per motor (2 registers), decoded as uint32 like the error reg
+            "feedback_motor_error_reg": 2,
+            # one unsigned 16b word per motor
+            "feedback_motor_status_reg": 1,
+            "feedback_motor_flags_reg": 1,
             # size is float
             "feedback_voltage_start_reg": 2,  # feedback voltage register (1 value)
             # size is int16_t
@@ -101,7 +134,7 @@ class ModbusMap:  # Artus Generic Modbus Map
         }
 
     def feedback_register_count(
-        self, feedback_reg_key, number_of_joints, number_of_sensors=0
+        self, feedback_reg_key, number_of_joints, number_of_sensors=0, number_of_motors=0
     ):
         """How many 16-bit holding registers to read for a feedback field.
 
@@ -112,11 +145,17 @@ class ModbusMap:  # Artus Generic Modbus Map
                 for scalar fields.
             number_of_sensors: Force-sensor count of the connected robot.
                 Used only for ``FINGERTIP_FEEDBACK_KEY``.
+            number_of_motors: Motor-board count of the connected robot.
+                Used only for ``MOTOR_FEEDBACK_KEYS``.
 
         Returns:
             Number of consecutive 16-bit registers to request.
         """
         multiplier = self.data_type_multiplier_map[feedback_reg_key]
+        if feedback_reg_key == self.FAULT_FEEDBACK_KEY:
+            return self.FAULT_REGISTER_WORDS
+        if feedback_reg_key in self.MOTOR_FEEDBACK_KEYS:
+            return math.ceil(multiplier * number_of_motors)
         if feedback_reg_key in self.SCALAR_FEEDBACK_KEYS:
             return math.ceil(multiplier)
         if feedback_reg_key == self.FINGERTIP_FEEDBACK_KEY:
