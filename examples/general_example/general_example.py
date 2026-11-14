@@ -16,12 +16,14 @@ Loads the robot configuration, connects to the configured ARTUS hand, and
 presents a numbered menu for connecting/disconnecting, waking/sleeping,
 calibrating, sending saved hand poses, and reading back feedback data
 (position, velocity, torque, fingertip forces, voltage, temperature, and
-error reports).
+error reports), plus the master's fault record, last command result and
+per-motor diagnostics (registers 700-812, newer master firmware).
 """
 # ------------------------------------------------------------------------------
 # ---------------------------- Import Libraries --------------------------------
 # ------------------------------------------------------------------------------
 import json
+from pprint import pprint
 
 # Add the desired path to the system path
 import os
@@ -68,9 +70,15 @@ def main_menu():
     ║   14 -> Get Average Temperature                                  ║
     ║   15 -> Get Joint Temperatures                                   ║
     ║   16 -> Get Error Report                                         ║
+    ║   17 -> Get Fault Report (why the hand is in ERROR)              ║
+    ║   18 -> Get Last Command Result (accepted / rejected)            ║
+    ║   19 -> Get Motor Diagnostics (motors with a problem)            ║
+    ║   20 -> Get Motor Diagnostics (all motors)                       ║
+    ║                                                                  ║
+    ║   c -> Clear errors                                              ║
     ║                                                                  ║
     ╚══════════════════════════════════════════════════════════════════╝""")
-    return input(">> Input Command Code (1-16):")
+    return input(">> Input Command Code (1-20):")
 
 
 # ------------------------------------------------------------------------------
@@ -201,6 +209,20 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
             artusapi.get_joint_temperatures()
         case "16":
             artusapi.get_error_report()
+        case "17":
+            # Why the master entered ERROR (reason, state, motor) and the last
+            # command's result. Printed directly: the log level may hide INFO.
+            pprint(artusapi.get_fault_report(), sort_dicts=False)
+        case "18":
+            pprint(artusapi.get_last_command_result(), sort_dicts=False)
+        case "19" | "20":
+            diagnostics = artusapi.get_motor_diagnostics(only_problems=(user_input == "19"))
+            if diagnostics is None:
+                logger.error("Per-motor diagnostics are not supported for this robot")
+            elif not diagnostics:
+                print("No motor reports a problem")
+            else:
+                pprint(diagnostics, sort_dicts=False)
         case "c":
             artusapi.clear_errors()
         case "r":

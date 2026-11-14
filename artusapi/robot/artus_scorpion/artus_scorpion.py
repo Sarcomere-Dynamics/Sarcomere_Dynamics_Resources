@@ -41,6 +41,9 @@ class ArtusScorpion(ArtusBase):
             logger=logger or None,
         )
 
+        # one motor board per joint, in joint order (per-motor registers 710+)
+        self.motor_names = list(self.joint_names)
+
         # set sensors
         self.available_feedback_types = [
             "feedback_position_start_reg",

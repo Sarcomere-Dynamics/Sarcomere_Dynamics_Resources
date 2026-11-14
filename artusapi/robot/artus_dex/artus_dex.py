@@ -50,8 +50,8 @@ class ArtusDex(ArtusBase):
                 17,
                 90,
                 90,  # pinky
-                30,
-                30,
+                45,  # pitch
+                30,  # yaw
             ],  # wrist
             joint_min_angles=[
                 -40,
@@ -70,8 +70,8 @@ class ArtusDex(ArtusBase):
                 -17,
                 0,
                 0,  # pinky
-                -30,
-                -30,
+                -45,  # pitch
+                -30,  # yaw
             ],  # wrist
             joint_default_angles=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             joint_rotation_directions=[
@@ -120,8 +120,36 @@ class ArtusDex(ArtusBase):
             logger=logger,
         )
 
+        # 23 motor boards in firmware actuator order (bldc_c_master dex.h,
+        # protocols/robot_errors.yaml motors_list): index = position in this list.
+        self.motor_names = [
+            "thumb_d3_1",
+            "thumb_d3_2",
+            "thumb_d2",
+            "thumb_d1",
+            "index_d3_1",
+            "index_d3_2",
+            "index_d2",
+            "middle_d3_1",
+            "middle_d3_2",
+            "middle_d2",
+            "ring_d3_1",
+            "ring_d3_2",
+            "ring_d2",
+            "pinky_d3_1",
+            "pinky_d3_2",
+            "pinky_d2",
+            "wrist_1",
+            "wrist_2",
+            "thumb_ext",
+            "index_ext",
+            "middle_ext",
+            "ring_ext",
+            "pinky_ext",
+        ]
+
         # speeds (deg/s)
-        self.max_velocity = 300
+        self.max_velocity = 900
         self.min_velocity = 0
         self.default_velocity = 150
 

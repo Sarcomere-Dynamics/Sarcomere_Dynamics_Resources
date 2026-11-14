@@ -232,9 +232,11 @@ class CommandHandler(ModbusMap):
         multiplier registered for ``modbus_key`` in
         ``ModbusMap.data_type_multiplier_map`` (0.5 -> packed int8 pairs,
         1 -> signed int16, 2 -> IEEE 754 float), with special-cased
-        handling for ``slave_id_reg`` (single uint8) and
-        ``feedback_actuator_error_reg`` (uint32 bitfield rather than
-        float, despite sharing multiplier 2).
+        handling for ``slave_id_reg`` (single uint8),
+        ``feedback_actuator_error_reg`` / ``feedback_motor_error_reg``
+        (uint32 bitfields rather than floats, despite multiplier 2), and
+        ``feedback_fault_reg`` / ``feedback_motor_status_reg`` /
+        ``feedback_motor_flags_reg`` (raw unsigned 16-bit words).
 
         Args:
             feedback_data: List (or single int) of uint16 values read
@@ -362,9 +364,19 @@ class CommandHandler(ModbusMap):
         # error_report is a 32-bit bitfield per joint transported as (low_word, high_word).
         # Route it to the uint32 helper so bit flags like DRV_FAULT=0x20 survive intact —
         # the multiplier=2 path would otherwise reinterpret the bytes as IEEE float.
-        if modbus_key == "feedback_actuator_error_reg":
+        if modbus_key in ("feedback_actuator_error_reg", "feedback_motor_error_reg"):
             decoded_data = helper_decode_feedback_16b_uint32(feedback_data)
             return decoded_data
+
+        # Master status record and per-motor status/flags are unsigned codes and
+        # bit fields: keep each register as its raw uint16 (the multiplier-1 path
+        # would sign them, the 0.5 path would split them into int8 pairs).
+        if modbus_key in (
+            "feedback_fault_reg",
+            "feedback_motor_status_reg",
+            "feedback_motor_flags_reg",
+        ):
+            return [int(v) & 0xFFFF for v in feedback_data]
 
         match ModbusMap().data_type_multiplier_map[modbus_key]:
             case 0.5:
