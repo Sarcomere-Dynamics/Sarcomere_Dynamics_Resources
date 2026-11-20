@@ -490,16 +490,20 @@ class ArtusAPI:
         self._communication_handler.close_connection()
         signal.signal(signal.SIGINT, self.original_sigint_handler)
 
-    def wake_up(self, control_type: int = 3):
+    def wake_up(self, control_type: int = 3, wait: bool = True):
         """Wakes up the hand and sets its control type.
 
-        Sends the start command, waits for the hand to report a ready state,
-        and retries once if the hand reports it is asleep.
+        Sends the start command (which runs LL and stroke calibration if the
+        hand needs it). By default it waits for the hand to report a ready
+        state and retries once if the hand reports it is asleep.
 
         Args:
             control_type: Control type to wake up with -- 3 for position
                 control, 2 for velocity control, 1 for torque control
                 (maximum 3 bits).
+            wait: If True (default), poll the robot status until the hand is
+                ready. If False, return right after sending the command so
+                the caller can check the status and motor diagnostics itself.
         """
         wake_command = self._command_handler.get_robot_start_command(
             control_type=control_type
@@ -509,11 +513,16 @@ class ArtusAPI:
         self._communication_handler.send_data(wake_command)
         self.last_time = time.perf_counter()
 
+        if not wait:
+            # Readiness is not confirmed; the caller checks the status itself.
+            self.awake = True
+            return
+
         ready_result = self._communication_handler.wait_for_ready(vis=False, timeout=30)
         if not ready_result:
             self.logger.error("Hand timed out waiting for ready")
         elif ready_result == ActuatorState.ACTUATOR_SLEEP.value:
-            self.wake_up()
+            self.wake_up(control_type=control_type)
         else:
             self.logger.info("Hand ready")
             self.state = ActuatorState.ACTUATOR_IDLE
@@ -524,6 +533,20 @@ class ArtusAPI:
         sleep_command = self._command_handler.get_sleep_command()
         self._communication_handler.send_data(sleep_command)
         self.last_time = time.perf_counter()
+
+    def estop(self):
+        """Sends the emergency stop command.
+
+        Accepted from any state except ACTUATOR_SLEEP (motors are already off
+        there, so the firmware rejects it with REJECTED_STATE). Every motor is
+        stopped and reports ESTOP_REQUESTED, and the hand enters
+        ACTUATOR_ERROR with fault reason ESTOP. Call ``clear_errors()`` to
+        return to ACTUATOR_IDLE, then ``wake_up()`` before moving again.
+        """
+        estop_command = self._command_handler.get_estop_command()
+        self._communication_handler.send_data(estop_command)
+        self.last_time = time.perf_counter()
+        self.awake = False
 
     def set_control_type(self, control_type: int):
         """Sets the active control type of the hand.
@@ -577,15 +600,19 @@ class ArtusAPI:
             self.logger.error(f"Invalid actuator state: {robot_state}")
             return None
 
-    def calibrate(self, joint=0):
+    def calibrate(self, joint=0, wait=True):
         """Runs the calibration routine on the hand.
 
-        Sends the calibration command, optionally scoped to a single joint,
-        and blocks until the hand reports it is ready again.
+        Sends the calibration command (LL then stroke), optionally scoped to
+        a single joint. By default it blocks until the hand reports it is
+        ready again.
 
         Args:
             joint: Joint index to calibrate. If 0 (default), calibrates all
                 joints/strokes.
+            wait: If True (default), poll the robot status until the hand is
+                ready. If False, return right after sending the command so
+                the caller can check the status and motor diagnostics itself.
         """
         if not self._check_awake():
             return
@@ -595,6 +622,9 @@ class ArtusAPI:
             calibrate_cmd.append(joint)
 
         self._communication_handler.send_data(calibrate_cmd)
+        if not wait:
+            self.state = ActuatorState.ACTUATOR_CALIBRATING_LL.value
+            return
         time.sleep(3)
         self.last_time = time.perf_counter()
         self.state = ActuatorState.ACTUATOR_CALIBRATING_STROKE.value

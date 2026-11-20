@@ -1,7 +1,7 @@
 {
   "thumb_spread": {
     "index": 0,
-    "target_angle": -25,
+    "target_angle": 25,
     "target_velocity": 50,
     "target_force": 40
   },
@@ -94,5 +94,17 @@
     "target_angle": 40,
     "target_velocity": 40,
     "target_force": 2
+  },
+  "wrist_pitch": {
+    "index": 16,
+    "target_angle": -30,
+    "target_velocity": 40,
+    "target_force": 40
+  },
+  "wrist_yaw": {
+    "index": 17,
+    "target_angle": 0,
+    "target_velocity": 40,
+    "target_force": 40
   }
 }

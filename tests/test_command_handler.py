@@ -36,6 +36,10 @@ class TestNewCommands(unittest.TestCase):
         )
         self.assertEqual(self.nc.command_dict["clear_errors_command"], 0x1A)
 
+    def test_get_estop_command(self):
+        """Verifies the ESTOP command payload and its 0x18 opcode."""
+        self.assertEqual(self.nc.get_estop_command(), [0x18])
+
     def test_get_calibration_command(self):
         """Verifies the calibration command is a single-element list."""
         self.assertEqual(

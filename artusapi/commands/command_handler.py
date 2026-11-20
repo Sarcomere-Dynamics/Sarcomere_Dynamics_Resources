@@ -61,6 +61,7 @@ class CommandHandler(ModbusMap):
             "wipe_sd_command": 0x46,
             "set_zero_command": 0x15,
             "clear_errors_command": 0x1A,
+            "estop_command": 0x18,
         }
         self.num_joints = num_joints
         if not logger:
@@ -427,6 +428,14 @@ class CommandHandler(ModbusMap):
             A single-element list containing the clear-errors command opcode.
         """
         return [self.command_dict["clear_errors_command"]]
+
+    def get_estop_command(self):
+        """Builds the emergency stop command.
+
+        Returns:
+            A single-element list containing the ESTOP command opcode.
+        """
+        return [self.command_dict["estop_command"]]
 
     def get_states_command(self, type=0):
         """Builds the command requesting feedback/state data.

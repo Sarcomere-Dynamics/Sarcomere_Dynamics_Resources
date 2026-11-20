@@ -75,6 +75,7 @@ def main_menu():
     ║   19 -> Get Motor Diagnostics (motors with a problem)            ║
     ║   20 -> Get Motor Diagnostics (all motors)                       ║
     ║                                                                  ║
+    ║   e -> EMERGENCY STOP (clear with c, then wake up with 3)        ║
     ║   c -> Clear errors                                              ║
     ║                                                                  ║
     ╚══════════════════════════════════════════════════════════════════╝""")
@@ -149,7 +150,10 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
             if control_type not in [1, 2, 3]:
                 logger.warning("Invalid control type, defaulting to position control")
                 control_type = 3
-            artusapi.wake_up(control_type=control_type)
+            # Don't poll the robot status here: check it manually (7) along
+            # with the fault report / motor diagnostics (17, 19, 20).
+            artusapi.wake_up(control_type=control_type, wait=False)
+            print("Start command sent. Use 7 for robot state, 17/19/20 for faults and motor diagnostics.")
         case "4":
             artusapi.sleep()
         case "5":
@@ -159,7 +163,10 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
             ):  # because not inclusive range
                 logger.error("Invalid joint number, please try again")
                 return
-            artusapi.calibrate(n)
+            # Don't poll the robot status here: check it manually (7) along
+            # with the fault report / motor diagnostics (17, 19, 20).
+            artusapi.calibrate(n, wait=False)
+            print("Calibration started. Use 7 for robot state, 17/19/20 for faults and motor diagnostics.")
         case "6":
             with open(os.path.join(hand_poses_path, "grasp_example.json"), "r") as file:
                 grasp_example_dict = json.load(file)
@@ -223,6 +230,9 @@ def handle_command(artusapi, user_input, logger, hand_poses_path):
                 print("No motor reports a problem")
             else:
                 pprint(diagnostics, sort_dicts=False)
+        case "e":
+            artusapi.estop()
+            print("ESTOP sent. Hand is in ERROR: use c to clear, then 3 to wake up.")
         case "c":
             artusapi.clear_errors()
         case "r":
@@ -268,9 +278,17 @@ def main():
     logger = config.logger
 
     # Main loop (example)
+    last_input = None
     while True:
         try:
-            user_input = main_menu()
+            user_input = main_menu().strip()
+            # Empty input (just Enter) repeats the previous command
+            if not user_input:
+                if last_input is None:
+                    continue
+                user_input = last_input
+                print(f">> Repeating command: {user_input}")
+            last_input = user_input
             handle_command(artusapi, user_input, logger, hand_poses_path)
         except Exception as e:
             logger.error(f"Error: {e}")

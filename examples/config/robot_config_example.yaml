@@ -1,6 +1,6 @@
 robots:
   left_hand_robot:
-    robot_connected: true
+    robot_connected: false
     robot_type: 'artus_talos'
     communication_method: 'ModbusRTU'
     baudrate: 115200
@@ -13,13 +13,13 @@ robots:
 
 
   right_hand_robot:
-    robot_connected: false
-    robot_type: 'artus_talos'
+    robot_connected: true
+    robot_type: 'artus_dex'
     communication_method: 'ModbusRTU'
     baudrate: 115200
-    communication_channel_identifier: '/dev/ttyUSB0'
+    communication_channel_identifier: '/dev/ttyACM0'
     hand_type: 'right'
-    start_robot: false
+    start_robot: true
     reset_on_start: 0
     streaming_frequency: 30  # data/seconds
     calibrate: true

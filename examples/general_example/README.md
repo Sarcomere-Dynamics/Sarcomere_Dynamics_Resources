@@ -39,6 +39,10 @@ Options 17-20 read the master's status registers (700-812). They need master fir
 
 Code meanings are in `artusapi/common/protocol_codes.py`.
 
+### Emergency stop
+
+`e` sends ESTOP: every motor stops and the hand goes to `ACTUATOR_ERROR` with fault reason `ESTOP` (rejected in SLEEP, where the motors are already off). To recover, send `c` to clear errors, then `3` to wake the hand up again.
+
 ### Setting targets
 
 The example uses two main json files to set the targets for the robot. They are located in the `data/hand_poses` folder. These files are set up for the **ARTUS Lite** hand, with all 16 joints.
