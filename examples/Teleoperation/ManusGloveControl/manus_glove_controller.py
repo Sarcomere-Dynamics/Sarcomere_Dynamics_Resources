@@ -124,13 +124,13 @@ class ManusGloveController:
         """
         if joint_angles_left is not None:
             if self.artus_api is not None:
-                self.artus_api.set_joint_angles_by_list(joint_angles_list=joint_angles_left)
+                self.artus_api.set_joint_angles_by_list(joint_angles=joint_angles_left)
         else:
             logging.warning("No joint angles received for left hand")
 
         if joint_angles_right is not None:
             if self.artus_api is not None:
-                self.artus_api.set_joint_angles_by_list(joint_angles_list=joint_angles_right)
+                self.artus_api.set_joint_angles_by_list(joint_angles=joint_angles_right)
         else:
             logging.warning("No joint angles received for right hand")
     
